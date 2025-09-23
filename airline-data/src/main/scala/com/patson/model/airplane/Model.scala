@@ -15,32 +15,35 @@ case class Model(name : String, family : String = "", capacity : Int, fuelBurn :
       SUPERSONIC
     } else {
       capacity match {
-        case x if (x <= 15) => LIGHT
-        case x if (x <= 70) => SMALL
-        case x if (x <= 150) => REGIONAL
-        case x if (x <= 250) => MEDIUM
-        case x if (x <= 350) => LARGE
-        case x if (x <= 500) => X_LARGE
+        case x if (x <= 19) => LIGHT
+        case x if (x <=50 ) => SMALL
+        case x if (x <= 76) => REGIONAL
+        case x if (x <= 249) => MEDIUM
+        case x if (x <= 360) => LARGE
+        case x if (x <= 475) => X_LARGE
         case _ => JUMBO
       }
     }
   }
   val category = Category.fromType(airplaneType)
 
-  private[this]val BASE_TURNAROUND_TIME = 40
-  val turnaroundTime : Int = {
-    BASE_TURNAROUND_TIME +
-      (airplaneType match {
-        case LIGHT => capacity / 3 //45 - old value
-        case SMALL =>  capacity / 3 //70
-        case REGIONAL => capacity / 3 //100
-        case MEDIUM =>  capacity / 2.5 //140
-        case LARGE => capacity / 2.5 //180
-        case X_LARGE => capacity / 2.5 //200
-        case JUMBO => capacity / 2.5 //220
-        case SUPERSONIC => capacity / 2.5
-      }).toInt
-  }
+private[this] val BASE_TURNAROUND_TIME = Map(
+  LIGHT -> 20, SMALL -> 25, REGIONAL -> 30,
+  MEDIUM -> 35, LARGE -> 40, X_LARGE -> 50, JUMBO -> 60, SUPERSONIC -> 50
+)
+val turnaroundTime: Int = {
+  BASE_TURNAROUND_TIME(airplaneType) +
+    (airplaneType match {
+      case LIGHT => capacity / 5
+      case SMALL => capacity / 5
+      case REGIONAL => capacity / 4
+      case MEDIUM => capacity / 4
+      case LARGE => capacity / 3.5
+      case X_LARGE => capacity / 3.5
+      case JUMBO => capacity / 3
+      case SUPERSONIC => capacity / 2.5
+    }).toInt
+}.min(120) // Cap at 120 minutes
 
   val airplaneTypeLabel : String = label(airplaneType)
 
