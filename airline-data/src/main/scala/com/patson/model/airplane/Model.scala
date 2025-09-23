@@ -45,9 +45,15 @@ case class Model(name : String, family : String = "", capacity : Int, fuelBurn :
   val airplaneTypeLabel : String = label(airplaneType)
 
   //weekly fixed cost
-  val baseMaintenanceCost : Int = {
-    (capacity * 150).toInt //for now
+val baseMaintenanceCost: Int = {
+  category match {
+    case Category.LIGHT => 1000
+    case Category.REGIONAL => 3000
+    case Category.MEDIUM => 6000
+    case Category.LARGE => 10000
+    case Category.SUPERSONIC => 20000
   }
+}
 
   def applyDiscount(discounts : List[ModelDiscount]) = {
     var discountedModel = this
