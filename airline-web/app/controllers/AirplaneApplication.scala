@@ -285,7 +285,7 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
     return rejections.toMap
   }
 
-  def validateMakeFavorite(airlineId : Int, modelId : Int) : Either[String, Unit] = {
+  def validateMakeFavorite(airlineId: Int, modelId: Int): Either[String, Unit] = {
     val airplanes = AirplaneSource.loadAirplanesCriteria(List(("a.model", modelId)))
     val airplanesCountByOwner = airplanes.filter(!_.isSold).groupBy(_.owner).view.map {
       case (airline, airplanes) => (airline.id, airplanes.length)
@@ -294,7 +294,10 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
     airplanesCountByOwner.get(airlineId) match {
       case Some(count) =>
         val ownershipPercentage = count * 100.0 / airplanes.length
-        if (ownershipPercentage >= ModelDiscount.MAKE_FAVORITE_PERCENTAGE_THRESHOLD) {
+        val airframeThreshold = ModelDiscount.FAVORITE_AIRFRAME_THRESHOLD(model.category)
+        val percentageThreshold = ModelDiscount.FAVORITE_PERCENTAGE_THRESHOLD
+        val requiredAirframesForPercentage = (airplanes.length * percentageThreshold / 100.0).ceil.toInt
+        if (count >= airframeThreshold || ownershipPercentage >= percentageThreshold) {
           ModelSource.loadFavoriteModelId(airlineId) match {
             case Some((favoriteModelId, startCycle)) =>
               if (favoriteModelId == modelId) {
@@ -308,16 +311,13 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
                   Left(s"Can only reset favorite in $remainingCycles week(s)")
                 }
               }
-            case None => Right(()) //no favorite yet. ok
+            case None => Right(()) //no favorite yet, ok
           }
-
         } else {
-
-          Left(s"Cannot set ${model.name} as Favorite as you do not own at least ${ModelDiscount.MAKE_FAVORITE_PERCENTAGE_THRESHOLD}% of this model in circulation. You currently own ${BigDecimal(ownershipPercentage).setScale(2, BigDecimal.RoundingMode.HALF_UP)}%")
+          Left(s"Cannot set ${model.name} as Favorite. Need ${percentageThreshold}% ($requiredAirframesForPercentage airframes) or $airframeThreshold airframes, you own $count airframes.")
         }
       case None => Left(s"Cannot set ${model.name} as Favorite as you do not own any airplane of this model.")
     }
-
   }
 
   def getOwnedAirplanes(airlineId : Int, simpleResult : Boolean, groupedResult : Boolean) = {
