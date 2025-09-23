@@ -43,7 +43,7 @@ val turnaroundTime: Int = {
       case JUMBO => capacity / 3
       case SUPERSONIC => capacity / 2.5
     }).toInt
-}.min(120) // Cap at 120 minutes
+}.min(180) // Cap at 180 minutes
 
   val airplaneTypeLabel : String = label(airplaneType)
 
