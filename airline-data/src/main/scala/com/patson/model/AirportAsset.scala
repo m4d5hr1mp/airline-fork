@@ -51,7 +51,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Ski resort attracts tourists")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(VACATION_HUB, 4))
         override val baseCost : Long = 500_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 25
         override val initRoi : Double = 1.0 / 70
@@ -63,7 +63,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Beach resort attracts tourists")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(VACATION_HUB, 2))
         override val baseCost : Long = 200_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 20
         override val initRoi : Double = 1.0 / 50
@@ -75,7 +75,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Convention center to boost business")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(FINANCIAL_HUB, 8))
         override val baseCost : Long = 2_000_000_000
-        override val baseRequirement : Int = 11
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 50
         override val initRoi : Double = 1.0 / 100
@@ -87,7 +87,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Museum attracts tourists")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INTERNATIONAL_HUB, 2))
         override val baseCost : Long = 800_000_000
-        override val baseRequirement : Int = 9
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 50
         override val initRoi : Double = 1.0 / 100
@@ -99,7 +99,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Residential Complex increases airport population")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(POPULATION, 25000))
         override val baseCost : Long = 200_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 25
         override val initRoi : Double = 1.0 / 50
@@ -111,7 +111,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Sport Arena")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.1))
         override val baseCost : Long = 200_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 35
         override val initRoi : Double = 1.0 / 100
@@ -123,7 +123,7 @@ object AirportAssetType extends Enumeration {
         //override val descriptions = List(s"Shopping Mall")
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.2))
         override val baseCost : Long = 800_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 25
         override val initRoi : Double = 1.0 / 80
@@ -134,7 +134,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 3 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(VACATION_HUB, 2))
         override val baseCost : Long = 300_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 35
         override val initRoi : Double = 1.0 / 60
@@ -144,7 +144,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 3 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(FINANCIAL_HUB, 2))
         override val baseCost : Long = 300_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 35
         override val initRoi : Double = 1.0 / 60
@@ -154,7 +154,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 4 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(VACATION_HUB, 5))
         override val baseCost : Long = 800_000_000
-        override val baseRequirement : Int = 9
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 20
         override val initRoi : Double = 1.0 / 100
@@ -164,7 +164,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 6 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(POPULATION, 100000)) //base
         override val baseCost : Long = 4_000_000_000L
-        override val baseRequirement : Int = 11
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 80
         override val initRoi : Double = 1.0 / 200
@@ -174,7 +174,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 4 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(VACATION_HUB, 2), AirportBoost(FINANCIAL_HUB, 1))
         override val baseCost : Long = 600_000_000
-        override val baseRequirement : Int = 10
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 50
         override val initRoi : Double = 1.0 / 200
@@ -184,7 +184,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 6 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.5), AirportBoost(FINANCIAL_HUB, 5), AirportBoost(POPULATION, 50000))
         override val baseCost : Long = 5_000_000_000L
-        override val baseRequirement : Int = 12
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 100
         override val initRoi : Double = 1.0 / 500
@@ -194,7 +194,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 5 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INTERNATIONAL_HUB, 3))
         override val baseCost : Long = 1_000_000_000
-        override val baseRequirement : Int = 11
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 50
         override val initRoi : Double = 1.0 / 200
@@ -205,7 +205,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 4 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(POPULATION, 20000), AirportBoost(INCOME, 0.3))
         override val baseCost : Long = 500000000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 30
         override val initRoi : Double = 1.0 / 40
@@ -215,7 +215,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 1 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.05))
         override val baseCost : Long = 100_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 10
         override val initRoi : Double = 1.0 / 100
@@ -225,7 +225,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 1 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.02))
         override val baseCost : Long = 30_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 15
         override val initRoi : Double = 1.0 / 50
@@ -235,7 +235,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 2 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.05))
         override val baseCost : Long = 50_000_000
-        override val baseRequirement : Int = 3
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 30
         override val initRoi : Double = 1.0 / 50
@@ -245,7 +245,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 1 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.02))
         override val baseCost : Long = 10_000_000
-        override val baseRequirement : Int = 1
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 8
         override val initRoi : Double = 1.0 / 30
@@ -255,7 +255,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 4 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.1))
         override val baseCost : Long = 400_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 25
         override val initRoi : Double = 1.0 / 80
@@ -265,7 +265,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 3 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.1))
         override val baseCost : Long = 300_000_000
-        override val baseRequirement : Int = 7
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 35
         override val initRoi : Double = 1.0 / 70
@@ -275,7 +275,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 2 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.05))
         override val baseCost : Long = 100_000_000
-        override val baseRequirement : Int = 5
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 25
         override val initRoi : Double = 1.0 / 60
@@ -285,7 +285,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 3 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.12))
         override val baseCost : Long = 500_000_000
-        override val baseRequirement : Int = 9
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 45
         override val initRoi : Double = 1.0 / 90
@@ -295,7 +295,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 1 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.02))
         override val baseCost : Long = 10_000_000
-        override val baseRequirement : Int = 1
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 10
         override val initRoi : Double = 1.0 / 50
@@ -305,7 +305,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 4 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.2))
         override val baseCost : Long = 1_000_000_000
-        override val baseRequirement : Int = 11
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 55
         override val initRoi : Double = 1.0 / 100
@@ -315,7 +315,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 3 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.1))
         override val baseCost : Long = 500_000_000
-        override val baseRequirement : Int = 7
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 30
         override val initRoi : Double = 1.0 / 100
@@ -325,7 +325,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 5 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(INCOME, 0.25))
         override val baseCost : Long = 1_500_000_000
-        override val baseRequirement : Int = 12
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 65
         override val initRoi : Double = 1.0 / 120
@@ -335,7 +335,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 6 * 52
         override val baseBoosts : List[AirportBoost] = List(AirportBoost(POPULATION, 100000))
         override val baseCost : Long = 2_000_000_000
-        override val baseRequirement : Int = 10
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 80
         override val initRoi : Double = 1.0 / 150
@@ -345,7 +345,7 @@ object AirportAssetType extends Enumeration {
         override val constructionDuration : Int = 2 * 52
         override val baseBoosts : List[AirportBoost] = List()
         override val baseCost : Long = 200_000_000
-        override val baseRequirement : Int = 7
+        override val baseRequirement : Int = 15
 
         override val maxRoi : Double = 1.0 / 20
         override val initRoi : Double = 1.0 / 60
