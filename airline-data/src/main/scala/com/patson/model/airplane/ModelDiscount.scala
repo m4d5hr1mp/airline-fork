@@ -35,13 +35,13 @@ object ModelDiscount {
   val getFavoriteDiscounts: Model => List[ModelDiscount] = (model : Model) => {
     val constructionTimeDiscount = ModelDiscount(model.id, 0.25, DiscountType.CONSTRUCTION_TIME, DiscountReason.FAVORITE, None)
     val priceDiscount = model.airplaneType match {
-      case LIGHT => 0.20
+      case LIGHT => 0.05
       case REGIONAL => 0.15
       case SMALL => 0.10
-      case MEDIUM => 0.06
-      case LARGE => 0.04
-      case X_LARGE => 0.03
-      case JUMBO => 0.02
+      case MEDIUM => 0.175
+      case LARGE => 0.07
+      case X_LARGE => 0.05
+      case JUMBO => 0.025
       case SUPERSONIC => 0.05
     }
     List(ModelDiscount(model.id, priceDiscount, DiscountType.PRICE, DiscountReason.FAVORITE, None), constructionTimeDiscount)
