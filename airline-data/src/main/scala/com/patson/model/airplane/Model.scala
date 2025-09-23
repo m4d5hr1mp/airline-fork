@@ -47,11 +47,11 @@ case class Model(name : String, family : String = "", capacity : Int, fuelBurn :
   //weekly fixed cost
 val baseMaintenanceCost: Int = {
   category match {
-    case Category.LIGHT => 1000
-    case Category.REGIONAL => 3000
-    case Category.MEDIUM => 6000
-    case Category.LARGE => 10000
-    case Category.SUPERSONIC => 20000
+    case Category.LIGHT => 150
+    case Category.REGIONAL => 150
+    case Category.MEDIUM => 150
+    case Category.LARGE => 150
+    case Category.SUPERSONIC => 150
   }
 }
 
