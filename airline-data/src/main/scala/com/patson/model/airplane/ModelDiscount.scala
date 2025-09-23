@@ -18,7 +18,18 @@ case class ModelDiscount(modelId : Int, discount : Double, discountType : Discou
 }
 
 object ModelDiscount {
-  val MAKE_FAVORITE_PERCENTAGE_THRESHOLD = 5 //5%
+  val FAVORITE_PERCENTAGE_THRESHOLD: Double = 5.0
+  val FAVORITE_AIRFRAME_THRESHOLD: Map[Category.Value, Int] = Map( 
+    //These values specify maximum number of airframes required to obtain "Favourite" discount, regardless of total # of airframes in circulation
+    Category.LIGHT -> 20,
+    Category.SMALL -> 25,
+    Category.REGIONAL -> 30,
+    Category.MEDIUM -> 50,
+    Category.LARGE -> 40,
+    Category.X_LARGE -> 25,
+    Category.JUMBO -> 15,
+    Category.SUPERSONIC -> 10
+  )
   val MAKE_FAVORITE_RESET_THRESHOLD = 52 //1 year at least
 
   val getFavoriteDiscounts: Model => List[ModelDiscount] = (model : Model) => {
