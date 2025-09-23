@@ -17,7 +17,9 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
     }
   }
 
-  val COST_EXPONENTIAL_BASE = 1.7
+  val COST_EXPONENTIAL_BASE = 1.6  
+  // This value governs base upkeep and build cost scaling from level. 
+  // 1.7 means bases above lvl 10 are hardly sustainable w/o assets. Use lower values to make it more affordable. 
   
   lazy val getUpkeep : Long = {
     val adjustedScale = if (scale == 0) 1 else scale //for non-existing base, calculate as if the base is 1
