@@ -21,14 +21,14 @@ object ModelDiscount {
   val FAVORITE_PERCENTAGE_THRESHOLD: Double = 5.0
   val FAVORITE_AIRFRAME_THRESHOLD: Map[Category.Value, Int] = Map( 
     //These values specify maximum number of airframes required to obtain "Favourite" discount, regardless of total # of airframes in circulation
-    Category.LIGHT -> 20,
-    Category.SMALL -> 25,
-    Category.REGIONAL -> 30,
-    Category.MEDIUM -> 50,
-    Category.LARGE -> 40,
-    Category.X_LARGE -> 25,
-    Category.JUMBO -> 15,
-    Category.SUPERSONIC -> 10
+    Category.LIGHT -> 25,     //for 1-19 pax models,        max 25 models owned = 500 models in circulation when we hit limiter
+    Category.SMALL -> 50,     // for 20-50 pax models,      max 50 models owned = 1000 models in circulation when we hit limiter
+    Category.REGIONAL -> 75,  //for 51-76 pax models,       max 75 models owned = 1500 models in circulation when we hit limiter
+    Category.MEDIUM -> 125,    // for 77-249 pax models,    max 100 models owned = 2000 models in circulation when we hit limiter
+    Category.LARGE -> 75,     // for 250-360 pax models,    max 75 models owned = 1500 models in circulation when we hit limiter
+    Category.X_LARGE -> 50,   // for 361-475 pax models,    max 50 models owned = 1000 models in circulation when we hit limiter
+    Category.JUMBO -> 50,     // for 476+ pax models,       max 50 models owned = 1000 models in circulation when we hit limiter
+    Category.SUPERSONIC -> 50 // for SST's,                 max 50 models owned = 1000 models in circulation when we hit limited
   )
   val MAKE_FAVORITE_RESET_THRESHOLD = 52 //1 year at least
 
