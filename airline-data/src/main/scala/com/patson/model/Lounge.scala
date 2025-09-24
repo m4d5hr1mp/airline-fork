@@ -22,11 +22,11 @@ object Lounge {
   
   def getBaseScaleRequirement(loungeLevel : Int) = {
     if (loungeLevel == 3) {
-      9
+      11
     } else if (loungeLevel == 2) {
-      6
+      9
     } else {
-      3
+      7
     }
   }
 }
