@@ -17,9 +17,9 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
     }
   }
 
-  val COST_EXPONENTIAL_BASE = 1.6  
   // This value governs base upkeep and build cost scaling from level. 
   // 1.7 means bases above lvl 10 are hardly sustainable w/o assets. Use lower values to make it more affordable. 
+  val COST_EXPONENTIAL_BASE = 1.6  
   
   lazy val getUpkeep : Long = {
     val adjustedScale = if (scale == 0) 1 else scale //for non-existing base, calculate as if the base is 1
@@ -29,63 +29,47 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
   }
 
   // This Defines Discounts to upkeep & build costs for lower scale airpots!
+  // For each scale below scale 7 get 10% discount: 
+  // Scale 6 = 10% / 90% of baseline cost, Scale 1 = 60% / 40% of baseline cost.
   lazy val airportSizeRatio =
-    //Upkeep Costs for Airport Scales below 6 are as follows:
-    // Scale 6 and up: 100%
-    // Scale 5:        80%
-    // Scale 4:        70%
-    // Scale 3:        60%
-    // Scale 2:        50%
-    // Scale 1:        40%
     if (airport.size > 6) {
       1.0
     } else {
       0.3 + airport.size * 0.1
     }
 
-//  def getLinkLimit(titleOption : Option[Title.Value]) : Int = {
-//    val base = 5
-//    val titleBonus = titleOption match {
-//      case Some(title) => CountryAirlineTitle.getLinkLimitBonus(title)
-//      case None => 0
-//    }
-//
-//    val scaleBonus =
-//      if (headquarter) {
-//        4 * scale
-//      } else {
-//        2 * scale
-//      }
-//
-//    base + titleBonus + scaleBonus
-//  }
-
+  // Logic inside "AirlineBase" object on line 124
   val getOfficeStaffCapacity = AirlineBase.getOfficeStaffCapacity(scale, headquarter)
 
-//  val HQ_BASIC_DELEGATE = 7
-//  val NON_HQ_BASIC_DELEGATE = 3
-//  val delegateCapacity : Int =
-//    (if (headquarter) HQ_BASIC_DELEGATE else NON_HQ_BASIC_DELEGATE) + scale / (if (headquarter) 1 else 2)
+  // Delegate Cost of a Base / HQ (Now equalised!)
+  val delegatesRequired : Int = scale / 2
 
-  val delegatesRequired : Int = {
-    if (headquarter) {
-      scale / 2
-    } else {
-      1 + scale / 2
-    }
-  }
-
+  // Overtime Cost Logic
+  val EXP_OVERTIME_FACTOR = 1.5  // Exponential growth factor for overtime tiers
 
   def getOvertimeCompensation(staffRequired : Int) = {
     if (getOfficeStaffCapacity >= staffRequired) {
       0
     } else {
       val delta = staffRequired - getOfficeStaffCapacity
-      var compensation = 0
       val income = CountrySource.loadCountryByCode(countryCode).map(_.income).getOrElse(0)
-      compensation += delta * (50000 + income) / 52 * 10 //weekly compensation, *10, as otherwise it's too low
+      val baseCostPerStaff = (50000 + income) / 52 * 10  // Weekly compensation per staff, *10 as in original
+      val tierSize = AirlineBase.STAFF_PER_SCALE(headquarter) // "AirlineBase.STAFF_PER_SCALE" can be found on lines 125-127
 
-      compensation
+      var totalCompensation = 0.0  // Use Double for precision with exponents
+      var remainingDelta = delta
+      var tier = 0  // Starting tier (0 for first tierSize staff)
+
+      while (remainingDelta > 0) {
+        val currentTierSize = Math.min(tierSize, remainingDelta)  // Handle partial tiers
+        val tierMultiplier = Math.pow(EXP_OVERTIME_FACTOR, tier)  // Exponential growth: factor^tier
+        totalCompensation += currentTierSize * baseCostPerStaff * tierMultiplier
+
+        remainingDelta -= tierSize
+        tier += 1
+      }
+
+      totalCompensation.toLong  // Convert back to Long for return type consistency
     }
   }
 
@@ -138,6 +122,11 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
 }
 
 object AirlineBase {
+  val STAFF_PER_SCALE: Map[Boolean, Int] = Map(
+    true -> 80,   // Headquarters: 80 staff per scale or tier
+    false -> 60   // Non-headquarters: 60 staff per scale or tier
+  )
+
   def getOfficeStaffCapacity(scale : Int, isHeadquarters : Boolean) = {
     val base =
       if (isHeadquarters) {
@@ -145,12 +134,7 @@ object AirlineBase {
       } else {
         0
       }
-    val scaleBonus =
-      if (isHeadquarters) {
-        80 * scale
-      } else {
-        60 * scale
-      }
+    val scaleBonus = STAFF_PER_SCALE(isHeadquarters) * scale
 
     base + scaleBonus
   }
