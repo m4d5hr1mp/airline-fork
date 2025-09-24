@@ -16,8 +16,8 @@ case class Model(name : String, family : String = "", capacity : Int, fuelBurn :
     } else {
       capacity match {
         case x if (x <= 19) => LIGHT
-        case x if (x <=50 ) => SMALL
-        case x if (x <= 76) => REGIONAL
+        case x if (x <= 50) => SMALL
+        case x if (x <= 114) => REGIONAL
         case x if (x <= 249) => MEDIUM
         case x if (x <= 360) => LARGE
         case x if (x <= 475) => X_LARGE
