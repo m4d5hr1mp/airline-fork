@@ -28,10 +28,18 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
     (baseUpkeep * airportSizeRatio * Math.pow(COST_EXPONENTIAL_BASE, adjustedScale - 1)).toInt
   }
 
+  // This Defines Discounts to upkeep & build costs for lower scale airpots!
   lazy val airportSizeRatio =
+    //Upkeep Costs for Airport Scales below 6 are as follows:
+    // Scale 6 and up: 100%
+    // Scale 5:        80%
+    // Scale 4:        70%
+    // Scale 3:        60%
+    // Scale 2:        50%
+    // Scale 1:        40%
     if (airport.size > 6) {
       1.0
-    } else { //discount for size < 6
+    } else {
       0.3 + airport.size * 0.1
     }
 
