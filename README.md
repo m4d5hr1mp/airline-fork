@@ -2,7 +2,7 @@ An opensource airline game.
 
 Live at https://www.airline-club.com/
 
-Version 2.1 released at https://v2.airline-club.com
+Version 2.2 released at https://v2.airline-club.com
 
 
 ![Screenshot 1](https://user-images.githubusercontent.com/2895902/74759887-5a966380-522e-11ea-9e54-2252af63d5ea.gif)
@@ -13,8 +13,8 @@ Version 2.1 released at https://v2.airline-club.com
 
 ## Setup
 1. install git :D of course
-1. clone this repo ;D , to setup for V2 use `git checkout v2`
-1. Install at least java development kit 8+
+1. clone this repo ;D , to setup for V2.2 (Latest as of Sept. 2025) use `git checkout 2.2`
+1. Install at least java development kit 8.0+ (Probably 11+ Given use of SBT)
 1. The 2 main projects are : airline-web (all the front-end stuff) and airline-data (the backend simulation).(Optional) If you want to import them to Scala IDE (if you want to code), goto the folder of those and run `activator eclipse` to generate the eclipse project files and then import those projects into your IDE
 1. This runs on mysql db (install veresion 5.x, i heard newest version 8.x? might not work). install Mysql server and then create database `airline_v2_1`, create a user `sa`, for password you might use `admin` or change it to something else. Make sure you change the corresponding password logic in the code to match that (https://github.com/patsonluk/airline/blob/master/airline-data/src/main/scala/com/patson/data/Constants.scala#L99)
 1. `airline-web` has dependency on `airline-data`, hence navigate to `airline-data` and run `activator publishLocal`. If you see [encoding error](https://github.com/patsonluk/airline/issues/267), add character_set_server=utf8mb4 to your /etc/my.cnf and restart mysql. it's a unicode characters issue, see https://stackoverflow.com/questions/10957238/incorrect-string-value-when-trying-to-insert-utf-8-into-mysql-via-jdbc
