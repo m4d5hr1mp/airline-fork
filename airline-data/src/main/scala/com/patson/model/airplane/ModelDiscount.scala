@@ -3,6 +3,7 @@ package com.patson.model.airplane
 import com.patson.data.AirplaneSource
 import com.patson.data.airplane.ModelSource
 import com.patson.model.airplane.Model.Category
+import com.patson.model.airplane.Model.Type
 import com.patson.model.airplane.Model.Type.{JUMBO, LARGE, LIGHT, MEDIUM, REGIONAL, SMALL, SUPERSONIC, X_LARGE}
 import com.patson.util.{AirplaneModelCache, AirplaneModelDiscountCache, AirplaneOwnershipCache}
 
@@ -18,19 +19,31 @@ case class ModelDiscount(modelId : Int, discount : Double, discountType : Discou
 }
 
 object ModelDiscount {
-  val MAKE_FAVORITE_PERCENTAGE_THRESHOLD = 5 //5%
+  val FAVORITE_PERCENTAGE_THRESHOLD: Double = 5.0
+  val FAVORITE_AIRFRAME_THRESHOLD: Map[Type.Value, Int] = Map( 
+    // These values specify maximum number of airframes required to obtain "Favourite" discount.
+    // Regardless of total # of airframes in circulation!
+    Type.LIGHT -> 25,       //for 1-19 pax models,        max 25 models owned = 500 models in circulation when we hit limiter
+    Type.SMALL -> 50,       // for 20-50 pax models,      max 50 models owned = 1000 models in circulation when we hit limiter
+    Type.REGIONAL -> 75,    //for 51-76 pax models,       max 75 models owned = 1500 models in circulation when we hit limiter
+    Type.MEDIUM -> 125,     // for 77-249 pax models,     max 100 models owned = 2000 models in circulation when we hit limiter
+    Type.LARGE -> 75,       // for 250-360 pax models,    max 75 models owned = 1500 models in circulation when we hit limiter
+    Type.X_LARGE -> 50,     // for 361-475 pax models,    max 50 models owned = 1000 models in circulation when we hit limiter
+    Type.JUMBO -> 50,       // for 476+ pax models,       max 50 models owned = 1000 models in circulation when we hit limiter
+    Type.SUPERSONIC -> 50   // for SST's,                 max 50 models owned = 1000 models in circulation when we hit limited
+  )
   val MAKE_FAVORITE_RESET_THRESHOLD = 52 //1 year at least
 
   val getFavoriteDiscounts: Model => List[ModelDiscount] = (model : Model) => {
     val constructionTimeDiscount = ModelDiscount(model.id, 0.25, DiscountType.CONSTRUCTION_TIME, DiscountReason.FAVORITE, None)
     val priceDiscount = model.airplaneType match {
-      case LIGHT => 0.20
+      case LIGHT => 0.05
       case REGIONAL => 0.15
       case SMALL => 0.10
-      case MEDIUM => 0.06
-      case LARGE => 0.04
-      case X_LARGE => 0.03
-      case JUMBO => 0.02
+      case MEDIUM => 0.175
+      case LARGE => 0.07
+      case X_LARGE => 0.05
+      case JUMBO => 0.025
       case SUPERSONIC => 0.05
     }
     List(ModelDiscount(model.id, priceDiscount, DiscountType.PRICE, DiscountReason.FAVORITE, None), constructionTimeDiscount)

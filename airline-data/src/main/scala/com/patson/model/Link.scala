@@ -208,16 +208,16 @@ object Link {
 //  }
   val staffScheme : Map[model.FlightType.Value, StaffSchemeBreakdown] = {
       val basicLookup = Map(
-        SHORT_HAUL_DOMESTIC -> 8,
-        MEDIUM_HAUL_DOMESTIC -> 10,
-        LONG_HAUL_DOMESTIC -> 12,
-        SHORT_HAUL_INTERNATIONAL -> 10,
-        MEDIUM_HAUL_INTERNATIONAL -> 15,
-        LONG_HAUL_INTERNATIONAL -> 20,
-        SHORT_HAUL_INTERCONTINENTAL -> 15,
-        MEDIUM_HAUL_INTERCONTINENTAL -> 25,
-        LONG_HAUL_INTERCONTINENTAL -> 30,
-        ULTRA_LONG_HAUL_INTERCONTINENTAL -> 30)
+        SHORT_HAUL_DOMESTIC -> 5,
+        MEDIUM_HAUL_DOMESTIC -> 5,
+        LONG_HAUL_DOMESTIC -> 7,
+        SHORT_HAUL_INTERNATIONAL -> 5,
+        MEDIUM_HAUL_INTERNATIONAL -> 7,
+        LONG_HAUL_INTERNATIONAL -> 12,
+        SHORT_HAUL_INTERCONTINENTAL -> 7,
+        MEDIUM_HAUL_INTERCONTINENTAL -> 12,
+        LONG_HAUL_INTERCONTINENTAL -> 15,
+        ULTRA_LONG_HAUL_INTERCONTINENTAL -> 15)
 
 
       val multiplyFactorLookup = Map(

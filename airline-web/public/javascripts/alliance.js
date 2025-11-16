@@ -27,6 +27,9 @@ function showAllianceCanvas(selectedAllianceId) {
 	}
 }
 
+window.showAllianceCanvas = showAllianceCanvas;
+
+
 function loadCurrentAirlineAlliance(callback) {
 	var getUrl = "airlines/" + activeAirline.id + "/alliance-details"
 	$.ajax({
@@ -732,171 +735,215 @@ function applyForAlliance() {
 	});
 }
 
-
 function showAllianceMap() {
-	clearAllPaths()
-	deselectLink()
+    clearAllPaths();
+    deselectLink();
 
-	var alliancePaths = []
+    const alliancePaths = [];
 
-	$.ajax({
-		type: 'GET',
-		url: "alliances/" + selectedAlliance.id + "/details",
-	    contentType: 'application/json; charset=utf-8',
-	    dataType: 'json',
-	    success: function(result) {
-				$.each(result.links, function(index, link) {
-					alliancePaths.push(drawAllianceLink(link))
-				})
-				var allianceBases = []
-				 $.each(result.members, function(index, airline) {
-				    if (airline.role != "APPLICANT") {
-				        $.merge(allianceBases, airline.bases)
-                    }
-                })
+    $.ajax({
+        type: 'GET',
+        url: `alliances/${selectedAlliance.id}/details`,
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success: function (result) {
+            // draw links
+            $.each(result.links, function (index, link) {
+                alliancePaths.push(drawAllianceLink(link)); // we already rewrote this to Leaflet
+            });
 
-				var airportMarkers = updateAirportBaseMarkers(allianceBases, alliancePaths)
-				//now add extra listener for alliance airports
-				$.each(airportMarkers, function(key, marker) {
-                        marker.addListener('mouseover', function(event) {
-                            closeAlliancePopups()
-                            var baseInfo = marker.baseInfo
-                            $("#allianceBasePopup .city").html(getCountryFlagImg(baseInfo.countryCode) + "&nbsp;" + baseInfo.city)
-                            $("#allianceBasePopup .airportName").text(baseInfo.airportName)
-                            $("#allianceBasePopup .iata").html(baseInfo.airportCode)
-                            $("#allianceBasePopup .airlineName").html(getAirlineLogoImg(baseInfo.airlineId) + "&nbsp;" + baseInfo.airlineName)
-                            $("#allianceBasePopup .baseScale").html(baseInfo.scale)
+            // collect alliance bases
+            let allianceBases = [];
+            $.each(result.members, function (index, airline) {
+                if (airline.role !== "APPLICANT") {
+                    $.merge(allianceBases, airline.bases);
+                }
+            });
 
-                            var infoWindow = new google.maps.InfoWindow({ maxWidth : 1200});
-                            var popup = $("#allianceBasePopup").clone()
-                            popup.show()
-                            infoWindow.setContent(popup[0])
-                            //infoWindow.setPosition(event.latLng);
-                            infoWindow.open(map, marker);
-                            map.allianceBasePopup = infoWindow
-                        })
-                        marker.addListener('mouseout', function(event) {
-                            closeAlliancePopups()
-                        })
-                    })
+            const airportMarkers = updateAirportBaseMarkers(allianceBases, alliancePaths);
 
+            // attach Leaflet events to each marker
+            $.each(airportMarkers, function (key, marker) {
+                marker.on('mouseover', function (e) {
+                    closeAlliancePopups();
 
-				switchMap();
-				$("#worldMapCanvas").data("initCallback", function() { //if go back to world map, re-init the map
-				        map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
-				        clearAllPaths()
-                        updateAirportMarkers(activeAirline)
-                        updateLinksInfo() //redraw all flight paths
-                        closeAlliancePopups()
-                })
+                    const baseInfo = marker.baseInfo;
+                    $("#allianceBasePopup .city").html(getCountryFlagImg(baseInfo.countryCode) + "&nbsp;" + baseInfo.city);
+                    $("#allianceBasePopup .airportName").text(baseInfo.airportName);
+                    $("#allianceBasePopup .iata").html(baseInfo.airportCode);
+                    $("#allianceBasePopup .airlineName").html(getAirlineLogoImg(baseInfo.airlineId) + "&nbsp;" + baseInfo.airlineName);
+                    $("#allianceBasePopup .baseScale").html(baseInfo.scale);
 
-				window.setTimeout(addExitButton , 1000); //delay otherwise it doesn't push to center
-	    },
-        error: function(jqXHR, textStatus, errorThrown) {
-	            console.log(JSON.stringify(jqXHR));
-	            console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
-	    },
-	    beforeSend: function() {
-            $('body .loadingSpinner').show()
+                    const popup = $("#allianceBasePopup").clone();
+                    popup.show();
+
+                    const leafletPopup = L.popup({ maxWidth: 1200 })
+                        .setLatLng(e.latlng)
+                        .setContent(popup[0])
+                        .openOn(map);
+
+                    map.allianceBasePopup = leafletPopup;
+                });
+
+                marker.on('mouseout', function () {
+                    closeAlliancePopups();
+                });
+            });
+
+            switchMap();
+
+            $("#worldMapCanvas").data("initCallback", function () {
+                // equivalent cleanup when switching back
+                if (map.exitButtonControl) {
+                    map.removeControl(map.exitButtonControl);
+                    map.exitButtonControl = undefined;
+                }
+                clearAllPaths();
+                updateAirportMarkers(activeAirline);
+                updateLinksInfo();
+                closeAlliancePopups();
+            });
+
+            // add exit button control
+            window.setTimeout(addExitButton, 1000);
         },
-        complete: function(){
-            $('body .loadingSpinner').hide()
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.log("AJAX error:", textStatus, errorThrown);
+        },
+        beforeSend: function () {
+            $('body .loadingSpinner').show();
+        },
+        complete: function () {
+            $('body .loadingSpinner').hide();
         }
-	});
+    });
 }
 
+
 function addExitButton() {
-    if (map.controls[google.maps.ControlPosition.TOP_CENTER].getLength() > 0) {
-        map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
+    // Remove existing button control if already present
+    if (map.exitButtonControl) {
+        map.removeControl(map.exitButtonControl);
     }
-    map.controls[google.maps.ControlPosition.TOP_CENTER].push(createMapButton(map, 'Exit Alliance Flight Map', 'hideAllianceMap()', 'hideAllianceMapButton')[0]);
+
+    // Define a custom Leaflet control
+    const ExitButtonControl = L.Control.extend({
+        options: { position: 'topcenter' }, // we'll patch this below
+        onAdd: function (map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar');
+            const button = L.DomUtil.create('a', '', container);
+            button.innerHTML = 'Exit Alliance Flight Map';
+            button.href = '#';
+            button.id = 'hideAllianceMapButton';
+            button.title = 'Exit Alliance Flight Map';
+            button.style.cursor = 'pointer';
+            button.style.padding = '5px 10px';
+            button.style.background = 'white';
+            button.style.fontWeight = 'bold';
+
+            // Prevent clicks from propagating to the map
+            L.DomEvent.disableClickPropagation(container);
+
+            // Bind click to your existing function
+            L.DomEvent.on(button, 'click', function (e) {
+                L.DomEvent.stop(e);
+                hideAllianceMap();
+            });
+
+            return container;
+        },
+    });
+
+    // Add the control to the map
+    map.exitButtonControl = new ExitButtonControl();
 }
 
 function drawAllianceLink(link) {
-	var from = new google.maps.LatLng({lat: link.fromLatitude, lng: link.fromLongitude})
-	var to = new google.maps.LatLng({lat: link.toLatitude, lng: link.toLongitude})
-	//var pathKey = link.id
-	
-	var strokeColor = airlineColors[link.airlineId]
-	if (!strokeColor) {
-		strokeColor = "#DC83FC"
-	}
+    if (!link) return null;
 
-    var maxOpacity = 0.7
-    var minOpacity = 0.1
-    var standardCapacity = 10000
-    var strokeOpacity
-	if (link.capacity.total < standardCapacity) {
-        strokeOpacity = minOpacity + link.capacity.total / standardCapacity * (maxOpacity - minOpacity)
+    const from = [link.fromLatitude, link.fromLongitude];
+    const to = [link.toLatitude, link.toLongitude];
+
+    // Determine stroke color
+    let strokeColor = airlineColors[link.airlineId] || "#DC83FC";
+
+    // Compute opacity based on capacity
+    const maxOpacity = 0.7;
+    const minOpacity = 0.1;
+    const standardCapacity = 10000;
+    let strokeOpacity;
+    if (link.capacity.total < standardCapacity) {
+        strokeOpacity = minOpacity + (link.capacity.total / standardCapacity) * (maxOpacity - minOpacity);
     } else {
-        strokeOpacity = maxOpacity
+        strokeOpacity = maxOpacity;
     }
-		
-	var linkPath = new google.maps.Polyline({
-			 geodesic: true,
-		     strokeColor: strokeColor,
-		     strokeOpacity: strokeOpacity,
-		     strokeWeight: 2,
-		     path: [from, to],
-		     zIndex : 90,
-		     link : link
-		});
-		
-	var fromAirport = getAirportText(link.fromAirportCity, link.fromAirportCode)
-	var toAirport = getAirportText(link.toAirportCity, link.toAirportCode)
-	
-	
-	shadowPath = new google.maps.Polyline({
-		 geodesic: true,
-	     strokeColor: strokeColor,
-	     strokeOpacity: 0.0001,
-	     strokeWeight: 25,
-	     path: [from, to],
-	     zIndex : 100,
-	     fromAirport : fromAirport,
-	     fromCountry : link.fromCountryCode, 
-	     toAirport : toAirport,
-	     toCountry : link.toCountryCode,
-	     capacity : link.capacity.total,
-	     airlineName : link.airlineName,
-	     airlineId : link.airlineId
-	});
-	
-	linkPath.shadowPath = shadowPath
-	
 
-	shadowPath.addListener('mouseover', function(event) {
-	    if (!map.allianceBasePopup) { //only do this if it is not hovered over base icon. This is a workaround as zIndex does not work - hovering over base icon triggers onmouseover event on the link below the icon
-            $("#linkPopupFrom").html(getCountryFlagImg(this.fromCountry) + "&nbsp;" + this.fromAirport)
-            $("#linkPopupTo").html(getCountryFlagImg(this.toCountry) + "&nbsp;" + this.toAirport)
-            $("#linkPopupCapacity").html(this.capacity)
-            $("#linkPopupAirline").html(getAirlineLogoImg(this.airlineId) + "&nbsp;" + this.airlineName)
+    // --- Primary visible path ---
+    const linkPath = L.polyline([from, to], {
+        color: strokeColor,
+        opacity: strokeOpacity,
+        weight: 2,
+        className: "alliance-link-path"
+    }).addTo(map);
 
+    linkPath.link = link; // for hover logic elsewhere
 
-            var infowindow = new google.maps.InfoWindow({
-                 maxWidth : 1200});
+    // --- “Shadow” path for capturing mouse events (wide, invisible) ---
+    const shadowPath = L.polyline([from, to], {
+        color: strokeColor,
+        opacity: 0.0001,
+        weight: 25,
+        className: "alliance-link-shadow"
+    }).addTo(map);
 
-            var popup = $("#linkPopup").clone()
-            popup.show()
-            infowindow.setContent(popup[0])
+    // Attach reference to linkPath for easy access
+    linkPath.shadowPath = shadowPath;
 
-            infowindow.setPosition(event.latLng);
-            infowindow.open(map);
-            map.allianceLinkPopup = infowindow
+    // Store link data directly on shadowPath (to emulate your Google Maps fields)
+    shadowPath.fromAirport = getAirportText(link.fromAirportCity, link.fromAirportCode);
+    shadowPath.toAirport = getAirportText(link.toAirportCity, link.toAirportCode);
+    shadowPath.fromCountry = link.fromCountryCode;
+    shadowPath.toCountry = link.toCountryCode;
+    shadowPath.capacity = link.capacity.total;
+    shadowPath.airlineName = link.airlineName;
+    shadowPath.airlineId = link.airlineId;
+
+    // --- Hover interaction ---
+    shadowPath.on("mouseover", function (e) {
+        if (!map.allianceBasePopup) {
+            $("#linkPopupFrom").html(getCountryFlagImg(this.fromCountry) + "&nbsp;" + this.fromAirport);
+            $("#linkPopupTo").html(getCountryFlagImg(this.toCountry) + "&nbsp;" + this.toAirport);
+            $("#linkPopupCapacity").html(this.capacity);
+            $("#linkPopupAirline").html(getAirlineLogoImg(this.airlineId) + "&nbsp;" + this.airlineName);
+
+            // Create Leaflet popup
+            const popupContent = $("#linkPopup").clone().show()[0];
+            const popup = L.popup({
+                autoPan: false,
+                closeButton: false,
+                offset: L.point(0, -5),
+                maxWidth: 1200
+            })
+                .setLatLng(e.latlng)
+                .setContent(popupContent)
+                .openOn(map);
+
+            map.allianceLinkPopup = popup;
         }
-	})		
-	shadowPath.addListener('mouseout', function(event) {
-        closeAllianceLinkPopup()
-	})
-	
-	linkPath.setMap(map)
-	linkPath.shadowPath.setMap(map)
-	polylines.push(linkPath)
-	polylines.push(linkPath.shadowPath)
+    });
 
-    var resultPath = { path : linkPath, shadow : shadowPath } //kinda need this so it has consistent data structure as the normal flight paths
-    return resultPath
+    shadowPath.on("mouseout", function () {
+        closeAllianceLinkPopup();
+    });
+
+    // --- Track these in your polyline arrays for cleanup consistency ---
+    polylines.push(linkPath);
+    polylines.push(shadowPath);
+
+    // Return structure consistent with old code
+    return { path: linkPath, shadow: shadowPath };
 }
+
 
 function showAllianceMemberDetails(allianceMember) {
     $("#allianceMemberModal").data("airlineId", allianceMember.airlineId)
@@ -1105,29 +1152,36 @@ function selectAllianceMission(mission, callback) {
 
 function closeAlliancePopups() {
     if (map.allianceBasePopup) {
-        map.allianceBasePopup.close()
-        map.allianceBasePopup.setMap(null)
-        map.allianceBasePopup = undefined
+        map.closePopup(map.allianceBasePopup);
+        map.allianceBasePopup = undefined;
     }
-    closeAllianceLinkPopup()
+    closeAllianceLinkPopup();
 }
 
 function closeAllianceLinkPopup() {
     if (map.allianceLinkPopup) {
-        map.allianceLinkPopup.close()
-        map.allianceLinkPopup.setMap(null)
-        map.allianceLinkPopup = undefined
+        map.closePopup(map.allianceLinkPopup);
+        map.allianceLinkPopup = undefined;
     }
 }
 
-
 function hideAllianceMap() {
-    map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
-    clearAllPaths()
-    updateAirportBaseMarkers([]) //revert base markers
-    closeAlliancePopups()
-    setActiveDiv($("#allianceCanvas"))
+    // 🧹 remove any custom Leaflet controls you might have added
+    if (map.allianceControl && map.hasLayer(map.allianceControl)) {
+        map.removeControl(map.allianceControl);
+    }
+
+    // 🗺️ clear paths and revert bases
+    clearAllPaths();
+    updateAirportBaseMarkers([]);
+
+    // ❌ ensure any active popups are closed
+    closeAlliancePopups();
+
+    // 🔙 return to alliance canvas UI
+    setActiveDiv($("#allianceCanvas"));
 }
+
 
 function checkResetAllianceLabelColor(targetAllianceId) {
     checkAllianceLabelColorAction(targetAllianceId, function(airlineOverride) {
@@ -1150,3 +1204,99 @@ function checkAllianceLabelColorAction(targetAllianceId, colorAction) {
         colorAction(true)
     }
 }
+
+// Define the global function to show alliance netwrk map
+window.showAllianceMap = function() {
+    clearAllPaths()
+    deselectLink()
+
+    const alliancePaths = []
+
+    $.ajax({
+        type: 'GET',
+        url: "alliances/" + selectedAlliance.id + "/details",
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        success: function(result) {
+            $.each(result.links, function(index, link) {
+                alliancePaths.push(drawAllianceLink(link))
+            })
+
+            const allianceBases = []
+            $.each(result.members, function(index, airline) {
+                if (airline.role !== "APPLICANT") {
+                    $.merge(allianceBases, airline.bases)
+                }
+            })
+
+            const airportMarkers = updateAirportBaseMarkers(allianceBases, alliancePaths)
+            $.each(airportMarkers, function(key, marker) {
+                marker.on('mouseover', function() {
+                    closeAlliancePopups()
+                    const baseInfo = marker.baseInfo
+                    $("#allianceBasePopup .city").html(getCountryFlagImg(baseInfo.countryCode) + "&nbsp;" + baseInfo.city)
+                    $("#allianceBasePopup .airportName").text(baseInfo.airportName)
+                    $("#allianceBasePopup .iata").html(baseInfo.airportCode)
+                    $("#allianceBasePopup .airlineName").html(getAirlineLogoImg(baseInfo.airlineId) + "&nbsp;" + baseInfo.airlineName)
+                    $("#allianceBasePopup .baseScale").html(baseInfo.scale)
+
+                    const popupContent = $("#allianceBasePopup").clone().show()[0]
+                    const popup = L.popup({ maxWidth: 1200 })
+                        .setLatLng(marker.getLatLng())
+                        .setContent(popupContent)
+                        .openOn(map)
+
+                    map.allianceBasePopup = popup
+                })
+                marker.on('mouseout', closeAlliancePopups)
+            })
+
+            switchMap()
+            $("#worldMapCanvas").data("initCallback", function() {
+                clearAllPaths()
+                updateAirportMarkers(activeAirline)
+                updateLinksInfo()
+                closeAlliancePopups()
+            })
+
+            window.setTimeout(addExitButton, 1000)
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.log(JSON.stringify(jqXHR))
+            console.log("AJAX error: " + textStatus + ' : ' + errorThrown)
+        },
+        beforeSend: function() {
+            $('body .loadingSpinner').show()
+        },
+        complete: function() {
+            $('body .loadingSpinner').hide()
+        }
+    })
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const allianceTab = document.querySelector('.tab-icon[data-link="alliance"]')
+    const allianceButton = document.querySelector('[data-action="show-alliance-map"]')
+
+    if (allianceTab) {
+        allianceTab.addEventListener('click', function() {
+            console.log('Alliance tab clicked')
+            showAllianceCanvas()
+        })
+    }
+
+    if (allianceButton) {
+        allianceButton.addEventListener('click', function() {
+            console.log('Flight Map button clicked, selectedAlliance =', window.selectedAlliance)
+            if (window.selectedAlliance) {
+                showAllianceMap()
+            } else {
+                console.warn('No alliance selected yet!')
+            }
+        })
+    }
+})
+
+window.showAllianceCanvas = showAllianceCanvas;
+
+

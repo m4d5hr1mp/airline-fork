@@ -393,49 +393,76 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     }
   }
 
-  def slotFee(airplaneModel : Model, airline : Airline) : Int = {
-    val baseSlotFee = size match {
-      case 1 => 50 //small
-      case 2 => 50 //medium
-      case 3 => 80 //large
-      case 4 => 150  //international class
-      case 5 => 250
-      case 6 => 350
-      case _ => 500 //mega airports - not suitable for tiny jets
+  // Airport Fees Logic Explained Below.
+  // Slot Fee - Fees charged for services (Slot, if aplicable, ATC and Ground handling)
+  def slotFee(airplaneModel: Model, airline: Airline): Int = {
+    // Slot allocation fee (only for size 7+ airports)
+    val slotAllocationFee = size match {
+      case s if s >= 7 => 500 // Fixed $500 fee for slot-controlled airports
+      case _ => 0 // No slot allocation fee for size < 7
     }
 
-    import Model.Type._
-    val multiplier = airplaneModel.airplaneType match {
-      case LIGHT => 1
-      case SMALL => 1
-      case REGIONAL => 3
-      case MEDIUM => 8
-      case LARGE => 12
-      case X_LARGE => 15
-      case JUMBO => 18
-      case SUPERSONIC => 12
+    // ATC fee: flat for LIGHT, SMALL, REGIONAL, SUPERSONIC; per-seat for MEDIUM, LARGE, X_LARGE, JUMBO to reflect MTOW difference within those categories.
+    val atcFee = airplaneModel.airplaneType match {
+      case Model.Type.LIGHT => 50                                      // Light Aircraft pay 50$
+      case Model.Type.SMALL => 100                                     // Small Aircraft pay 100$
+      case Model.Type.REGIONAL => 250                                  // Regional Aircraft pay 250$
+      case Model.Type.SUPERSONIC => 2000                               // Supersonics pay 1000$
+      case Model.Type.MEDIUM => (3.75 * airplaneModel.capacity).toInt  // Mediums pay from 115x3.75=431.25 to 249*3.75=933.75 (This includes all mainline narrow-bodies)
+      case Model.Type.LARGE => (5.0 * airplaneModel.capacity).toInt    // Large pay from 250x5=1250 to 360x5=1800 (this includes all smaller wide-bodies)
+      case Model.Type.X_LARGE => (7.0 * airplaneModel.capacity).toInt  // Extra Large pay from 361x7=2527 to 475x7=3325 (this includes all bigger wide-bodies, excluding B777-300)
+      case Model.Type.JUMBO => (10.0 * airplaneModel.capacity).toInt   // Jumbos pay from 550x10=5500 to 10x865=8650 (B777-300, B747 Family, A380-800)
     }
 
-    //apply discount if it's a base
-    val discount = getAirlineBase(airline.id) match {
-      case Some(airlineBase) =>
-        if (airlineBase.headquarter) 0.5 else 0.8 //headquarter 50% off, base 20% off
-      case None =>
-        1 //no discount
+    // Ground handling fee: category-based, flat-rate since there's not as much difference from slight size change of an airplane within category.
+    val groundHandlingFee = airplaneModel.airplaneType match {
+      case Model.Type.LIGHT => 50
+      case Model.Type.SMALL => 150
+      case Model.Type.REGIONAL => 250
+      case Model.Type.MEDIUM => 750
+      case Model.Type.LARGE => 1750
+      case Model.Type.X_LARGE => 2500
+      case Model.Type.JUMBO => 4000
+      case Model.Type.SUPERSONIC => 3000
     }
 
-    (baseSlotFee * multiplier * discount).toInt
+    // Total fee before discount
+    val totalFee = slotAllocationFee + atcFee + groundHandlingFee
+
+    // Apply 10% discount for any airline base
+    val discount = getAirlineBase(airline.id).isDefined match {
+      case true => 0.9 // 10% discount
+      case false => 1.0 // No discount
+    }
+
+    (totalFee * discount).toInt
   }
 
-  def landingFee(airplaneModel : Model) : Int = {
-    val perSeat =
-      if (size <= 3) {
-        3
-      } else {
-        size
-      }
+  def landingFee(airplaneModel: Model): Int = {
+    // Base landing fee based on airport size
+    val baseLandingFee = size match {
+      case 1 => 100  // Small regional
+      case 2 => 200  // Medium regional
+      case 3 => 300  // Large regional
+      case 4 => 500  // International
+      case 5 => 800  // Major hub
+      case 6 => 1200 // Large hub
+      case _ => 2000 // Mega airports
+    }
 
-    airplaneModel.capacity * perSeat
+    // Category multiplier for runway usage
+    val categoryMultiplier = airplaneModel.airplaneType match {
+      case Model.Type.LIGHT => 0.5
+      case Model.Type.SMALL => 1.5
+      case Model.Type.REGIONAL => 2.5
+      case Model.Type.MEDIUM => 4.0
+      case Model.Type.LARGE => 8.0
+      case Model.Type.X_LARGE => 12.0
+      case Model.Type.JUMBO => 16.0
+      case Model.Type.SUPERSONIC => 10.0
+    }
+
+    (baseLandingFee * categoryMultiplier).toInt
   }
 
   def allowsModel(airplaneModel : Model) : Boolean = {

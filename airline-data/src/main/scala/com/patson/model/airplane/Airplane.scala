@@ -72,5 +72,5 @@ object Airplane {
   val BAD_CONDITION = 40
   val CRITICAL_CONDITION = 20
   val DEFAULT_DEALER_RATIO = 1.2
-  val MAX_FLIGHT_MINUTES : Int = (24 * 60 * 4).toInt
+  val MAX_FLIGHT_MINUTES : Int = (16 * 60 * 7).toInt //16hrs operating days!
 }

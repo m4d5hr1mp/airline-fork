@@ -121,7 +121,7 @@ class SignUp @Inject()(cc: ControllerComponents)(ws: WSClient) extends AbstractC
           AirlineSource.saveAirlines(List(newAirline))
           UserSource.setUserAirline(user, newAirline)
 
-          SearchUtil.addAirline(newAirline)
+          //SearchUtil.addAirline(newAirline) - THIS SHIT MAKES ELASTIC SEARCH HARD DEPENDENCY!
           
 //          val profile = StartupProfile.profilesById(userInput.profileId)
 //          profile.initializeAirline(newAirline)

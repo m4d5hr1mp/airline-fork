@@ -205,41 +205,45 @@ function downgradeBase() {
 }
 
 function clearMarkerEntry(markerEntry) {
-	//remove all animation intervals
-	window.clearInterval(markerEntry.animation)
-	
-	//remove all markers
-	$.each(markerEntry.markers, function(key, marker) {
-		marker.setMap(null)
-	})
+  // remove all animation intervals
+  window.clearInterval(markerEntry.animation);
+
+  // remove all markers
+  $.each(markerEntry.markers, function (key, marker) {
+    if (map.hasLayer(marker)) {
+      map.removeLayer(marker);
+    }
+  });
 }
 
 function clearPathEntry(pathEntry) {
-	pathEntry.path.setMap(null)
-	pathEntry.shadow.setMap(null)
+  if (pathEntry.path && map.hasLayer(pathEntry.path)) {
+    map.removeLayer(pathEntry.path);
+  }
+  if (pathEntry.shadow && map.hasLayer(pathEntry.shadow)) {
+    map.removeLayer(pathEntry.shadow);
+  }
 }
 
 function clearAllPaths() {
-	$.each(flightMarkers, function( linkId, markerEntry ) {
-		clearMarkerEntry(markerEntry)
-	});
-	//remove all links from UI first
-	$.each(flightPaths, function( key, pathEntry ) {
-		clearPathEntry(pathEntry)
-	})
-	
-	flightPaths = {}
-	flightMarkers = {}
-	
-	$.each(polylines, function(index, polyline) {
-		if (polyline.getMap() != null) {
-			polyline.setMap(null)
-		}
-	})
-	
-	polylines = polylines.filter(function(polyline) { 
-	    return polyline.getMap() != null
-	})
+  $.each(flightMarkers, function (linkId, markerEntry) {
+    clearMarkerEntry(markerEntry);
+  });
+
+  $.each(flightPaths, function (key, pathEntry) {
+    clearPathEntry(pathEntry);
+  });
+
+  flightPaths = {};
+  flightMarkers = {};
+
+  $.each(polylines, function (index, polyline) {
+    if (map.hasLayer(polyline)) {
+      map.removeLayer(polyline);
+    }
+  });
+
+  polylines = [];
 }
 
 //remove and re-add all the links
@@ -294,63 +298,157 @@ function refreshLinks(forceRedraw) {
 
 
 
-function drawFlightPath(link, linkColor) {
-	
-   if (!linkColor) {
-	   linkColor = getLinkColor(link.profit, link.revenue) 
-   }
-   var flightPath = new google.maps.Polyline({
-     path: [{lat: link.fromLatitude, lng: link.fromLongitude}, {lat: link.toLatitude, lng: link.toLongitude}],
-     geodesic: true,
-     strokeColor: linkColor,
-     strokeOpacity: pathOpacityByStyle[currentStyles].normal,
-     strokeWeight: 2,
-     frequency : link.frequency,
-     modelId : link.modelId,
-     link : link,
-     zIndex: 90
-   });
-   
-   var icon = "assets/images/icons/airplane.png"
-   
-   flightPath.setMap(map)
-   polylines.push(flightPath)
-   
-   var shadowPath = new google.maps.Polyline({
-	     path: [{lat: link.fromLatitude, lng: link.fromLongitude}, {lat: link.toLatitude, lng: link.toLongitude}],
-	     geodesic: true,
-	     map: map,
-	     strokeColor: getLinkColor(link.profit, link.revenue),
-	     strokeOpacity: 0.001,
-	     strokeWeight: 15,
-	     zIndex: 100
-	   });
-   
-   var resultPath = { path : flightPath, shadow : shadowPath }
-   if (link.id) {
-	  shadowPath.addListener('click', function() {
-	   		selectLinkFromMap(link.id, false)
-	  });
-      drawFlightMarker(flightPath, link);
-	  flightPaths[link.id] = resultPath 
-   }
-   
-   return resultPath
+
+// ==========================
+// MUST LOAD GREAT CIRCLE HELPER IN LAZY MODE OTHERWISE SHIT BREAKS!
+// ==========================
+let interpolateGreatCircle = null;
+
+function ensureGreatCircleHelper() {
+  if (!interpolateGreatCircle) {
+    console.log("Initializing great-circle math helper…");
+
+    interpolateGreatCircle = function (fromLat, fromLon, toLat, toLon) {
+      const coords = [];
+
+      const lat1 = fromLat * Math.PI / 180;
+      const lon1 = fromLon * Math.PI / 180;
+      const lat2 = toLat * Math.PI / 180;
+      const lon2 = toLon * Math.PI / 180;
+
+      const d = 2 * Math.asin(
+        Math.sqrt(
+          Math.sin((lat2 - lat1) / 2) ** 2 +
+          Math.cos(lat1) * Math.cos(lat2) *
+          Math.sin((lon2 - lon1) / 2) ** 2
+        )
+      );
+
+      if (d === 0) {
+        return [[fromLat, fromLon], [toLat, toLon]];
+      }
+
+      // Dynamic segment count based on distance
+      const distanceKm = d * 6371;
+      let steps;
+      if (distanceKm < 500) steps = 3;
+      else if (distanceKm < 1000) steps = 5;
+      else if (distanceKm < 2000) steps = 8;
+      else if (distanceKm < 3000) steps = 10;
+      else if (distanceKm < 4000) steps = 12;
+      else if (distanceKm < 6000) steps = 16;
+      else if (distanceKm < 8000) steps = 24;
+      else if (distanceKm < 12000) steps = 30;
+      else if (distanceKm < 16000) steps = 36;
+      else steps = 48;
+
+      for (let i = 0; i <= steps; i++) {
+        const f = i / steps;
+        const A = Math.sin((1 - f) * d) / Math.sin(d);
+        const B = Math.sin(f * d) / Math.sin(d);
+
+        const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
+        const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+        const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+        const lat = Math.atan2(z, Math.sqrt(x * x + y * y)) * 180 / Math.PI;
+        const lon = Math.atan2(y, x) * 180 / Math.PI;
+
+        coords.push([lat, lon]);
+      }
+
+      // Fix wraparound across 180° meridian
+      for (let i = 1; i < coords.length; i++) {
+        const prevLon = coords[i - 1][1];
+        let lon = coords[i][1];
+        const diff = lon - prevLon;
+        if (diff > 180) lon -= 360;
+        else if (diff < -180) lon += 360;
+        coords[i][1] = lon;
+      }
+
+      return coords;
+    };
+  }
+
+  return interpolateGreatCircle;
 }
 
+// Draw Flight Paths Using Leaflet, with Lazy-Loaded Helper function from above:
+function drawFlightPath(link, linkColor) {
+  if (!linkColor) {
+    linkColor = getLinkColor(link.profit, link.revenue);
+  }
+
+  // 🌀 Get (and lazily initialize) the helper
+  const greatCircle = ensureGreatCircleHelper();
+
+  // Generate curved path
+  const pathCoords = greatCircle(
+    link.fromLatitude,
+    link.fromLongitude,
+    link.toLatitude,
+    link.toLongitude
+  );
+
+  // Main visible path
+  const flightPath = L.polyline(pathCoords, {
+    color: linkColor,
+    opacity: pathOpacityByStyle[currentStyles].normal,
+    weight: 2,
+    zIndex: 90
+  });
+
+  // Shadow path (used for click hitbox)
+  const shadowPath = L.polyline(pathCoords, {
+    color: linkColor,
+    opacity: 0.001,
+    weight: 15,
+    zIndex: 100
+  });
+
+  flightPath.addTo(map);
+  shadowPath.addTo(map);
+
+  polylines.push(flightPath);
+
+  const resultPath = { path: flightPath, shadow: shadowPath };
+
+  if (link.id) {
+    shadowPath.on("click", function () {
+      selectLinkFromMap(link.id, false);
+    });
+
+    drawFlightMarker(flightPath, link);
+    flightPaths[link.id] = resultPath;
+  }
+
+  return resultPath;
+}
+
+
 function refreshFlightPath(link, forceRedraw) {
-	if (flightPaths[link.id]) {
-		var path = flightPaths[link.id].path
-		if (forceRedraw || path.frequency != link.frequency || path.modelId != link.modelId) { //require marker change
-			path.frequency = link.frequency
-			path.modelId = link.modelId
-			
-			drawFlightMarker(path, link)
-		} 
-		path.setOptions({ strokeColor : getLinkColor(link.profit, link.revenue), strokeOpacity : pathOpacityByStyle[currentStyles].normal })
-	
-		//flightPaths[link.id].setOptions({ strokeColor : getLinkColor(link)})
-	}
+  const entry = flightPaths[link.id];
+  if (entry && entry.path) {
+    const path = entry.path;
+
+    if (forceRedraw || path.frequency !== link.frequency || path.modelId !== link.modelId) {
+      path.frequency = link.frequency;
+      path.modelId = link.modelId;
+
+      drawFlightMarker(path, link);
+    }
+
+    const newColor = getLinkColor(link.profit, link.revenue);
+    path.setStyle({
+      color: newColor,
+      opacity: pathOpacityByStyle[currentStyles].normal
+    });
+
+    if (entry.shadow) {
+      entry.shadow.setStyle({ color: newColor });
+    }
+  }
 }
 
 function getLinkColor(profit, revenue) {
@@ -402,67 +500,93 @@ function getLinkColor(profit, revenue) {
 }
 
 function highlightPath(path, refocus) {
-	refocus = refocus || false
-	//focus to the from airport
-	if (refocus) {
-		map.setCenter(path.getPath().getAt(0))
-	}
+    refocus = refocus || false;
 
-	
-	if (!path.highlighted) { //only highlight again if it's not already done so
-	    var originalColorString = path.strokeColor
-		//keep track of original values so we can revert...shouldn't there be a better way to just get all options all at once?
-		path.originalColor = originalColorString
-		path.originalStrokeWeight = path.strokeWeight
-		path.originalZIndex = path.zIndex
-		path.originalStrokeOpacity = path.strokeOpacity
+    // Leaflet stores coordinates in an array — no .getPath()
+    if (refocus) {
+        const latlngs = path.getLatLngs();
+        if (latlngs && latlngs.length > 0) {
+            map.panTo(latlngs[0]); // equivalent to setCenter()
+        }
+    }
 
-		path.setOptions({ strokeOpacity : pathOpacityByStyle[currentStyles].highlight })
-		var totalFrames = 20
-		
-		var rgbHexValue = parseInt(originalColorString.substring(1), 16);
-		var currentRgb = { r : rgbHexValue >> (4 * 4), g : rgbHexValue >> (2 * 4) & 0xff, b : rgbHexValue & 0xff }
-		var highlightColor = { r : 0xff, g : 0xff, b : 0xff}
-		var colorStep = { r : (highlightColor.r - currentRgb.r) / totalFrames, g : (highlightColor.g - currentRgb.g) / totalFrames, b : (highlightColor.b - currentRgb.b) / totalFrames }
-		var currentFrame = 0
-		var animation = window.setInterval(function() {
-			if (currentFrame < totalFrames) { //transition to highlight color
-				currentRgb = { r : currentRgb.r + colorStep.r, g : currentRgb.g + colorStep.g, b : currentRgb.b + colorStep.b }
-			} else { //transition back to original color
-				currentRgb = { r : currentRgb.r - colorStep.r, g : currentRgb.g - colorStep.g, b : currentRgb.b - colorStep.b }
-			}
-			//convert currentRgb back to hexstring
-			var redHex = Math.round(currentRgb.r).toString(16)
-			if (redHex.length < 2) {
-				redHex = "0" + redHex
-			}
-			var greenHex = Math.round(currentRgb.g).toString(16)
-			if (greenHex.length < 2) {
-				greenHex = "0" + greenHex
-			}
-			var blueHex = Math.round(currentRgb.b).toString(16)
-			if (blueHex.length < 2) {
-				blueHex = "0" + blueHex
-			}
-			 
-			var colorHexString = "#" + redHex + greenHex + blueHex
-			path.setOptions({ strokeColor : colorHexString , strokeWeight : 4, zIndex : 91})
-			
-			currentFrame = (currentFrame + 1) % (totalFrames * 2)
-			
-		}, 50)
-		path.animation = animation
-		
-		path.highlighted = true
-	}		
-	
+    if (!path.highlighted) {
+        // Save original style so we can revert later
+        const currentStyle = path.options;
+        path.originalStyle = {
+            color: currentStyle.color,
+            weight: currentStyle.weight,
+            opacity: currentStyle.opacity
+        };
+
+        const originalColorString = currentStyle.color;
+        const totalFrames = 20;
+
+        // Parse hex color
+        const rgbHexValue = parseInt(originalColorString.substring(1), 16);
+        let currentRgb = {
+            r: (rgbHexValue >> 16) & 0xff,
+            g: (rgbHexValue >> 8) & 0xff,
+            b: rgbHexValue & 0xff
+        };
+        const highlightColor = { r: 255, g: 255, b: 255 };
+        const colorStep = {
+            r: (highlightColor.r - currentRgb.r) / totalFrames,
+            g: (highlightColor.g - currentRgb.g) / totalFrames,
+            b: (highlightColor.b - currentRgb.b) / totalFrames
+        };
+        let currentFrame = 0;
+
+        // Animation loop
+        const animation = window.setInterval(function () {
+            if (currentFrame < totalFrames) {
+                currentRgb = {
+                    r: currentRgb.r + colorStep.r,
+                    g: currentRgb.g + colorStep.g,
+                    b: currentRgb.b + colorStep.b
+                };
+            } else {
+                currentRgb = {
+                    r: currentRgb.r - colorStep.r,
+                    g: currentRgb.g - colorStep.g,
+                    b: currentRgb.b - colorStep.b
+                };
+            }
+
+            // Convert back to hex
+            const toHex = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+            const colorHexString = "#" + toHex(currentRgb.r) + toHex(currentRgb.g) + toHex(currentRgb.b);
+
+            path.setStyle({
+                color: colorHexString,
+                weight: 4,
+                opacity: pathOpacityByStyle[currentStyles].highlight
+            });
+
+            currentFrame = (currentFrame + 1) % (totalFrames * 2);
+        }, 50);
+
+        path.animation = animation;
+        path.highlighted = true;
+    }
 }
+
 function unhighlightPath(path) {
-	window.clearInterval(path.animation)
-	path["animation"] = undefined
-	path.setOptions({ strokeColor : path.originalColor , strokeWeight : path.originalStrokeWeight, zIndex : path.originalZIndex, strokeOpacity : path.originalStrokeOpacity})
-	
-	delete path.highlighted
+    if (!path) return;
+    if (path.animation) {
+        window.clearInterval(path.animation);
+        path.animation = undefined;
+    }
+
+    if (path.originalStyle) {
+        path.setStyle({
+            color: path.originalStyle.color,
+            weight: path.originalStyle.weight,
+            opacity: path.originalStyle.opacity
+        });
+    }
+
+    delete path.highlighted;
 }
 
 function toggleMapAnimation() {
@@ -474,119 +598,115 @@ function toggleMapAnimation() {
 	refreshLinks(true)	
 }
 
+// --- Helper: interpolate between two points (approximate) ---
+function interpolateLatLng(from, to, t) {
+    return L.latLng(
+        from.lat + (to.lat - from.lat) * t,
+        from.lng + (to.lng - from.lng) * t
+    );
+}
 
 //Use the DOM setInterval() function to change the offset of the symbol
 //at fixed intervals.
 function drawFlightMarker(line, link) {
-	var linkId = link.id
-	
-	//clear the old entry first
-	var oldMarkerEntry = flightMarkers[link.id]
-	if (oldMarkerEntry) {
-		clearMarkerEntry(oldMarkerEntry)
-	}
-	
-	if (currentAnimationStatus && link.assignedAirplanes && link.assignedAirplanes.length > 0) {
-		var from = line.getPath().getAt(0)
-		var to = line.getPath().getAt(1)
-		var image = {
-	        url: "assets/images/markers/dot.png",
-	        origin: new google.maps.Point(0, 0),
-	        anchor: new google.maps.Point(6, 6),
-	    };
+    const linkId = link.id;
 
+    // Clear any old markers for this link
+    const oldMarkerEntry = flightMarkers[linkId];
+    if (oldMarkerEntry) {
+        clearMarkerEntry(oldMarkerEntry);
+    }
 
+    // Only animate if enabled and airplanes assigned
+    if (currentAnimationStatus && link.assignedAirplanes && link.assignedAirplanes.length > 0) {
+        const latlngs = line.getLatLngs();
+        if (!latlngs || latlngs.length < 2) {
+            console.warn("⚠️ drawFlightMarker: invalid latlngs for link", link);
+            return;
+        }
 
-		var frequency = link.frequency
-//		var airplaneCount = link.assignedAirplanes.length
-//		var frequencyByAirplane = {}
-//		$.each(link.assignedAirplanes, function(key, airplane) {
-//			frequencyByAirplane[key] = Math.floor(frequency / airplaneCount)
-//		})
-//		for (i = 0; i < frequency % airplaneCount; i++) { //assign the remainder
-//			frequencyByAirplane[i] = frequencyByAirplane[i] + 1
-//		}
-        var animationInterval = 100
-        var minsPerInterval = 1
-        var minutesPerWeek = 60 * 24 * 7
-        var maxTripsPerMarker = (60 * 24 * 7) / (link.duration * 2) //how many round trips can a marker make in a week, assuming a marker go back and forth right the way
-        var markersRequired = Math.ceil(frequency / maxTripsPerMarker)
-        var totalIntervalsPerWeek = minutesPerWeek / minsPerInterval //min in a week, assume each interval is 1 mins
+        const from = latlngs[0];
+        const to = latlngs[latlngs.length - 1];
 
-		var markersOfThisLink = []
-		for (i = 0; i < markersRequired; i ++) {
-			var marker = new google.maps.Marker({
-			    position: from,
-			    icon : image, 
-			    totalDuration : link.duration * 2, //round trip
-			    elapsedDuration : 0,
-			    nextDepartureFrame : Math.floor((i + 0.1) * totalIntervalsPerWeek / frequency) % totalIntervalsPerWeek, //i + 0.1 so they wont all depart at the same time
-				departureInterval : Math.floor(totalIntervalsPerWeek / markersRequired),
-				status : "forward",
-			    isActive: false,
-			    clickable: false,
-			});
-			
-			//flightMarkers.push(marker)
-			markersOfThisLink.push(marker)
-		}
-		
-		flightMarkers[linkId] = {} //initialize
-		flightMarkers[linkId].markers = markersOfThisLink
-		
-		var count = 0;
-		var animation = window.setInterval(function() {
-			$.each(markersOfThisLink, function(key, marker) { 
-				if (count == marker.nextDepartureFrame) {
-					if (christmasMarker) {
-						marker.icon = {
-						        url: randomFlightMarker(),
-						        origin: new google.maps.Point(0, 0),
-						        anchor: new google.maps.Point(6, 6),
-						    };
-					}
-					marker.status = "forward"
-					marker.isActive = true
-					marker.elapsedDuration = 0
-					marker.setPosition(from)
-					marker.setMap(map)
-				} else if (marker.isActive) {
-					marker.elapsedDuration += minsPerInterval
-					
-					if (marker.elapsedDuration >= marker.totalDuration) { //finished a round trip
-						//marker.setMap(null)
-						fadeOutMarker(marker, animationInterval)
-						marker.isActive = false
-						marker.nextDepartureFrame = (marker.nextDepartureFrame + marker.departureInterval) % totalIntervalsPerWeek
-						//console.log("next departure " + marker.nextDepartureFrame)
-					} else {
-					    if (marker.status === "forward") {
-					         if (marker.elapsedDuration / marker.totalDuration >= 0.45) { //finished forward, now go into turnaround
-                                marker.status = "turnaround"
-					         } else {
-					            var newPosition = google.maps.geometry.spherical.interpolate(from, to, marker.elapsedDuration / marker.totalDuration / 0.45)
-                                marker.setPosition(newPosition)
-                             }
-                        }
-                        if (marker.status === "turnaround") {
-                             if (marker.elapsedDuration / marker.totalDuration >= 0.55) { //finished turnaround, now go into backward
-                                marker.status = "backward"
-                             }
-                        }
-                        if (marker.status === "backward") {
-                            var newPosition = google.maps.geometry.spherical.interpolate(to, from, (marker.elapsedDuration / marker.totalDuration - 0.55) / 0.45)
-                            marker.setPosition(newPosition)
+        const icon = L.icon({
+            iconUrl: "/assets/images/markers/dot.png",
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        });
+
+        const frequency = link.frequency;
+        const animationInterval = 100; // ms
+        const minsPerInterval = 1;
+        const minutesPerWeek = 60 * 24 * 7;
+        const maxTripsPerMarker = (60 * 24 * 7) / (link.duration * 2);
+        const markersRequired = Math.ceil(frequency / maxTripsPerMarker);
+        const totalIntervalsPerWeek = minutesPerWeek / minsPerInterval;
+
+        const markersOfThisLink = [];
+
+        for (let i = 0; i < markersRequired; i++) {
+            const marker = L.marker([from.lat, from.lng], { icon, interactive: false });
+
+            marker.totalDuration = link.duration * 2; // round trip
+            marker.elapsedDuration = 0;
+            marker.nextDepartureFrame = Math.floor((i + 0.1) * totalIntervalsPerWeek / frequency) % totalIntervalsPerWeek;
+            marker.departureInterval = Math.floor(totalIntervalsPerWeek / markersRequired);
+            marker.status = "forward";
+            marker.isActive = false;
+
+            markersOfThisLink.push(marker);
+        }
+
+        flightMarkers[linkId] = { markers: markersOfThisLink };
+
+        let count = 0;
+        const animation = window.setInterval(() => {
+            markersOfThisLink.forEach(marker => {
+                if (count === marker.nextDepartureFrame) {
+                    marker.status = "forward";
+                    marker.isActive = true;
+                    marker.elapsedDuration = 0;
+                    marker.setLatLng(from);
+                    marker.addTo(map);
+                } else if (marker.isActive) {
+                    marker.elapsedDuration += minsPerInterval;
+
+                    if (marker.elapsedDuration >= marker.totalDuration) {
+                        map.removeLayer(marker);
+                        marker.isActive = false;
+                        marker.nextDepartureFrame = (marker.nextDepartureFrame + marker.departureInterval) % totalIntervalsPerWeek;
+                    } else {
+                        const t = marker.elapsedDuration / marker.totalDuration;
+
+                        let newPos;
+                        if (marker.status === "forward") {
+                            if (t >= 0.45) {
+                                marker.status = "turnaround";
+                            } else {
+                                newPos = interpolateLatLng(from, to, t / 0.45);
+                            }
+                        } else if (marker.status === "turnaround") {
+                            if (t >= 0.55) {
+                                marker.status = "backward";
+                            }
+                        } else if (marker.status === "backward") {
+                            newPos = interpolateLatLng(to, from, (t - 0.55) / 0.45);
                         }
 
-					}
-				}
-			})
-			count = (count + 1) % totalIntervalsPerWeek;
-		}, animationInterval)
-		
-		flightMarkers[linkId].animation = animation;
-	}
+                        if (newPos) {
+                            marker.setLatLng(newPos);
+                        }
+                    }
+                }
+            });
+
+            count = (count + 1) % totalIntervalsPerWeek;
+        }, animationInterval);
+
+        flightMarkers[linkId].animation = animation;
+    }
 }
+
 
 
 /**
@@ -856,7 +976,6 @@ function fadeOutMarker(marker, animationInterval) {
         }
     }, animationInterval)
 }
-
 
 function planToAirport(toAirportId, toAirportName) {
 	$('#planLinkToAirportId').val(toAirportId)
@@ -1377,8 +1496,6 @@ function updateFrequencyDetail(info) {
     updateTotalValues()
 }
 
-
-
 function addAirplaneRow(container, airplane, frequency) {
     var airplaneRow = $("<div class='table-row airplaneRow'></div>") //airplane bar contains - airplane icon, configuration, frequency
 
@@ -1484,7 +1601,6 @@ function removeAirplaneFromLink(airplaneId) {
     })
 }
 
-
 //Get capacity based on current UI status
 function getPlanLinkCapacity() {
     var currentFrequency = 0 //airplanes that are ready
@@ -1519,7 +1635,6 @@ function getPlanLinkCapacity() {
         return { "current" : { "capacity" : currentCapacity, "frequency" : currentFrequency }}
     }
 }
-
 
 // Update total frequency and capacity
 function updateTotalValues() {
@@ -1571,7 +1686,6 @@ function updateTotalValues() {
     })
 }
 
-
 function getAssignedAirplaneIcon(airplane) {
 	var badConditionThreshold = $('#planLinkAirplaneSelect').data('badConditionThreshold')
 	return getAirplaneIcon(airplane, badConditionThreshold, airplane.isAssigned)
@@ -1581,7 +1695,6 @@ function getAssignedAirplaneImg(airplane) {
 	var badConditionThreshold = $('#planLinkAirplaneSelect').data('badConditionThreshold')
 	return getAirplaneIconImg(airplane, badConditionThreshold, airplane.isAssigned)
 }
-
 
 function toggleAssignedAirplane(iconSpan) {
 	var airplane = $(iconSpan).data('airplane')
@@ -1863,7 +1976,6 @@ function selectLinkFromMap(linkId, refocus) {
 	refreshLinkDetails(linkId)
 }
 
-
 function selectLinkFromTable(row, linkId) {
 	selectedLink = linkId
 	//update table
@@ -1891,7 +2003,6 @@ function removeAllLinks() {
 	    }
 	});
 }
-
 
 function updateLoadedLinks(links) {
 	var previousOrder = {}
@@ -1978,7 +2089,6 @@ function showLinkComposition(linkId) {
 	    }
 	});
 }
-
 
 function showLinkEventHistory(linkId) {
     $('#linkEventModal .chart').hide()
@@ -2495,7 +2605,6 @@ function showSatisfactionBreakdown($icon, positiveComments, negativeComments, sa
     $('#satisfactionDetailsTooltip').show()
 }
 
-
 function updateTopCountryComposition(countryComposition) {
 	countryComposition = countryComposition.sort(function (a, b) {
 	    return b.passengerCount - a.passengerCount 
@@ -2551,7 +2660,6 @@ function updatePreferenceTypeComposition(preferenceComposition) {
 	 			   + "</div><div class='cell' style='width: 30%; text-align: right;'>" + commaSeparateNumber(entry.passengerCount) + "</div></div>")
 	});
 }
-
 
 function updateAirlineBaseList(airlineId, table) {
 	table.children('.table-row').remove()
@@ -2803,8 +2911,6 @@ function updateAssignedDelegateCount(delegateCount) {
 
 }
 
-
-
 function getLinkNegotiation(callback) {
     assignedDelegates = 0
     availableDelegates = 0
@@ -2980,9 +3086,6 @@ function getLinkNegotiation(callback) {
 	});
 }
 
-
-
-
 function refreshAssignedAirplanesBar(container, assignedAirplanes) {
 	$(container).empty()
 
@@ -3016,7 +3119,6 @@ function refreshSavedLink(savedLink) {
 		loadLinksTable()
 	}
 }
-
 
 function negotiationAnimation(savedLink, callback, callbackParam) {
     var negotiationResult = savedLink.negotiationResult

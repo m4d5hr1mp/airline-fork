@@ -1,0 +1,69 @@
+// ============================================
+// LoungeSimulation — Draft Implementation Plan
+// ============================================
+// NOTE: This file is NOT compiled yet.
+// Once stable, rename to LoungeSimulation.scala
+// and link it in AirportSimulation.scala
+//
+// Purpose: handle lounge decay, maintenance,
+// renovation, and feature simulation.
+// ============================================
+
+package com.patson
+
+import com.patson.data._
+import com.patson.model._
+import scala.collection.immutable
+
+
+object LoungeSimulation {
+
+  def simulateLounges(
+      allAirports: List[Airport],
+      cycle: Int
+  ): Unit = {
+    println(s"Running Lounge Simulation for cycle $cycle")
+    
+    // Step 1: Load lounges using AirlineSource
+    val allLounges = AirlineSource.loadAllLounges()
+    println(s"[LoungeSim] Loaded ${allLounges.size} lounges from DB")
+
+    // Step 2: Apply decay
+    val updatedLounges = allLounges.map { lounge =>
+    val decayedCondition = lounge.loungeDecayCondition()
+    lounge.copy(condition = decayedCondition)
+    }
+
+    // Step 3: Persist updated lounges
+    updatedLounges.foreach { updated =>
+    AirlineSource.saveLounge(updated)
+    }
+    println(s"[LoungeSim] Saved ${updatedLounges.size} lounges after decay")
+
+    // Step 4: (Placeholder for future)
+    // - renovateLounge()
+    // - apply feature bonuses
+    // - trigger maintenance costs
+    // - log lounge changes
+  }
+
+  /**
+    * TODO: Example placeholder for automatic renovation check
+    */
+  def autoRenovateCheck(lounge: Lounge, cycle: Int): Boolean = {
+    // Later:
+    // if (lounge.condition < 40 && lounge.airline.hasFundsForRenovation) true else false
+    false
+  }
+
+  /**
+    * TODO: Simulate lounge features
+    * Example: feature-based bonuses to loyalty or satisfaction
+    */
+  def simulateLoungeFeatures(lounge: Lounge): Unit = {
+    // Placeholder logic:
+    // lounge.features.foreach { f =>
+    //   if (f.isActive) applyFeatureEffect(f)
+    // }
+  }
+}

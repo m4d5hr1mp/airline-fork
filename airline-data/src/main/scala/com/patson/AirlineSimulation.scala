@@ -17,9 +17,9 @@ import com.patson.util.{AirportChampionInfo, ChampionUtil, CountryChampionInfo}
 
 object AirlineSimulation {
   private val AIRLINE_FIXED_COST = 0 //for now...
-  val MAX_SERVICE_QUALITY_INCREMENT : Double = 0.5
-  val MAX_SERVICE_QUALITY_DECREMENT : Double = 10
-  val MAX_REPUTATION_DELTA = 1
+  val MAX_SERVICE_QUALITY_INCREMENT : Double = 0.5 //Use 1, 0.5 or 0.25 in Production?
+  val MAX_SERVICE_QUALITY_DECREMENT : Double = 1
+  val MAX_REPUTATION_DELTA = 1 //Use 1 in Production!
   val BANKRUPTCY_CASH_THRESHOLD = -10000000 //-10M
   val MAX_AIRPORT_CHAMPION_BOOST_ENTRIES = 120 //per airline, how many airport champ entries can it add up for reputation boost
 
@@ -143,7 +143,7 @@ object AirlineSimulation {
       //overtime compensation
         val linksByFromAirportId = allFlightLinksByAirlineId.get(airline.id).getOrElse(List.empty).groupBy(_.from.id)
 
-        var overtimeCompensation = 0
+        var overtimeCompensation: Long = 0L
         airline.bases.foreach { base =>
           val staffRequired = linksByFromAirportId.get(base.airport.id) match {
             case Some(links) => links.map(_.getCurrentOfficeStaffRequired).sum
@@ -333,6 +333,12 @@ object AirlineSimulation {
 
 
         //update reputation
+        // Reworked Reputation Bonuses from network to slow down early progression 
+        // and give players some kind of objective to grow towards.
+        // To Do List:
+        // 1. Expose Milestone in profile
+        // 2. Expose Milestones Rep in tooltip
+        //update reputation
         val reputationBreakdowns = ListBuffer[ReputationBreakdown]()
         val reputationByPassengers = flightLinkResultByAirline.get(airline.id) match {
           case Some(linkConsumptions) =>
@@ -353,14 +359,6 @@ object AirlineSimulation {
             0
         }
         reputationBreakdowns.append(ReputationBreakdown(ReputationType.FLIGHT_PASSENGERS, reputationByPassengers))
-
-//        champions.get(airline).foreach { //if this airline championed anything
-//          _.foreach { championInfo =>
-//              targetReputation = targetReputation + championInfo.reputationBoost
-//          }
-//        }
-
-
 
         val reputationByAirportChampions = airportChampionsByAirlineId.get(airline.id) match {
           case Some(airportChampions) => airportChampions.map(_.reputationBoost).sorted.takeRight(MAX_AIRPORT_CHAMPION_BOOST_ENTRIES).sum
@@ -451,28 +449,6 @@ object AirlineSimulation {
     OilSource.deleteOilConsumptionHistoryBeforeCycle(currentCycle - 10)
   }
   
-//  def getChampionReputationBoost(airlineId : Int) : Double = {
-//    val topChampionsByCountryCode : List[(String, List[((Int, Long), Int)])]= CountrySource.loadMarketSharesByCriteria(List()).map {
-//      case CountryMarketShare(countryCode, airlineShares) => (countryCode, airlineShares.toList.sortBy(_._2)(Ordering.Long.reverse).take(3).zipWithIndex)
-//    }
-//    
-//    val championedCountryByThisAirline: List[(Country, Int)] = topChampionsByCountryCode.map { //(country, ranking)
-//      case (countryCode, championAirlines) => (countryCode, championAirlines.find {
-//        case((championAirlineId, passengerCount), ranking) => championAirlineId == airlineId
-//      })
-//    }.filter {
-//      case (countryCode, thisAirlineRankingOption) => thisAirlineRankingOption.isDefined
-//    }.map {
-//      case (countryCode, thisAirlineRankingOption) => (CountrySource.loadCountryByCode(countryCode).get, thisAirlineRankingOption.get._2 + 1)
-//    }
-//    
-//    championedCountryByThisAirline.foldLeft(0.0) {
-//      case(sum, (country, ranking)) => sum + Computation.computeReputationBoost(country, ranking)
-//    }
-//  }
-  
-  
-  
   /**
    * compute monthly and yearly income 
    * 
@@ -554,23 +530,6 @@ object AirlineSimulation {
     
     (totalLoanPayment, totalLoanInterest)
   }
-  
-//  def getTargetQuality(serviceFunding : Int, links : List[Link]) : Double = {
-//    var totalPassengerMileCapacity = links.map { link => link.frequency * link.getAssignedModel().fold(0L)(_.capacity.toLong) * link.distance }.sum
-//    val MIN_PASSENGER_MILE_CAPACITY = 1000 * 1000
-//    totalPassengerMileCapacity = Math.max(totalPassengerMileCapacity, MIN_PASSENGER_MILE_CAPACITY)
-//
-//    getTargetQuality(serviceFunding, totalPassengerMileCapacity) //50x to get 50 target quality, 200x to get max 100 target quality
-//  }
-//
-//  val getTargetQuality : (Int, Long) => Double = (funding : Int, totalPassengerMileCapacity : Long) => {
-//    val computedQuality = Math.pow(funding.toDouble / (totalPassengerMileCapacity.toDouble / 4000) / 30, 1 / 2.5) * 40  //40x capacity (assume average 4k distance) to get 50 target quality, 200x capacity to get max 100 target quality
-//    if (computedQuality >= Airline.MAX_SERVICE_QUALITY) {
-//      Airline.MAX_MAINTENANCE_QUALITY
-//    } else {
-//      computedQuality
-//    }
-//  }
 
   def getServiceFunding(targetQuality : Int, links : List[Link]) : Long = {
     val totalPassengerMileCapacity = links.map { link => link.frequency * link.getAssignedModel().fold(0L)(_.capacity.toLong) * link.distance }.sum
@@ -607,21 +566,4 @@ object AirlineSimulation {
       }
     } 
   }
-  
-//  def getChampions(allAirlines : scala.collection.immutable.Map[Int, Airline], allCountries : scala.collection.immutable.Map[String, Country]) : scala.collection.immutable.Map[Airline, List[(Country, Int)]] = {
-//    val champions = Map[Airline, ListBuffer[(Country, Int)]]()
-//     CountrySource.loadMarketSharesByCriteria(List.empty).foreach { 
-//       case CountryMarketShare(countryCode : String, airlineShares) => {
-//         val championsForThisCountry = airlineShares.toList.sortBy(_._2)(Ordering[Long].reverse).take(5)
-//         for (x <- 0 until championsForThisCountry.size) {
-//            val airline = allAirlines((championsForThisCountry(x)._1))
-//            val ranking = x + 1
-//            val airlineChampionedCountries = champions.getOrElseUpdate(airline, ListBuffer[(Country, Int)]())
-//            airlineChampionedCountries += ((allCountries(countryCode), ranking))
-//         }
-//       }
-//     }
-//    
-//    champions.mapValues(_.toList).toMap
-//  }
 }

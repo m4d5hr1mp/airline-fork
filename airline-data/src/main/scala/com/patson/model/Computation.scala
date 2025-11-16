@@ -1,11 +1,10 @@
 package com.patson.model
-
 import com.patson.PassengerSimulation.LINK_COST_TOLERANCE_FACTOR
 import com.patson.model.airplane._
+import com.patson.model.airplane.Model.Type._
 import com.patson.data.{AirlineSource, AirplaneSource, AirportAssetSource, AirportSource, AllianceSource, BankSource, CountrySource, CycleSource, OilSource}
 import com.patson.Util
 import com.patson.util.{AirlineCache, AllianceRankingUtil}
-
 import scala.collection.mutable.ListBuffer
 
 object Computation {
@@ -17,42 +16,32 @@ object Computation {
       println(s"Cannot find $MODEL_COUNTRY_CODE to compute model power")
       1
   }
-
   lazy val MAX_VALUES = getMaxValues()
   lazy val MODEL_AIRPORT_POWER = MAX_VALUES._1
   lazy val MAX_POPULATION = MAX_VALUES._2
   lazy val MAX_INCOME = MAX_VALUES._3
-
   val MAX_COMPUTED_DISTANCE = 20000
   lazy val standardFlightDurationCache : Array[Int] = {
     val result = new Array[Int](MAX_COMPUTED_DISTANCE + 1)
     for (i <- 0 to MAX_COMPUTED_DISTANCE) { //should cover everything...
-      result(i) =  Computation.internalComputeStandardFlightDuration(i)
+      result(i) = Computation.internalComputeStandardFlightDuration(i)
     }
     result
   }
-
   def getMaxValues(): (Long, Long, Long) = {
     val allAirports = AirportSource.loadAllAirports()
     //take note that below should NOT use boosted values, should use base, otherwise it will incorrectly load some lazy vals of the Airport that is MAX
     (allAirports.maxBy(_.basePower).basePower, allAirports.maxBy(_.basePopulation).basePopulation, allAirports.maxBy(_.baseIncome).baseIncome)
   }
 
-  //distance vs max speed
-  val speedLimits = List((300, 350), (400, 500), (400, 700))  
-  def calculateDuration(airplaneModel: Model, distance : Int) : Int = {
-    val speed =
-      if (airplaneModel.category == com.patson.model.airplane.Model.Category.SUPERSONIC) {
-        (airplaneModel.speed * 1.5).toInt //up adjusted for SST
-      } else {
-        airplaneModel.speed
-      }
-    calculateDuration(speed, distance)
-  }
-  def calculateDuration(airplaneSpeed : Int, distance : Int) = {
+  // distance vs max speed (restored from older version for simple duration calculations)
+  val speedLimits = List((300, 350), (400, 500), (400, 700))
+
+  // Simple duration calculation (restored from older version for standard/reference use)
+  def calculateSimpleDuration(airplaneSpeed : Int, distance : Int) : Int = {
     var remainDistance = distance
-    var duration = 0;
-    for ((distanceBucket, maxSpeed) <- speedLimits if(remainDistance > 0)) {
+    var duration = 0
+    for ((distanceBucket, maxSpeed) <- speedLimits if (remainDistance > 0)) {
       val speed = Math.min(maxSpeed, airplaneSpeed)
       if (distanceBucket >= remainDistance) {
         duration += remainDistance * 60 / speed
@@ -61,20 +50,99 @@ object Computation {
       }
       remainDistance -= distanceBucket
     }
-
     if (remainDistance > 0) {
       duration += remainDistance * 60 / airplaneSpeed
     }
     duration
   }
 
+  case class FlightPhases(climbTimeMin: Double, cruiseTimeMin: Double, descentTimeMin: Double, groundOpsMin: Double)
+
+  def calculateFlightPhases(airplaneModel: Model, distance: Int): FlightPhases = {
+    /**
+      * Extracts phase durations from the detailed flight computation.
+      * This is used to support phase-specific calculations (e.g., fuel burn) in other modules.
+      */
+    import com.patson.model.airplane.Model.Type._
+    val speedKph = airplaneModel.speed
+    // Determine if aircraft is a prop or jet
+    val isProp = speedKph <= 670
+    // --- Assign cruise altitude by type ---
+    val cruiseAltMeters = if (isProp) {
+      6500.0
+    } else airplaneModel.airplaneType match {
+      case LIGHT => 13000.0 // Business jets
+      case SMALL => 9750.0 // Small regional jets
+      case REGIONAL => 10000.0 // Larger regionals (e.g. E190)
+      case MEDIUM => 10500.0 // 737/A320 family
+      case LARGE => 11000.0 // A300/A330/767 class
+      case X_LARGE => 12000.0 // 777-200, A350-900
+      case JUMBO => 12000.0 // 747, 777-300, A380
+      case SUPERSONIC => 18000.0 // Concorde-class
+      case _ => 10500.0
+    }
+    // --- Short-haul rule ---
+    // Routes shorter than 500 km are capped at 7600 m max cruise altitude!
+    val effectiveCruiseAlt = if (distance < 500) {
+      math.min(cruiseAltMeters, 7600.0)
+    } else {
+      cruiseAltMeters
+    }
+    // --- Base climb/descent rate by category (m/min) ---
+    val baseClimbRate = airplaneModel.airplaneType match {
+      case LIGHT | SMALL => 400.0
+      case REGIONAL => 600.0
+      case MEDIUM => 800.0
+      case LARGE | X_LARGE => 900.0
+      case JUMBO => 900.0
+      case SUPERSONIC => 1200.0
+      case _ => 700.0
+    }
+    // --- Optional: altitude-dependent climb rate decay (disabled for now) ---
+    /*
+    // Option A: exponential decay (smooth)
+    val decayFactor = Math.exp(-effectiveCruiseAlt / 15000.0)
+    val effectiveClimbRate = baseClimbRate * (0.5 + 0.5 * decayFactor)
+    // Option B: simple piecewise decay (clear and adjustable)
+    val effectiveClimbRate = if (effectiveCruiseAlt < 7600) {
+      baseClimbRate
+    } else if (effectiveCruiseAlt < 10000) {
+      baseClimbRate * 0.8
+    } else if (effectiveCruiseAlt < 12000) {
+      baseClimbRate * 0.65
+    } else {
+      baseClimbRate * 0.55
+    }
+    */
+    // For now, climb/descent rate remains constant
+    val effectiveClimbRate = baseClimbRate
+    val effectiveDescentRate = baseClimbRate // symmetrical descent
+    // --- Calculate phase times ---
+    val climbTimeMin = effectiveCruiseAlt / effectiveClimbRate
+    val descentTimeMin = effectiveCruiseAlt / effectiveDescentRate
+    // Average climb/descent ground speed = 60% of cruise speed
+    val climbDescentDistance = (speedKph * 0.6 / 60) * (climbTimeMin + descentTimeMin)
+    val cruiseDistance = math.max(0, distance - climbDescentDistance)
+    val cruiseTimeMin = if (cruiseDistance > 0) {
+      cruiseDistance / (speedKph / 60.0)
+    } else {
+      0.0
+    }
+    // --- Add taxi/holding buffer (15 min each end) ---
+    val groundOpsBufferMin = 30.0
+    FlightPhases(climbTimeMin, cruiseTimeMin, descentTimeMin, groundOpsBufferMin)
+  }
+
+  def calculateDuration(airplaneModel: Model, distance: Int): Int = {
+    val phases = calculateFlightPhases(airplaneModel, distance)
+    (phases.climbTimeMin + phases.cruiseTimeMin + phases.descentTimeMin + phases.groundOpsMin).toInt
+  }
 
   def calculateFlightMinutesRequired(airplaneModel : Model, distance : Int) : Int = {
     val duration = calculateDuration(airplaneModel, distance)
     val roundTripTime = (duration + airplaneModel.turnaroundTime) * 2
     roundTripTime
   }
-
   def calculateMaxFrequency(airplaneModel : Model, distance : Int) : Int = {
     if (airplaneModel.range < distance) {
       0
@@ -83,27 +151,20 @@ object Computation {
       (Airplane.MAX_FLIGHT_MINUTES / roundTripTime).toInt
     }
   }
-  
-
   val SELL_RATE = 0.8
-  
   def calculateAirplaneSellValue(airplane : Airplane) : Int = {
     val currentNewMarketPrice = airplane.model.applyDiscount(ModelDiscount.getBlanketModelDiscounts(airplane.model.id)).price
     val value = airplane.value * airplane.purchaseRate * SELL_RATE //airplane.purchase < 1 means it was bought with a discount, selling should be lower price
     if (value < 0) 0 else value.toInt
   }
-  
   def calculateDistance(fromAirport : Airport, toAirport : Airport) : Int = {
     Util.calculateDistance(fromAirport.latitude, fromAirport.longitude, toAirport.latitude, toAirport.longitude).toInt
   }
-
   def getFlightType(fromAirport : Airport, toAirport : Airport) : FlightType.Value = {
     getFlightType(fromAirport, toAirport, calculateDistance(fromAirport, toAirport))
   }
-  
-  def getFlightType(fromAirport : Airport, toAirport : Airport, distance : Int) = { 
-//    val distance = distanceOption.getOrElse(Util.calculateDistance(fromAirport.latitude, fromAirport.longitude, toAirport.latitude, toAirport.longitude).toInt)
-    
+  def getFlightType(fromAirport : Airport, toAirport : Airport, distance : Int) = {
+    // val distance = distanceOption.getOrElse(Util.calculateDistance(fromAirport.latitude, fromAirport.longitude, toAirport.latitude, toAirport.longitude).toInt)
     import FlightType._
     if (fromAirport.countryCode == toAirport.countryCode) { //domestic
       if (distance <= 1000) {
@@ -133,8 +194,6 @@ object Computation {
       }
     }
   }
-  
-
   /**
    * Returns a normalized income level, should be greater than 0
    */
@@ -149,8 +208,6 @@ object Computation {
   def fromIncomeLevel(incomeLevel : Double) : Int = {
     (Math.pow(Math.E, incomeLevel * Math.log(1.1)) * 500).toInt
   }
-
-
   /**
     * For low income base, use the boost level (which is MAX boost). For higher income base, down adjust it to certain
     * percentage
@@ -171,63 +228,26 @@ object Computation {
       } else {
         maxIncomeBoost
       }
-
     finalBoost
   }
-
-  
   def getLinkCreationCost(from : Airport, to : Airport) : Int = {
-    
     val baseCost = 100000 + (from.income + to.income)
-      
     val minAirportSize = Math.min(from.size, to.size) //encourage links for smaller airport
-    
-    val airportSizeMultiplier = Math.pow(1.5, minAirportSize) 
+    val airportSizeMultiplier = Math.pow(1.5, minAirportSize)
     val distance = calculateDistance(from, to)
     val distanceMultiplier = distance.toDouble / 5000
     val internationalMultiplier = if (from.countryCode == to.countryCode) 1 else 3
-    
-    (baseCost * airportSizeMultiplier * distanceMultiplier * internationalMultiplier).toInt 
+    (baseCost * airportSizeMultiplier * distanceMultiplier * internationalMultiplier).toInt
   }
-  
-//  def computeReputationBoost(country : Country, ranking : Int) : Double = {
-//    //US gives boost of (rank : boost)
-//    // 1st : 30
-//    // 2nd : 24
-//    // 3rd : 19
-//    // 4th : 16
-//    // 5th : 13
-//    // 6th : 10
-//    // 7th : 8
-//    // 8th : 6
-//    // 9th : 4
-//    // 10th : 2
-//
-//    val ratioToModelPower = country.airportPopulation * country.income.toDouble / MODEL_COUNTRY_POWER
-//
-//    val boost = math.log10(ratioToModelPower * 100) / 2 * reputationBoostTop10(ranking)
-//
-//    if (boost < 1 && ranking <= 3) {
-//      1
-//    } else if (boost < 0.5) {
-//      0.5
-//    } else {
-//      BigDecimal(boost).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-//    }
-//  }
-
   val REDUCED_COMPENSATION_SERVICE_LEVEL_THRESHOLD = 40 //airline with service level below this will pay less compensation
-  
   def computeCompensation(link : Link) : Int = {
     if (link.majorDelayCount > 0 || link.minorDelayCount > 0 || link.cancellationCount > 0 ) {
       val soldSeatsPerFlight = link.soldSeats / link.frequency
       val halfCapacityPerFlight = link.capacity / link.frequency * 0.5
-      
       val affectedSeatsPerFlight = if (soldSeatsPerFlight.total > halfCapacityPerFlight.total) soldSeatsPerFlight else halfCapacityPerFlight //if less than 50% LF, considered that as 50% LF
-      var compensation = (affectedSeatsPerFlight * link.cancellationCount * 0.5 * link.price).total  //50% of ticket price, as there's some penalty for that already
+      var compensation = (affectedSeatsPerFlight * link.cancellationCount * 0.5 * link.price).total //50% of ticket price, as there's some penalty for that already
       compensation = compensation + (affectedSeatsPerFlight * link.majorDelayCount * 0.3 * link.price).total //30% of ticket price
       compensation = compensation + (affectedSeatsPerFlight * link.minorDelayCount * 0.05 * link.price).total //5% of ticket price
-
       if (link.airline.getCurrentServiceQuality() < REDUCED_COMPENSATION_SERVICE_LEVEL_THRESHOLD) { //down to only 20%
         val ratio = 0.2 + 0.8 * link.airline.getCurrentServiceQuality() / REDUCED_COMPENSATION_SERVICE_LEVEL_THRESHOLD
         (compensation * ratio).toInt
@@ -238,31 +258,6 @@ object Computation {
       0
     }
   }
-
-//  val MAX_FREQUENCY_ABSOLUTE_BASE = 30
-//  def getMaxFrequencyThreshold(airline : Airline) : Int = {
-//    MAX_FREQUENCY_ABSOLUTE_BASE
-//  }
-
-//  def getMaxFrequencyThreshold(airline : Airline) : Int = {
-//     AllianceSource.loadAllianceMemberByAirline(airline) match {
-//       case Some(allianceMember) => {
-//         if (allianceMember.role != AllianceRole.APPLICANT) {
-//           AllianceRankingUtil.getRanking(allianceMember.allianceId) match {
-//             case Some((ranking, _)) => {
-//               val maxFrequencyBonus = Alliance.getMaxFrequencyBonus(ranking)
-//               MAX_FREQUENCY_ABSOLUTE_BASE + maxFrequencyBonus
-//             }
-//             case None => MAX_FREQUENCY_ABSOLUTE_BASE
-//           }
-//         } else {
-//           MAX_FREQUENCY_ABSOLUTE_BASE
-//         }
-//       }
-//       case None => MAX_FREQUENCY_ABSOLUTE_BASE
-//     }
-//  }
-  
   def getResetAmount(airlineId : Int) : ResetAmountInfo = {
     val currentCycle = CycleSource.loadCycle()
     val amountFromAirplanes = AirplaneSource.loadAirplanesByOwner(airlineId, false).map(Computation.calculateAirplaneSellValue(_).toLong).sum
@@ -271,18 +266,11 @@ object Computation {
     val amountFromLoans = BankSource.loadLoansByAirline(airlineId).map(_.earlyRepayment(currentCycle) * -1).sum //repay all loans now
     val amountFromOilContracts = OilSource.loadOilContractsByAirline(airlineId).map(_.contractTerminationPenalty(currentCycle) * -1).sum //termination penalty
     val existingBalance = AirlineCache.getAirline(airlineId).get.airlineInfo.balance
-    
     ResetAmountInfo(amountFromAirplanes, amountFromBases, amountFromAssets, amountFromLoans, amountFromOilContracts, existingBalance)
   }
-  
   case class ResetAmountInfo(airplanes : Long, bases : Long, assets : Long, loans : Long, oilContracts : Long, existingBalance : Long) {
     val overall = airplanes + bases + assets + loans + oilContracts + existingBalance
   }
-
-//  def getAirplaneConstructionTime(model : Model, existingConstruction : Int) : Int = {
-//    model.constructionTime + (existingConstruction / 5) * model.constructionTime / 4 
-//  }
-
   val MAX_SATISFACTION_PRICE_RATIO_THRESHOLD = 0.7 //at 100% satisfaction is <= this threshold
   val MIN_SATISFACTION_PRICE_RATIO_THRESHOLD = LINK_COST_TOLERANCE_FACTOR + 0.05 //0% satisfaction >= this threshold ... +0.05 so, there will be at least some satisfaction even at the LINK_COST_TOLERANCE_FACTOR
   /**
@@ -297,7 +285,6 @@ object Computation {
     //println(s"${cost} vs standard price $standardPrice. satisfaction : ${satisfaction}")
     satisfaction
   }
-
   val computeStandardFlightDuration = (distance: Int) => {
     if (distance <= MAX_COMPUTED_DISTANCE) {
       standardFlightDurationCache(distance)
@@ -315,9 +302,8 @@ object Computation {
       } else {
         800
       }
-    Computation.calculateDuration(standardSpeed, distance)
+    Computation.calculateSimpleDuration(standardSpeed, distance)
   }
-
   def getDomesticAirportWithinRange(principalAirport : Airport, range : Int) = { //range in km
     val affectedAirports = ListBuffer[Airport]()
     AirportSource.loadAirportsByCountry(principalAirport.countryCode).foreach { airport =>

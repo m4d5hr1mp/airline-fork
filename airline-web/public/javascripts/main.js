@@ -310,84 +310,139 @@ function hideUserSpecificElements() {
 
 
 function initMap() {
-	initStyles()
-  map = new google.maps.Map(document.getElementById('map'), {
-	center: {lat: 20, lng: 150.644},
-   	zoom : 2,
-   	minZoom : 2,
-   	gestureHandling: 'greedy',
-   	styles: getMapStyles(),
-	mapTypeId: getMapTypes(),
-   	restriction: {
-                latLngBounds: { north: 85, south: -85, west: -180, east: 180 },
-              }
-  });
-	
-  google.maps.event.addListener(map, 'zoom_changed', function() {
-	    var zoom = map.getZoom();
-	    // iterate over markers and call setVisible
-	    $.each(markers, function( key, marker ) {
-	        marker.setVisible(isShowMarker(marker, zoom));
-	    })
-  });
-  
-  google.maps.event.addListener(map, 'maptypeid_changed', function() { 
-		var mapType = map.getMapTypeId();
-		$.cookie('currentMapTypes', mapType);
+  initStyles(); // keep your existing style setup if needed
+
+  // Initialize the Leaflet map
+  const mapDiv = document.getElementById('map');
+  window.map = L.map('map', {
+    zoomControl: true,
+    worldCopyJump: true,
+  }).setView([20, 150.644], 2);
+
+    // Add dark CartoDB tiles (low-clutter)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    minZoom: 2,
+    maxZoom: 12
+    }).addTo(map);
+
+    // ✅ Define Leaflet icons (replacing old Google Maps icon references)
+  const largeAirportMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/airport-darker.png",
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
   });
 
-  addCustomMapControls(map)
+  const mediumAirportMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/airport.png",
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+
+  const smallAirportMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/airport-lighter.png",
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+
+  const gatewayAirportMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/airport-gateway.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+
+  const baseMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/base.png",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+
+    const headquarterMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/headquarter.png",
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+
+  // ✅ Store them in the same way old code expects
+  $("#map").data("largeAirportMarker", largeAirportMarkerIcon);
+  $("#map").data("mediumAirportMarker", mediumAirportMarkerIcon);
+  $("#map").data("smallAirportMarker", smallAirportMarkerIcon);
+  $("#map").data("gatewayAirportMarker", gatewayAirportMarkerIcon);
+  $("#map").data("baseMarker", baseMarkerIcon);
+  $("#map").data("headquarterMarker", headquarterMarkerIcon);
+
+
+  // Handle zoom visibility logic
+  map.on('zoomend', function () {
+    const zoom = map.getZoom();
+    $.each(markers, function (key, marker) {
+      // assuming you have isShowMarker(marker, zoom) defined somewhere
+      const visible = isShowMarker(marker, zoom);
+      if (visible) marker.addTo(map);
+      else map.removeLayer(marker);
+    });
+  });
+
+  // Light/dark mode switching etc. would go here later
+  addCustomMapControls(map);
 }
+
 
 function addCustomMapControls(map) {
-//			<div id="toggleMapChristmasButton" class="googleMapIcon" onclick="toggleChristmasMarker()" align="center" style="display: none; margin-bottom: 10px;"><span class="alignHelper"></span><img src='@routes.Assets.versioned("images/icons/bauble.png")' title='Merry Christmas!' style="vertical-align: middle;"/></div>-->
-//			<div id="toggleMapAnimationButton" class="googleMapIcon" onclick="toggleMapAnimation()" align="center" style="display: none; margin-bottom: 10px;"><span class="alignHelper"></span><img src='@routes.Assets.versioned("images/icons/arrow-step-over.png")' title='toggle flight marker animation' style="vertical-align: middle;"/></div>-->
-//			<div id="toggleMapLightButton" class="googleMapIcon" onclick="toggleMapLight()" align="center" style="display: none;"><span class="alignHelper"></span><img src='@routes.Assets.versioned("images/icons/switch.png")' title='toggle dark/light themed map' style="vertical-align: middle;"/></div>-->
-   var toggleMapChristmasButton = $('<div id="toggleMapChristmasButton" class="googleMapIcon" onclick="toggleChristmasMarker()" align="center" style="display: none; margin-bottom: 10px;"><span class="alignHelper"></span><img src="assets/images/icons/bauble.png" title=\'Merry Christmas!\' style="vertical-align: middle;"/></div>')
-   var toggleMapAnimationButton = $('<div id="toggleMapAnimationButton" class="googleMapIcon" onclick="toggleMapAnimation()" align="center" style="margin-bottom: 10px;"><span class="alignHelper"></span><img src="assets/images/icons/arrow-step-over.png" title=\'toggle flight marker animation\' style="vertical-align: middle;"/></div>')
-   var toggleChampionButton = $('<div id="toggleChampionButton" class="googleMapIcon" onclick="toggleChampionMap()" align="center"  style="margin-bottom: 10px;"><span class="alignHelper"></span><img src="assets/images/icons/crown.png" title=\'toggle champion\' style="vertical-align: middle;"/></div>')
-   var toggleMapLightButton = $('<div id="toggleMapLightButton" class="googleMapIcon" onclick="toggleMapLight()" align="center" style=""><span class="alignHelper"></span><img src="assets/images/icons/switch.png" title=\'toggle dark/light themed map\' style="vertical-align: middle;"/></div>')
+  // Create a custom Leaflet control class
+  const CustomControl = L.Control.extend({
+    options: { position: 'bottomright' }, // or 'bottomleft'
+    onAdd: function () {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
 
+      // Add your HTML buttons here
+      container.innerHTML = `
+        <div id="toggleMapLightButton" class="googleMapIcon" onclick="toggleMapLight()" align="center" style="margin-bottom: 10px;">
+          <span class="alignHelper"></span>
+          <img src="assets/images/icons/switch.png" title="toggle dark/light themed map" style="vertical-align: middle;"/>
+        </div>
+        <div id="toggleMapAnimationButton" class="googleMapIcon" onclick="toggleMapAnimation()" align="center" style="margin-bottom: 10px;">
+          <span class="alignHelper"></span>
+          <img src="assets/images/icons/arrow-step-over.png" title="toggle flight marker animation" style="vertical-align: middle;"/>
+        </div>
+        <div id="toggleChampionButton" class="googleMapIcon" onclick="toggleChampionMap()" align="center" style="margin-bottom: 10px;">
+          <span class="alignHelper"></span>
+          <img src="assets/images/icons/crown.png" title="toggle champion" style="vertical-align: middle;"/>
+        </div>
+        <div id="toggleMapChristmasButton" class="googleMapIcon" onclick="toggleChristmasMarker()" align="center" style="display:none; margin-bottom: 10px;">
+          <span class="alignHelper"></span>
+          <img src="assets/images/icons/bauble.png" title="Merry Christmas!" style="vertical-align: middle;"/>
+        </div>
+      `;
 
-  toggleMapLightButton.index = 1
-  toggleMapAnimationButton.index = 2
-  toggleChampionButton.index = 3
-  toggleMapChristmasButton.index = 5
-
-
-  if ($("#map").height() > 500) {
-    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(toggleMapLightButton[0]);
-    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(toggleMapAnimationButton[0]);
-    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(toggleChampionButton[0])
-    //map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(toggleHeatmapButton[0])
-
-    if (christmasFlag) {
-       map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(toggleMapChristmasButton[0]);
-       toggleMapChristmasButton.show()
+      // Prevent map drag when clicking inside controls
+      L.DomEvent.disableClickPropagation(container);
+      return container;
     }
+  });
 
-  } else {
-    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(toggleMapLightButton[0]);
-    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(toggleMapAnimationButton[0]);
-    map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(toggleChampionButton[0])
-    //map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(toggleHeatmapButton[0])
-
-    if (christmasFlag) {
-       map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(toggleMapChristmasButton[0]);
-    }
-  }
+  // Add control to map
+  map.addControl(new CustomControl());
 }
 
+
 function addAirlineSpecificMapControls(map) {
-    var toggleHeatmapButton = $('<div id="toggleMapHeatmapButton" class="googleMapIcon" onclick="toggleHeatmap()" align="center"  style="margin-bottom: 10px;"><span class="alignHelper"></span><img src="assets/images/icons/table-heatmap.png" title=\'toggle heatmap\' style="vertical-align: middle;"/></div>')
-
-    toggleHeatmapButton.index = 4
-
-    if ($("#map").height() > 500) {
-        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].insertAt(3, toggleHeatmapButton[0])
-     } else {
-        map.controls[google.maps.ControlPosition.LEFT_BOTTOM].insertAt(3, toggleHeatmapButton[0])
+  const HeatmapControl = L.Control.extend({
+    options: { position: 'bottomright' },
+    onAdd: function () {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+      container.innerHTML = `
+        <div id="toggleMapHeatmapButton" class="googleMapIcon" onclick="toggleHeatmap()" align="center" style="margin-bottom: 10px;">
+          <span class="alignHelper"></span>
+          <img src="assets/images/icons/table-heatmap.png" title="toggle heatmap" style="vertical-align: middle;"/>
+        </div>
+      `;
+      L.DomEvent.disableClickPropagation(container);
+      return container;
     }
+  });
+  map.addControl(new HeatmapControl());
 }
 
 function LinkHistoryControl(controlDiv, map) {
@@ -889,4 +944,10 @@ window.addEventListener('popstate', function(e) {
             eval(e.state.onclickFunction)
         }
     }
+});
+
+// Wait for DOM to finish loading before initializing the map
+$(document).ready(function() {
+  console.log("DOM ready — initializing Leaflet map...");
+  initMap();
 });

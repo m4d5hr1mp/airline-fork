@@ -568,24 +568,42 @@ object AirlineSource {
         val airlines = Map[Int, Airline]()
         while (resultSet.next()) {
           val airlineId = resultSet.getInt("airline")
-          val airline = airlines.getOrElseUpdate(airlineId, AirlineCache.getAirline(airlineId, false).getOrElse(Airline.fromId(airlineId)))
+          val airline = airlines.getOrElseUpdate(
+            airlineId,
+            AirlineCache.getAirline(airlineId, false).getOrElse(Airline.fromId(airlineId))
+          )
           AllianceSource.loadAllianceMemberByAirline(airline).foreach { member =>
             if (member.role != AllianceRole.APPLICANT) {
               airline.setAllianceId(member.allianceId)
             }
           }
-          
-          //val airport = Airport.fromId(resultSet.getInt("airport"))
+
           val airportId = resultSet.getInt("airport")
           val airport = airports.getOrElseUpdate(airportId, AirportCache.getAirport(airportId, true).get)
           val name = resultSet.getString("name")
           val level = resultSet.getInt("level")
           val foundedCycle = resultSet.getInt("founded_cycle")
           val status = resultSet.getString("status")
-          
-          
-          lounges += Lounge(airline, airline.getAllianceId(), airport, name, level, LoungeStatus.withName(status), foundedCycle)
+
+          // Create the base lounge
+          val lounge = Lounge(
+            airline,
+            airline.getAllianceId(),
+            airport,
+            name,
+            level,
+            LoungeStatus.withName(status),
+            foundedCycle
+          )
+
+          /*
+          // 🔹 Load and attach lounge features (enable once LoungeFeatureSource exists)
+          lounge.features = LoungeFeatureSource.loadLoungeFeatures(lounge)
+          */
+
+          lounges += lounge
         }
+
         
         resultSet.close()
         preparedStatement.close()

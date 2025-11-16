@@ -34,6 +34,12 @@
 	  <link rel="stylesheet" type="text/css" href='/assets/stylesheets/classic.css' id="uiTheme">
 	  <link rel="stylesheet" type="text/css" href='@routes.Assets.versioned("stylesheets/mobile.css")'> <!-- this has to be last so it overrides the CSS if mobile-->
 
+	<!-- OpenStreetMap (Leaflet) -->
+	<link
+		rel="stylesheet"
+		href="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.css"
+	/>
+	<script src="https://unpkg.com/leaflet@@1.9.4/dist/leaflet.js"></script>
 
     
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js" defer></script>
@@ -3093,7 +3099,7 @@
 										</div>
 									</div>
 								</div>
-								<div class="button" onclick="showAllianceMap()">Flight Map</div>
+								<div class="button" data-action="show-alliance-map">Flight Map</div>
 								<h4 style="margin-top: 10px">Members</h4>
 								<div id="allianceMemberList" class="table data" style="width: 100%;">
 								</div>
@@ -5513,8 +5519,8 @@
 
     <script src="@routes.Assets.versioned("javascripts/chat-popup.js")"></script>
 
-    <script src='https://maps.googleapis.com/maps/api/js?v=3.43&key=@configuration.get[String]("google.mapKey")&libraries=geometry,drawing,visualization&callback=initMap'>
-	</script>
+    <!-- <script src='https://maps.googleapis.com/maps/api/js?v=3.43&key=@configuration.get[String]("google.mapKey")&libraries=geometry,drawing,visualization&callback=initMap'>
+	</script> -->
 <!-- 	<script src="https://apis.google.com/js/platform.js"></script> -->
   <script src='/assets/firework/fscreen.js'></script>
   <script src='/assets/firework/stage.js'></script>

@@ -385,101 +385,130 @@ function updateRivalBaseList(airlineId) {
     updateAirlineBaseList(airlineId, $('#rivalBases'))
 }
 
-var rivalMapAirlineId
+var rivalMapAirlineId;
 
 function showRivalMap() {
-    var airlineId = $('#rivalDetails').data("airlineId")
-	clearAllPaths()
-	deselectLink()
-    rivalMapAirlineId = airlineId
-	var paths = []
+    const airlineId = $('#rivalDetails').data("airlineId");
+    rivalMapAirlineId = airlineId;
 
-    var getUrl = "airlines/" + airlineId + "/links"
-	$.ajax({
-		type: 'GET',
-		url: getUrl,
-		contentType: 'application/json; charset=utf-8',
-	    dataType: 'json',
-	    success: function(links) {
-	    	$.each(links, function(index, link) {
-                    var path = drawFlightPath(link, "#DC83FC")
-                    paths.push(path)
-                    //remove on click add on hover
-                    google.maps.event.clearInstanceListeners(path.shadow);
-                    var infoWindow
-                    path.shadow.addListener('mouseover', function(event) {
-                        var fromAirport = getAirportText(link.fromAirportCity, link.fromAirportCode)
-                    	var toAirport = getAirportText(link.toAirportCity, link.toAirportCode)
-                        $("#linkPopupFrom").html(getCountryFlagImg(link.fromCountryCode) + "&nbsp;" + fromAirport)
-                        $("#linkPopupTo").html(getCountryFlagImg(link.toCountryCode) + "&nbsp;" + toAirport)
-                        $("#linkPopupCapacity").html(link.capacity.total)
-                        $("#linkPopupAirline").html(getAirlineSpan(link.airlineId, link.airlineName))
+    console.log("Opening rival flight map for airline", airlineId);
 
-                        infoWindow = new google.maps.InfoWindow({
-                             maxWidth : 1200});
+    // clear previous paths
+    clearAllPaths();
+    deselectLink();
 
-                        var popup = $("#linkPopup").clone()
-                        popup.show()
-                        infoWindow.setContent(popup[0])
+    // switch to map view
+    switchMap();
 
-                        infoWindow.setPosition(event.latLng);
-                        infoWindow.open(map);
-                    })
-                    path.shadow.addListener('mouseout', function(event) {
-                        infoWindow.close();
-                        infoWindow.setMap(null);
-                    })
-                })
-
-	    },
-	    error: function(jqXHR, textStatus, errorThrown) {
-	            console.log(JSON.stringify(jqXHR));
-	            console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
-	    },
-	    beforeSend: function() {
-            $('body .loadingSpinner').show()
-        },
-        complete: function(){
-            $('body .loadingSpinner').hide()
-        }
-	});
-
-
-
+    // Fetch links and draw them in Leaflet (like alliance map)
     $.ajax({
-    		type: 'GET',
-    		url: "airlines/" + airlineId + "/bases",
-    	    contentType: 'application/json; charset=utf-8',
-    	    dataType: 'json',
-    	    success: function(bases) {
-    	    	updateAirportBaseMarkers(bases, paths)
-    	    },
-    	    error: function(jqXHR, textStatus, errorThrown) {
-    	            console.log(JSON.stringify(jqXHR));
-    	            console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
-    	    }
-    });
-    window.setTimeout(function() {
-        if (map.controls[google.maps.ControlPosition.TOP_CENTER].getLength() > 0) {
-            map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
+        type: 'GET',
+        url: `airlines/${airlineId}/links`,
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json',
+        beforeSend: function () {
+            $('body .loadingSpinner').show();
+        },
+        success: function (links) {
+            const paths = [];
+
+				$.each(links, function(index, link) {
+				const { path, shadow } = drawFlightPath(link, "#DC83FC");
+				paths.push({ path, shadow, link });
+
+				shadow.off(); // clear previous listeners just in case
+
+				shadow.on('mouseover', function (e) {
+					const fromAirport = getAirportText(link.fromAirportCity, link.fromAirportCode);
+					const toAirport = getAirportText(link.toAirportCity, link.toAirportCode);
+					$("#linkPopupFrom").html(getCountryFlagImg(link.fromCountryCode) + "&nbsp;" + fromAirport);
+					$("#linkPopupTo").html(getCountryFlagImg(link.toCountryCode) + "&nbsp;" + toAirport);
+					$("#linkPopupCapacity").html(link.capacity.total);
+					$("#linkPopupAirline").html(getAirlineSpan(link.airlineId, link.airlineName));
+
+					const popup = $("#linkPopup").clone();
+					popup.show();
+
+					const infoPopup = L.popup({ closeButton: false, autoClose: true })
+					.setLatLng(e.latlng)
+					.setContent(popup[0])
+					.openOn(map);
+
+					shadow.once('mouseout', function () {
+					if (map.hasLayer(infoPopup)) map.closePopup(infoPopup);
+					});
+				});
+				});
+
+
+            // fetch rival bases and update markers
+            $.ajax({
+                type: 'GET',
+                url: `airlines/${airlineId}/bases`,
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (bases) {
+                    updateAirportBaseMarkers(bases, paths);
+                },
+                complete: function () {
+                    $('body .loadingSpinner').hide();
+                }
+            });
+
+            // add “Exit Rival Flight Map” control
+            addRivalExitButton();
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error("Failed to load rival links:", textStatus, errorThrown);
+        },
+        complete: function () {
+            $('body .loadingSpinner').hide();
         }
-        map.controls[google.maps.ControlPosition.TOP_CENTER].push(createMapButton(map, 'Exit Rival Flight Map', 'hideRivalMap()', 'hideRivalMapButton')[0]);
-    }, 1000); //delay otherwise it doesn't push to center
-    switchMap()
-    $("#worldMapCanvas").data("initCallback", function() { //if go back to world map, re-init the map
-    	map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
-    	clearAllPaths()
-        updateAirportMarkers(activeAirline)
-        updateLinksInfo() //redraw all flight paths
-    })
+    });
 }
 
+function addRivalExitButton() {
+  if (map.exitButtonControl) {
+    map.removeControl(map.exitButtonControl);
+  }
+
+  const ExitButtonControl = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd: function (map) {
+      const container = L.DomUtil.create('div', 'leaflet-bar');
+      const button = L.DomUtil.create('a', '', container);
+      button.innerHTML = 'Exit Rival Flight Map';
+      button.href = '#';
+      button.id = 'hideRivalMapButton';
+      button.title = 'Exit Rival Flight Map';
+      button.style.cursor = 'pointer';
+      button.style.padding = '5px 10px';
+      button.style.background = 'white';
+      button.style.fontWeight = 'bold';
+
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.on(button, 'click', function (e) {
+        L.DomEvent.stop(e);
+        hideRivalMap();
+      });
+
+      return container;
+    }
+  });
+
+  map.exitButtonControl = new ExitButtonControl();
+  map.addControl(map.exitButtonControl);
+}
+
+
 function hideRivalMap() {
-	map.controls[google.maps.ControlPosition.TOP_CENTER].clear()
-	clearAllPaths()
-	updateAirportBaseMarkers([]) //revert base markers
-	rivalMapAirlineId = undefined
-	setActiveDiv($("#rivalsCanvas"))
+    if (map.exitButtonControl) {
+        map.removeControl(map.exitButtonControl);
+    }
+    clearAllPaths();
+    updateAirportBaseMarkers([]);
+    rivalMapAirlineId = undefined;
+    setActiveDiv($("#rivalsCanvas"));
 }
 
 function showRivalHistory() {

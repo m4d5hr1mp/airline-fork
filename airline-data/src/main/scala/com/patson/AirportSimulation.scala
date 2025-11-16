@@ -39,6 +39,8 @@ object AirportSimulation {
     //check whether lounge is still active
     updateLoungeStatus(allAirports, linkRidershipDetails)
 
+    // Simulate Reworked Lounges by calling "LoungeSimulation.txt / .scala" (In Development!)
+    //LoungeSimulation.simulateLounges(allAirports, cycle)
 
     println("Finished simulation of loyalty by link consumption")
     println("Finished loyalist simulation")
@@ -322,172 +324,14 @@ object AirportSimulation {
     result.toList.partition(_.amount > 0)
   }
 
-  def updateLoungeStatus(allAirports : List[Airport], linkRidershipDetails : Predef.Map[(PassengerGroup, Airport, Route), Int]) = {
-    println("Checking lounge status")
-    val passengersByAirport : MapView[Airport, MapView[Airline, Int]] = linkRidershipDetails.toList.flatMap {
-      case ((passengerGroup, airport, route), count) =>
-        route.links.filter(_.link.transportType == TransportType.FLIGHT).flatMap { linkConsideration =>
-          List((linkConsideration.link.airline, linkConsideration.from, count), (linkConsideration.link.airline, linkConsideration.to, count))
-        }
-
-    }.groupBy {
-      case (airline, airport, count) => airport
-    }.view.mapValues { list =>
-      list.map {
-        case (airline, airport, count) => (airline, count)
-      }.groupBy(_._1).view.mapValues(_.map(_._2).sum)
-    }
-
-
-    allAirports.foreach { airport =>
-      if (!airport.getLounges().isEmpty) {
-        val airlineIdsWithBase = airport.getAirlineBases().keys.toList
-        //println(s"AIRPORT $airport : ${passengersByAirport.get(airport).map(_.toList)}")
-        val airlinesByPassengers : List[(Airline, Int)] = passengersByAirport.get(airport).map(_.toList).getOrElse(List.empty).filter {
-          case (airline, _) => airlineIdsWithBase.contains(airline.id) //only count airlines that has a base here
-        }
-
-        val eligibleAirlines = airlinesByPassengers.sortBy(_._2).takeRight(airport.getLounges()(0).getActiveRankingThreshold).map(_._1)
-        airport.getLounges().foreach { lounge =>
-          val newStatus =
-            if (eligibleAirlines.contains(lounge.airline)) {
-              LoungeStatus.ACTIVE
-            } else {
-              LoungeStatus.INACTIVE
-            }
-
-          if (lounge.status != newStatus) {
-            println(s"Flipping status for lounge $lounge to $newStatus")
-            AirlineSource.saveLounge(lounge.copy(status = newStatus))
-          }
-        }
-      }
-    }
+  // Lounge activation logic removed.
+  def updateLoungeStatus(
+      allAirports: List[Airport],
+      linkRidershipDetails: scala.collection.immutable.Map[(PassengerGroup, Airport, Route), Int]
+  ): Unit = {
+    println("Skipping! Lounge Paxflow conditions have been disabled!")
   }
-//
-//  def airportProjectSimulation(allAirports : List[Airport]) = {
-//    import ProjectStatus._
-//    println("simulating airport projects")
-//
-//    val inProgressProjects = AirportSource.loadAllAirportProjects().filter { _.status != COMPLETED }
-//  }
-  
-//  private def simulateAirlineAppeals(airport : Airport, soldLinksByAirline : Map[Int, Seq[LinkConsumptionDetails]]) = {
-//    val newAppeals = mutable.HashMap[Int, AirlineAppeal]()
-//    soldLinksByAirline.foreach {
-//      case(airlineId, soldLinksByAirline) => {
-//        val targetLoyalty = getTargetLoyalty(soldLinksByAirline, airport.population)
-//        val appeal = airport.getAirlineBaseAppeal(airlineId)
-//        val currentLoyalty = appeal.loyalty //get the unadjusted value
-//        var newLoyalty = getNewLoyalty(currentLoyalty, targetLoyalty)
-//        val penalty = getPenalty(soldLinksByAirline)
-////        if (penalty > 0) {
-////          println("penalty for " + airlineId + " at airport " + airport + " is " + penalty)
-////        }
-//        newLoyalty = newLoyalty - penalty
-//        if (newLoyalty <= 0) {
-//          newLoyalty = 0
-//        }
-//
-//        //airport.setAirlineLoyalty(airlineId, newLoyalty)
-//        //AirportSource.updateAirlineAppeal(airport.id, airlineId, AirlineAppeal(newLoyalty, appeal.awareness))
-//        newAppeals.put(airlineId, AirlineAppeal(newLoyalty, appeal.awareness))
-//       // println("airport " + airport.name + " airline " + airlineId + " loyalty updating from " + currentLoyalty + " to " + newLoyalty)
-//      }
-//    }
-//    AirportSource.updateAirlineAppeals(airport.id, newAppeals.toMap)
-//
-//
-//    if (!airport.getLounges().isEmpty) {
-//      val airlinesByPassengers = soldLinksByAirline.mapValues( consumptionDetails => consumptionDetails.map {_.link.soldSeats.total}.sum).toList.sortBy(_._2) //Map[airlineId, totalPassengersForThisAirport]
-//      val eligibleAirlines = airlinesByPassengers.takeRight(airport.getLounges()(0).getActiveRankingThreshold).map(_._1)
-//      airport.getLounges().foreach { lounge =>
-//        val newStatus =
-//        if (eligibleAirlines.contains(lounge.airline.id)) {
-//          LoungeStatus.ACTIVE
-//        } else {
-//          LoungeStatus.INACTIVE
-//        }
-//
-//        if (lounge.status != newStatus) {
-//          AirlineSource.saveLounge(lounge.copy(status = newStatus))
-//        }
-//      }
-//
-//    }
-//
-//
-//
-//  }
-  
-//  private[patson] val getTargetLoyalty : (Seq[LinkConsumptionDetails], Long) => Double = (consumptionDetails, population) => {
-//    val totalTransportedPassengers = consumptionDetails.map { _.link.soldSeats.total }.sum
-//    val totalQualityProduct = consumptionDetails.map { consumptionDetailsEntry => consumptionDetailsEntry.link.soldSeats.total * consumptionDetailsEntry.link.computedQuality }.sum
-//    val averageQuality = if (totalTransportedPassengers == 0) 0 else totalQualityProduct / totalTransportedPassengers
-//    val targetLoyaltyByQuality = averageQuality
-////    //to attain MAX loyalty requires transporting everyone (1 X pop) once per year, the increment in on power to MAX loyalty = weekly passenger
-////    //ie base ^ 100 = pop / 52
-////    //   base = (pop / 52) ^ 0.01
-////    //and base ^ targetLoyaltyBypassengerVolume  = passenger
-////    //    targetLoyaltyBypassengerVolume * log(base) = log(passenger)
-////    //    targetLoyaltyBypassengerVolume = log(passenger) / (0.01 * log(pop/52))
-////    //    targetLoyaltyBypassengerVolume = log(passenger) * 100 / log(pop/52)
-////
-////    // now pop needs to be bigger than 52, otherwise we have problem, in fact lets make min pop 10000
-////
-////
-////    val targetLoyaltyBypassengerVolume = Math.log(totalTransportedPassengers) * 100 / Math.log(Math.max(10000, population) / 52)
-//
-//
-//    //2nd formula:
-//    //  1. loyalty range [1, 100] are split into steps of 1
-//    //  2. From current step n, to reach next step n + 1 would require passengers of current step * a multiplier, denote the passenger of current step as p(n). we let p(1) = 1
-//    //  3. The multiplier itself is also a function to the step n, denote as m(n)
-//    //  4. From 2. and 3., we can write formula of p(n + 1) = p(n) * m(n)
-//    //  5. Multiplier decrease proportionally to n, ie m(x) = m(1) - (m(1) - m(99)) * (x - 1) / 98
-//    //  6. Now we create conditions, we let:
-//    //    b. To reach last step of loyalty 100, m(99) = 1.0001
-//    //    a. at loyalty 1, m(1) > m(100), which we need to figure out in order to work on 5.
-//    //    c. Thinking from a city with 1M pop:
-//    //        it should reach loyalty 100 if it transport every single pop within that year, therefore weekly passenger is 1000000 / 52, and we want p(100) = 1000000 / 52
-//    //        it should start with loyalty 1 if it transport 1 pop per week, therefore we want p(1) = 1
-//    //  7. Probably can be solved in some other fancy math, but i decided to let computer to estimate it for me ;) ...using binary search :\ (see method estimateM0), found m0 = 1.159339475631714
-//    //  8. Build an array LOYALTY_TO_PASSENGER_VOLUME, that lists required passenger to reach certain loyalty, the index is the Loyalty (based on 1mil pop)
-//    //  9. Now scale the required passengers with the city size relative to 1 million and search for matching loyalty
-//
-//    if (totalTransportedPassengers == 0) {
-//      0
-//    } else {
-//      var upper = AirlineAppeal.MAX_LOYALTY
-//      var lower = 1
-//      var found = false
-//      var estLoyalty = lower
-//
-//      val normalizePassengers = totalTransportedPassengers.toDouble * 1000000 / population
-//
-//      while (!found) {
-//        estLoyalty = (upper + lower) / 2
-//        if (LOYALTY_TO_PASSENGER_VOLUME(estLoyalty) > normalizePassengers) {
-//          upper = estLoyalty
-//        } else if (LOYALTY_TO_PASSENGER_VOLUME(estLoyalty) < normalizePassengers) {
-//          lower = estLoyalty
-//        } else {
-//          found = true
-//        }
-//
-//        if (upper - lower == 1) {
-//          found = true
-//          estLoyalty += 1 //bump up one to the upper bound
-//        }
-//      }
-//
-//      val targetLoyaltyBypassengerVolume = estLoyalty
-//      var targetLoyalty = Math.min(targetLoyaltyByQuality, targetLoyaltyBypassengerVolume).doubleValue()
-//
-//      targetLoyalty
-//    }
-//  }
-  
+
   private[patson] val getPenalty : Seq[LinkConsumptionDetails] => Double = consumptionDetails => {
       //add penalty for delays and cancellation
       val totalCapacity = consumptionDetails.map { _.link.capacity.total }.sum
@@ -519,23 +363,6 @@ object AirportSimulation {
     
     result.map(_.toInt)
   }
-  
-//  private[patson] val getNewLoyalty : (Double, Double) => Double = (currentLoyalty, targetLoyalty) =>  {
-//    if (currentLoyalty < targetLoyalty) {
-//      if (currentLoyalty + LOYALTY_INCREMENT_BY_FLIGHTS >= targetLoyalty) {
-//        targetLoyalty
-//      } else {
-//        currentLoyalty + LOYALTY_INCREMENT_BY_FLIGHTS
-//      }
-//    } else {
-//      if (currentLoyalty - LOYALTY_DECREMENT_BY_FLIGHTS <= targetLoyalty) {
-//        targetLoyalty
-//      } else {
-//        currentLoyalty - LOYALTY_DECREMENT_BY_FLIGHTS
-//      }
-//    }
-//  }
-  
   
   def estimateM1 : Double = {
     val m99 = 1.0001

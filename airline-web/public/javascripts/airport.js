@@ -328,97 +328,123 @@ function updateAirportChampionDetails(airport) {
 
 }
 
-function initAirportMap() { //only called once, see https://stackoverflow.com/questions/10485582/what-is-the-proper-way-to-destroy-a-map-instance
-    airportMap = new google.maps.Map(document.getElementById('airportMap'), {
-		//center: {lat: airport.latitude, lng: airport.longitude},
-	   	//zoom : 6,
-	   	minZoom : 2,
-	   	maxZoom : 9,
-//	   	scrollwheel: false,
-//	    navigationControl: false,
-//	    mapTypeControl: false,
-//	    scaleControl: false,
-//	    draggable: false,
-	   	gestureHandling: 'greedy',
-	   	fullscreenControl: false,
-	   	streetViewControl: false,
-        zoomControl: true,
-	   	styles: getMapStyles()
-	});
+function initAirportMap() {
+  const mapContainer = document.getElementById("airportMap");
+  if (!mapContainer) {
+    console.error("Map container #airportMap not found");
+    return;
+  }
 
-    if (christmasFlag) {
-        //<div id="santaClausButton" class="googleMapIcon glow" onclick="showSantaClausAttemptStatus()" align="center" style="display: none; margin-bottom: 10px;"><span class="alignHelper"></span><img src='@routes.Assets.versioned("images/markers/christmas/santa-hat.png")' title='Santa, where are you?' style="vertical-align: middle;"/></div>-->
-        var santaClausButton = $('<div id="santaClausButton" class="googleMapIcon glow" onclick="showSantaClausAttemptStatus()" align="center" style="margin-bottom: 10px;"><span class="alignHelper"></span><img src="assets/images/markers/christmas/santa-hat.png" title=\'Santa, where are you!\' style="vertical-align: middle;"/></div>')
+  // If Leaflet map already exists, remove it before reinit
+  if (mapContainer._leaflet_id) {
+    mapContainer._leaflet_id = null;
+  }
 
-        santaClausButton.index = 1
-        airportMap.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(santaClausButton[0]);
-    }
+  airportMap = L.map(mapContainer, {
+    minZoom: 2,
+    maxZoom: 9,
+    zoomControl: true,
+    scrollWheelZoom: true,
+    attributionControl: true,
+  }).setView([20, 0], 2); // default world view, overwritten later in populateAirportDetails()
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    minZoom: 2,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+  }).addTo(airportMap);
+
+  // 🎅 Optional Santa Button — ported from Google Maps
+  if (christmasFlag) {
+    const santaClausButton = L.control({ position: "bottomright" });
+    santaClausButton.onAdd = function () {
+      const div = L.DomUtil.create("div", "googleMapIcon glow");
+      div.id = "santaClausButton";
+      div.setAttribute("align", "center");
+      div.style.marginBottom = "10px";
+      div.innerHTML = `
+        <span class="alignHelper"></span>
+        <img src="assets/images/markers/christmas/santa-hat.png"
+             title="Santa, where are you!"
+             style="vertical-align: middle; cursor: pointer;"/>
+      `;
+      div.onclick = showSantaClausAttemptStatus;
+      return div;
+    };
+    santaClausButton.addTo(airportMap);
+  }
 }
 
 
 function populateAirportDetails(airport) {
-    if (!airportMap) {
-        initAirportMap()
+  if (!airportMap) {
+    initAirportMap();
+  }
+
+  // Cleanup old markers
+  airportMapMarkers.forEach(m => airportMap.removeLayer(m));
+  airportMapMarkers = [];
+
+  if (airportMapCircle) {
+    airportMap.removeLayer(airportMapCircle);
+  }
+
+  if (airport) {
+    addCityMarkers(airportMap, airport); // keep your existing helper if it works
+
+    airportMap.setView([airport.latitude, airport.longitude], 6);
+
+    // 🧩 Build Leaflet icon from stored image
+    const airportMarkerUrl = $("#airportMap").data("airportMarker");
+
+    const airportMarkerIcon = L.icon({
+      iconUrl: airportMarkerUrl,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      className: "airport-marker"
+    });
+
+    // 🧩 Add marker
+    const airportMarker = L.marker(
+      [airport.latitude, airport.longitude],
+      {
+        title: airport.name,
+        icon: airportMarkerIcon,
+        zIndexOffset: 999
+      }
+    ).addTo(airportMap);
+
+    airportMapMarkers.push(airportMarker);
+
+    // 🟢 Add circle radius
+    airportMapCircle = L.circle(
+      [airport.latitude, airport.longitude],
+      {
+        radius: airport.radius * 1000, // meters
+        color: "#32CF47",
+        opacity: 0.2,
+        weight: 2,
+        fillColor: "#32CF47",
+        fillOpacity: 0.3
+      }
+    ).addTo(airportMap);
+
+    // 🧩 Load stats and details
+    loadAirportStatistics(airport);
+    loadGenericTransits(airport);
+    updateAirportLoyalistDetails(airport);
+    showAirportAssets(airport);
+
+    // 🧩 Simulate Google Maps "idle" re-center
+    setTimeout(() => {
+      airportMap.setView([airport.latitude, airport.longitude], airportMap.getZoom());
+    }, 2000);
+
+    // 🎅 Seasonal extra
+    if (christmasFlag) {
+      initSantaClaus();
     }
-
-    // cleanup first
-    for (var i = 0; i < airportMapMarkers.length; i++ ) {
-        airportMapMarkers[i].setMap(null);
-    }
-    airportMapMarkers = []
-
-    if (airportMapCircle) { //remove the old circle
-        airportMapCircle.setMap(null)
-    }
-
-
-
-    if (airport) {
-		addCityMarkers(airportMap, airport)
-		airportMap.setZoom(6)
-        airportMap.setCenter({lat: airport.latitude, lng: airport.longitude}); //this would eventually trigger an idle
-
-		var airportMarkerIcon = $("#airportMap").data("airportMarker")
-		var airportMarker = new google.maps.Marker({
-		    position: {lat: airport.latitude, lng: airport.longitude},
-		    map: airportMap,
-		    title: airport.name,
-		    icon : airportMarkerIcon,
-		    zIndex : 999
-		  });
-
-		airportMapMarkers.push(airportMarker)
-
-		
-		airportMapCircle = new google.maps.Circle({
-		        center: {lat: airport.latitude, lng: airport.longitude},
-		        radius: airport.radius * 1000, //in meter
-		        strokeColor: "#32CF47",
-		        strokeOpacity: 0.2,
-		        strokeWeight: 2,
-		        fillColor: "#32CF47",
-		        fillOpacity: 0.3,
-		        map: airportMap
-		    });
-		loadAirportStatistics(airport)
-		loadGenericTransits(airport)
-		updateAirportLoyalistDetails(airport)
-		showAirportAssets(airport)
-
-		google.maps.event.addListenerOnce(airportMap, 'idle', function() {
-           setTimeout(function() { //set a timeout here, otherwise it might not render part of the map...
-             airportMap.setCenter({lat: airport.latitude, lng: airport.longitude}); //this would eventually trigger an idle
-             google.maps.event.trigger(airportMap, 'resize'); //this refreshes the map
-           }, 2000);
-        });
-
-        if (christmasFlag) {
-            initSantaClaus()
-        }
-	}
-
-
-
+  }
 }
 
 
@@ -673,130 +699,100 @@ function getAirports() {
 }
 
 function addMarkers(airports) {
-    var infoWindow = new google.maps.InfoWindow({
-		maxWidth : 250
-	})
-	var originalOpacity = 0.7
-	currentZoom = map.getZoom()
+  const originalOpacity = 0.7;
+  currentZoom = map.getZoom();
 
-	google.maps.event.addListener(infoWindow, 'closeclick',function(){
-       if (infoWindow.marker) {
-        infoWindow.marker.setOpacity(originalOpacity)
-       }
+  const resultMarkers = {};
+  const infoPopup = L.popup({ maxWidth: 250 });
+
+  for (let i = 0; i < airports.length; i++) {
+    const airportInfo = airports[i];
+    const position = [airportInfo.latitude, airportInfo.longitude];
+    const iconUrl = getAirportIcon(airportInfo);
+
+    // Leaflet custom icon
+    const icon = L.icon({
+      iconUrl: iconUrl,
+      iconSize: [30, 30],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -10],
     });
 
-	var resultMarkers = {}
-	for (i = 0; i < airports.length; i++) {
-		  var airportInfo = airports[i]
-		  var position = {lat: airportInfo.latitude, lng: airportInfo.longitude};
-		  var icon = getAirportIcon(airportInfo)
-//          if (airportInfo.championAirlineName) {
-//            console.log(airportInfo.name + "-> " + airportInfo.championAirlineName)
-//          }
+    const marker = L.marker(position, {
+      title: airportInfo.name,
+      opacity: originalOpacity,
+      icon: icon,
+    });
 
-		  
-		  var marker = new google.maps.Marker({
-			    position: position,
-			    map: map,
-			    title: airportInfo.name,
-//			    airportName: airportInfo.name,
-//		  		airportCode: airportInfo.iata,
-//		  		airportCity: airportInfo.city,
-//		  		airportId: airportInfo.id,
-//		  		airportSize: airportInfo.size,
-//		  		airportPopulation: airportInfo.population,
-//		  		airportIncomeLevel: airportInfo.incomeLevel,
-//		  		airportCountryCode: airportInfo.countryCode,
-//		  		airportZone : airportInfo.zone,
-//		  		airportAvailableSlots: airportInfo.availableSlots,
-                opacity: originalOpacity,
-		  		airport : airportInfo,
-		  		icon: icon,
-		  		originalIcon: icon, //so we can flip back and forth
-			  });
-		  if (airportInfo.championAirlineId) {
-            marker.championIcon = '/airlines/' + airportInfo.championAirlineId + '/logo'
-            marker.championAirlineName = airportInfo.championAirlineName
-            marker.contested = airportInfo.contested
-          }
+    marker.airport = airportInfo;
 
-		  
-		  var zIndex = airportInfo.size * 10 
-		  var sizeAdjust = Math.floor(airportInfo.population / 1000000) //add something extra due to pop
-		  if (sizeAdjust > 9) {
-			sizeAdjust = 9;
-		  }
-		  zIndex += sizeAdjust
-		  
-		  marker.setZIndex(zIndex); //major airport should have higher index
+    if (airportInfo.championAirlineId) {
+      marker.championIcon = '/airlines/' + airportInfo.championAirlineId + '/logo';
+      marker.championAirlineName = airportInfo.championAirlineName;
+      marker.contested = airportInfo.contested;
+    }
 
-		  marker.addListener('click', function() {
-			  infoWindow.close();
-			  if (infoWindow.marker && infoWindow.marker != this) {
-			    infoWindow.marker.setOpacity(originalOpacity)
-              }
-			  
-			  activeAirport = this.airport
-			  
-			  var isBase = false;
-			  
-			  if (activeAirline) {
-				  updateBaseInfo(this.airport.id)
-			  }
-			  $("#airportPopupName").text(this.airport.name)
-			  let $opennessIcon = $(getOpennessIcon(loadedCountriesByCode[this.airport.countryCode].openness))
-			  $opennessIcon.css('vertical-align', 'middle');
-			  $("#airportPopupOpennessIcon").html($opennessIcon)
-			  $("#airportPopupIata").text(this.airport.iata)
-			  $("#airportPopupCity").html(this.airport.city + "&nbsp;" + getCountryFlagImg(this.airport.countryCode))
-			  $("#airportPopupZone").text(zoneById[this.airport.zone])
-			  $("#airportPopupSize").text(this.airport.size)
-			  $("#airportPopupPopulation").text('-') //wait for extended details
-			  $("#airportPopupIncomeLevel").text('-') //wait for extended details
-			  $("#airportPopupOpenness").html(getOpennessSpan(loadedCountriesByCode[this.airport.countryCode].openness))
-			  $("#airportPopupMaxRunwayLength").html(this.airport.runwayLength + "&nbsp;m")
-			  updateAirportExtendedDetails(this.airport.id, this.airport.countryCode)
-			  //updateAirportSlots(this.airport.id)
-			  
-			  $("#airportPopupId").val(this.airport.id)
-			  var popup = $("#airportPopup").clone()
-			  populateNavigation(popup)
-			  popup.show()
-			  infoWindow.setContent(popup[0])
-			  infoWindow.open(map, this);
-			  infoWindow.marker = this
-			  
-			  activeAirportPopupInfoWindow = infoWindow
-			  
-			  if (activeAirline) {
-				  if (!activeAirline.headquarterAirport) {
-					  $("#planToAirportButton").hide()
-				  } else {
-					  $("#planToAirportButton").show()
-				  }
-			  } else {
-				  $("#planToAirportButton").hide()
-			  }
-			  
-		  });
+    // Handle click -> open info popup
+    marker.on('click', function () {
+      activeAirport = this.airport;
 
-		  marker.addListener('mouseover', function(event) {
-               this.setOpacity(0.9)
-            })
-            marker.addListener('mouseout', function(event) {
-                if (infoWindow.marker != this) {
-                    this.setOpacity(originalOpacity)
-                }
-            })
+      if (activeAirline) {
+        updateBaseInfo(this.airport.id);
+      }
 
+      $("#airportPopupName").text(this.airport.name);
+      const $opennessIcon = $(getOpennessIcon(loadedCountriesByCode[this.airport.countryCode].openness));
+      $opennessIcon.css('vertical-align', 'middle');
+      $("#airportPopupOpennessIcon").html($opennessIcon);
+      $("#airportPopupIata").text(this.airport.iata);
+      $("#airportPopupCity").html(this.airport.city + "&nbsp;" + getCountryFlagImg(this.airport.countryCode));
+      $("#airportPopupZone").text(zoneById[this.airport.zone]);
+      $("#airportPopupSize").text(this.airport.size);
+      $("#airportPopupPopulation").text('-');
+      $("#airportPopupIncomeLevel").text('-');
+      $("#airportPopupOpenness").html(getOpennessSpan(loadedCountriesByCode[this.airport.countryCode].openness));
+      $("#airportPopupMaxRunwayLength").html(this.airport.runwayLength + "&nbsp;m");
+      updateAirportExtendedDetails(this.airport.id, this.airport.countryCode);
 
-		  marker.setVisible(isShowMarker(marker, currentZoom))
+      $("#airportPopupId").val(this.airport.id);
+      const popup = $("#airportPopup").clone();
+      populateNavigation(popup);
+      popup.show();
 
+      infoPopup.setContent(popup[0]);
+      infoPopup.setLatLng(position);
+      map.openPopup(infoPopup);
 
-		  resultMarkers[airportInfo.id] = marker
-	}
-	//now assign it to markers to indicate that it's ready
-	markers = resultMarkers
+      activeAirportPopupInfoWindow = infoPopup;
+
+      if (activeAirline) {
+        if (!activeAirline.headquarterAirport) {
+          $("#planToAirportButton").hide();
+        } else {
+          $("#planToAirportButton").show();
+        }
+      } else {
+        $("#planToAirportButton").hide();
+      }
+    });
+
+    // Hover effects
+    marker.on('mouseover', function () {
+      this.setOpacity(0.9);
+    });
+    marker.on('mouseout', function () {
+      this.setOpacity(originalOpacity);
+    });
+
+    // Respect zoom visibility logic
+    if (isShowMarker(marker, currentZoom)) {
+      marker.addTo(map);
+    }
+
+    resultMarkers[airportInfo.id] = marker;
+  }
+
+  markers = resultMarkers;
 }
 
 function planToAirportFromInfoWindow() {
@@ -812,79 +808,85 @@ function removeMarkers() {
 }
 
 function addCityMarkers(airportMap, airport) {
-	var cities = airport.citiesServed
-	var infoWindow = new google.maps.InfoWindow({
-		maxWidth : 500
-	})
-	var cityMarkerIcon = $("#airportMap").data("cityMarker")
-	var townMarkerIcon = $("#airportMap").data("townMarker")
-	var villageMarkerIcon = $("#airportMap").data("villageMarker")
-	
+  const cities = airport.citiesServed || [];
+  const cityMarkerIconUrl = $("#airportMap").data("cityMarker");
+  const townMarkerIconUrl = $("#airportMap").data("townMarker");
+  const villageMarkerIconUrl = $("#airportMap").data("villageMarker");
 
-	cities.sort(sortByProperty("population", false))
-	var count = 0
-	$.each(cities, function( key, city ) {
-		if (++ count > 20) { //do it for top 20 cities only
-			return false
-		}	
-		var icon
-		if (city.population >= 500000) {
-			icon = cityMarkerIcon
-		} else if (city.population >= 100000) {
-			icon = townMarkerIcon
-		} else {
-			icon = villageMarkerIcon
-		}
-		var position = {lat: city.latitude, lng: city.longitude};
-		  var marker = new google.maps.Marker({
-			    position: position,
-			    map: airportMap,
-			    title: city.name,
-			    cityInfo : city,
-			    icon : icon
-			  });
-		  airportMapMarkers.push(marker)
-		  
-		  marker.addListener('click', function() {
-			  infoWindow.close();
-			  var city = this.cityInfo
-			  $("#cityPopupName").text(city.name)
-			  $("#cityPopupPopulation").text(commaSeparateNumber(city.population))
-			  $("#cityPopupIncomeLevel").text(city.incomeLevel)
-			  $("#cityPopupCountryCode").text(city.countryCode)
-			  $("#cityPopupCountryCode").append("<img class='flag' src='assets/images/flags/" + city.countryCode + ".png' />")
-			  $("#cityPopupId").val(city.id)
-			   
-			  
-			  
-///////////////
-				 ///////////////////////////!!!!!!!!!!
-			$.ajax({
-				type: 'GET',
-				url: "cities/" + city.id + "/airportShares",
-			    contentType: 'application/json; charset=utf-8',
-			    dataType: 'json',
-//			    async: false,
-			    success: function(airportShares) {
-			    	plotAirportShares(airportShares, airport.id, $("#cityPie"))
-			    },
-			    error: function(jqXHR, textStatus, errorThrown) {
-			            console.log(JSON.stringify(jqXHR));
-			            console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
-			    }
-			});
+  // Clear existing city markers if any
+  if (window.airportCityMarkers) {
+    window.airportCityMarkers.forEach(m => airportMap.removeLayer(m));
+  }
+  window.airportCityMarkers = [];
 
-			var popup = $("#cityPopup").clone()
-            popup.show()
-            infoWindow.setContent(popup[0])
-			infoWindow.open(airportMap, this);
-			  
-			  
-			/////////////////////!!!!!!!!!!!!!!!
-		 ///////////////
-		  });
-		  //marker.setVisible()
-	});
+  // Sort by population descending
+  cities.sort(sortByProperty("population", false));
+
+  let count = 0;
+  $.each(cities, function (key, city) {
+    if (++count > 20) {
+      return false; // only top 20
+    }
+
+    let iconUrl;
+    if (city.population >= 500000) {
+      iconUrl = cityMarkerIconUrl;
+    } else if (city.population >= 100000) {
+      iconUrl = townMarkerIconUrl;
+    } else {
+      iconUrl = villageMarkerIconUrl;
+    }
+
+    // Build Leaflet icon
+    const icon = L.icon({
+      iconUrl: iconUrl,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      className: "city-marker",
+    });
+
+    const marker = L.marker([city.latitude, city.longitude], {
+      title: city.name,
+      icon: icon,
+    }).addTo(airportMap);
+
+    window.airportCityMarkers.push(marker);
+
+    // On marker click: show popup & load AJAX data
+    marker.on("click", function () {
+      // Close any open popups
+      airportMap.closePopup();
+
+      // Build popup HTML (clone template like before)
+      const popup = $("#cityPopup").clone();
+      popup.show();
+      popup.find("#cityPopupName").text(city.name);
+      popup.find("#cityPopupPopulation").text(commaSeparateNumber(city.population));
+      popup.find("#cityPopupIncomeLevel").text(city.incomeLevel);
+      popup.find("#cityPopupCountryCode").text(city.countryCode);
+      popup.find("#cityPopupCountryCode").append(
+        "<img class='flag' src='assets/images/flags/" + city.countryCode + ".png' />"
+      );
+      popup.find("#cityPopupId").val(city.id);
+
+      // Fetch airport shares (same AJAX call as before)
+      $.ajax({
+        type: "GET",
+        url: "cities/" + city.id + "/airportShares",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (airportShares) {
+          plotAirportShares(airportShares, airport.id, popup.find("#cityPie"));
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          console.log("AJAX error: " + textStatus + " : " + errorThrown);
+        },
+      });
+
+      // Bind popup to marker
+      marker.bindPopup(popup[0], { maxWidth: 500 }).openPopup();
+    });
+  });
 }
 
 
@@ -1131,87 +1133,129 @@ function toggleChampionMap() {
 }
 
 function addContestedMarker(airportMarker) {
-    var contestedMarker = new google.maps.Marker({
-        position: airportMarker.getPosition(),
-        map,
-        title: "Contested",
-        icon: { anchor: new google.maps.Point(-5,15), url: "assets/images/icons/fire.png" },
-        zIndex: 500
-      });
-    //marker.setVisible(isShowMarker(airportMarker, zoom))
-    contestedMarker.bindTo("visible", airportMarker)
-    contestedMarker.setZIndex(airportMarker.getZIndex() + 1)
-    contestedMarkers.push(contestedMarker)
+  const contestedIcon = L.icon({
+    iconUrl: "assets/images/icons/fire.png",
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+
+  const contestedMarker = L.marker(airportMarker.getLatLng(), {
+    icon: contestedIcon,
+    title: "Contested",
+    zIndexOffset: 500
+  }).addTo(map);
+
+  // optional: sync visibility manually (Leaflet doesn’t have .bindTo)
+  if (!airportMarker.isVisible()) {
+    map.removeLayer(contestedMarker);
+  }
+
+  contestedMarkers.push(contestedMarker);
 }
 
 
 function updateAirportBaseMarkers(newBaseAirports, relatedFlightPaths) {
-    //reset baseMarkers
-    $.each(baseMarkers, function(index, marker) {
-        marker.setIcon(marker.originalIcon)
-        marker.isBase = false
-        marker.setVisible(isShowMarker(marker, map.getZoom()))
-        marker.baseInfo = undefined
-        google.maps.event.clearListeners(marker, 'mouseover');
-        google.maps.event.clearListeners(marker, 'mouseout');
-
-    })
-    baseMarkers = []
-    var headquarterMarkerIcon = $("#map").data("headquarterMarker")
-    var baseMarkerIcon = $("#map").data("baseMarker")
-    $.each(newBaseAirports, function(key, baseAirport) {
-        var marker = markers[baseAirport.airportId]
-        if (baseAirport.headquarter) {
-            marker.setIcon(headquarterMarkerIcon)
-        } else {
-            marker.setIcon(baseMarkerIcon)
-        }
-        marker.setZIndex(999)
-        marker.isBase = true
-        marker.setVisible(true)
-        marker.baseInfo = baseAirport
-        var originalOpacity = marker.getOpacity()
-        marker.addListener('mouseover', function(event) {
-                    $.each(relatedFlightPaths, function(linkId, pathEntry) {
-                        var path = pathEntry.path
-                        var link = pathEntry.path.link
-                        if (!$(path).data("originalOpacity")) {
-                            $(path).data("originalOpacity", path.strokeOpacity)
-                        }
-                        if (link.fromAirportId != baseAirport.airportId || link.airlineId != baseAirport.airlineId) {
-                            path.setOptions({ strokeOpacity : 0.1 })
-                        } else {
-                            path.setOptions({ strokeOpacity : 0.8 })
-                        }
-                    })
-                })
-        marker.addListener('mouseout', function(event) {
-            $.each(relatedFlightPaths, function(linkId, pathEntry) {
-                var path = pathEntry.path
-                var originalOpacity = $(path).data("originalOpacity")
-                if (originalOpacity !== undefined) {
-                    path.setOptions({ strokeOpacity : originalOpacity })
-                }
-            })
-        })
-
-        baseMarkers.push(marker)
-    })
-
-    return baseMarkers
-}
-
-function updateAirportMarkers(airline) { //set different markers for head quarter and bases
-	if (!markers) { //markers not ready yet, wait
-		setTimeout(function() { updateAirportMarkers(airline) }, 100)
-	} else {
-	    if (airline) {
-		    updateAirportBaseMarkers(airline.baseAirports, flightPaths)
-		} else {
-            updateAirportBaseMarkers([])
-		}
+  // Reset existing base markers
+  $.each(baseMarkers, function (index, marker) {
+    marker.setIcon(marker.originalIcon || marker.options.icon);
+    marker.isBase = false;
+    marker.setOpacity(0.7);
+    if (!isShowMarker(marker, map.getZoom())) {
+      map.removeLayer(marker);
+    } else {
+      marker.addTo(map);
     }
+    marker.baseInfo = undefined;
+    marker.off('mouseover');
+    marker.off('mouseout');
+  });
+
+  baseMarkers = [];
+
+  // ✅ Extract the actual URLs, not the icon objects
+  const baseMarkerObj = $("#map").data("baseMarker");
+  const hqMarkerObj = $("#map").data("headquarterMarker");
+
+const baseIconUrl = $("#map").data("baseMarker")?.options?.iconUrl || "/assets/images/markers/base.png";
+const hqIconUrl = $("#map").data("headquarterMarker")?.options?.iconUrl || "/assets/images/markers/headquarter.png";
+
+  $.each(newBaseAirports, function (key, baseAirport) {
+    const marker = markers[baseAirport.airportId];
+    if (!marker) return;
+
+    // ✅ Select proper icon URL
+    const iconUrl = baseAirport.headquarter ? hqIconUrl : baseIconUrl;
+
+    // ✅ Build new Leaflet icon from URL string
+    const leafletIcon = L.icon({
+      iconUrl: iconUrl,   // <-- this is now a string, not an object
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -10],
+      className: 'airport-base-marker'
+    });
+
+    // ✅ Apply the new icon
+    marker.setIcon(leafletIcon);
+    marker.setZIndexOffset(999);
+    marker.isBase = true;
+    marker.baseInfo = baseAirport;
+    marker.setOpacity(1);
+    marker.addTo(map);
+
+    const originalOpacity = marker.options.opacity;
+
+    //Route Highlight on Hover Logic
+    marker.on('mouseover', function () {
+      $.each(relatedFlightPaths, function (linkId, pathEntry) {
+        const path = pathEntry.path;
+        const link = pathEntry.link; // ✅ fix: use the link reference we stored in rivals.js
+
+        if (!link) return; // guard just in case
+
+        if (!$(path).data("originalOpacity")) {
+          $(path).data("originalOpacity", path.options.opacity);
+        }
+
+        if (link.fromAirportId != baseAirport.airportId || link.airlineId != baseAirport.airlineId) {
+          path.setStyle({ opacity: 0.1 });
+        } else {
+          path.setStyle({ opacity: 0.8 });
+        }
+      });
+    });
+
+
+    marker.on('mouseout', function () {
+      $.each(relatedFlightPaths, function (linkId, pathEntry) {
+        const path = pathEntry.path;
+        const originalOpacity = $(path).data("originalOpacity");
+        if (originalOpacity !== undefined) {
+          path.setStyle({ opacity: originalOpacity });
+        }
+      });
+    });
+
+    baseMarkers.push(marker);
+  });
+
+  return baseMarkers;
 }
+
+
+
+function updateAirportMarkers(airline) {
+  if (!markers) {
+    setTimeout(function() { updateAirportMarkers(airline); }, 100);
+  } else {
+    if (airline) {
+      updateAirportBaseMarkers(airline.baseAirports, flightPaths);
+    } else {
+      updateAirportBaseMarkers([], []);
+    }
+  }
+}
+
 
 //airport links view
 
@@ -1382,25 +1426,29 @@ function hideAirportLinksView() {
 }
 
 function getAirportIcon(airportInfo) {
-    var largeAirportMarkerIcon = $("#map").data("largeAirportMarker")
-    var mediumAirportMarkerIcon = $("#map").data("mediumAirportMarker")
-    var smallAirportMarkerIcon = $("#map").data("smallAirportMarker")
-    var gatewayAirportMarkerIcon = $("#map").data("gatewayAirportMarker")
+  const largeIcon = $("#map").data("largeAirportMarker");
+  const mediumIcon = $("#map").data("mediumAirportMarker");
+  const smallIcon = $("#map").data("smallAirportMarker");
+  const gatewayIcon = $("#map").data("gatewayAirportMarker");
 
-    if (airportInfo.isGateway) {
-      icon = gatewayAirportMarkerIcon
-    } else if (airportInfo.size <= 3) {
-      icon = smallAirportMarkerIcon
-    } else if (airportInfo.size <= 6) {
-      icon = mediumAirportMarkerIcon
-    } else {
-      icon = largeAirportMarkerIcon
-    }
-    return icon
+  let iconObj;
+
+  if (airportInfo.isGateway) {
+    iconObj = gatewayIcon;
+  } else if (airportInfo.size <= 3) {
+    iconObj = smallIcon;
+  } else if (airportInfo.size <= 6) {
+    iconObj = mediumIcon;
+  } else {
+    iconObj = largeIcon;
+  }
+
+  // ✅ Always return the string URL
+  const iconUrl = iconObj?.options?.iconUrl || "/assets/images/markers/airport.png";
+  return iconUrl;
 }
-function hideInfoTooltip() {
-    $('#extraInfoTooltip').hide()
-}
+
+
 
 function showAppealBreakdown($parent, bonusDetails) {
     var rows = []

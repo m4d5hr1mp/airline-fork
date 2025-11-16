@@ -1,0 +1,80 @@
+package com.patson.data
+
+import com.patson.model._
+import java.sql.Connection
+import scala.collection.mutable.ListBuffer
+
+object LoungeFeatureSource {
+  private val TABLE = "lounge_feature"
+
+  def saveLoungeFeatures(lounge: Lounge, features: List[LoungeFeature]): Unit = {
+    val connection = Meta.getConnection()
+    try {
+      val deleteStatement = connection.prepareStatement(
+        s"DELETE FROM $TABLE WHERE airline_id = ? AND airport_id = ?"
+      )
+      deleteStatement.setInt(1, lounge.airline.id)
+      deleteStatement.setInt(2, lounge.airport.id)
+      deleteStatement.executeUpdate()
+      deleteStatement.close()
+
+      if (features.nonEmpty) {
+        val insertStatement = connection.prepareStatement(
+          s"INSERT INTO $TABLE (airline_id, airport_id, feature_type, installed_cycle, is_active) VALUES (?, ?, ?, ?, ?)"
+        )
+        features.foreach { feature =>
+          insertStatement.setInt(1, lounge.airline.id)
+          insertStatement.setInt(2, lounge.airport.id)
+          insertStatement.setString(3, feature.featureType.toString)
+          insertStatement.setInt(4, feature.installedCycle)
+          insertStatement.setBoolean(5, feature.isActive)
+          insertStatement.addBatch()
+        }
+        insertStatement.executeBatch()
+        insertStatement.close()
+      }
+    } finally {
+      connection.close()
+    }
+  }
+
+  def loadLoungeFeatures(lounge: Lounge): List[LoungeFeature] = {
+    val connection = Meta.getConnection()
+    val statement = connection.prepareStatement(
+      s"SELECT * FROM $TABLE WHERE airline_id = ? AND airport_id = ?"
+    )
+    statement.setInt(1, lounge.airline.id)
+    statement.setInt(2, lounge.airport.id)
+    val resultSet = statement.executeQuery()
+
+    val features = ListBuffer[LoungeFeature]()
+    while (resultSet.next()) {
+      val featureTypeStr = resultSet.getString("feature_type")
+      val featureType = LoungeFeatureType.withName(featureTypeStr)
+      val installedCycle = resultSet.getInt("installed_cycle")
+      val isActive = resultSet.getBoolean("is_active")
+      features += LoungeFeature(featureType, installedCycle, isActive)
+    }
+
+    resultSet.close()
+    statement.close()
+    connection.close()
+
+    features.toList
+  }
+
+  def deleteFeaturesByLounge(lounge: Lounge): Unit = {
+    val connection = Meta.getConnection()
+    try {
+      val statement = connection.prepareStatement(
+        s"DELETE FROM $TABLE WHERE airline_id = ? AND airport_id = ?"
+      )
+      statement.setInt(1, lounge.airline.id)
+      statement.setInt(2, lounge.airport.id)
+      statement.executeUpdate()
+      statement.close()
+    } finally {
+      connection.close()
+    }
+  }
+}

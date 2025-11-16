@@ -42,11 +42,33 @@ function showLinkHistoryView() {
 }
 
 function loadLinkHistory(linkId) {
-    $.each(historyPaths, function(index, path) { //clear all history path
-        path.setMap(null)
-        path.shadowPath.setMap(null)
-    })
-    historyPaths = {}
+    // 🧹 Clear all existing history paths safely (Leaflet version)
+    $.each(historyPaths, function(index, path) {
+        if (!path) return;
+
+        // Remove main path
+        if (typeof path.remove === 'function') {
+            path.remove();
+        } else if (map && map.hasLayer && map.hasLayer(path)) {
+            map.removeLayer(path);
+        }
+
+        // Remove shadow path if present
+        if (path.shadowPath) {
+            if (typeof path.shadowPath.remove === 'function') {
+                path.shadowPath.remove();
+            } else if (map && map.hasLayer && map.hasLayer(path.shadowPath)) {
+                map.removeLayer(path.shadowPath);
+            }
+        }
+    });
+
+    historyPaths = {};
+
+    // Optional: clear animation markers too
+    clearHistoryFlightMarkers();
+
+    // 🔽 everything from here stays the same
 	var linkInfo = loadedLinksById[linkId]
     var airlineNamesById = {}
     var cycleDelta = $('#linkHistoryControlPanel').data('cycleDelta')
@@ -75,7 +97,7 @@ function loadLinkHistory(linkId) {
                             if (!forwardTransitPaxByAirlineId[relatedLink.airlineId]) {
                                 forwardTransitPaxByAirlineId[relatedLink.airlineId] = relatedLink.passenger
                             } else {
-                                forwardTransitPaxByAirlineId[relatedLink.airlineId] = forwardTransitPaxByAirlineId[relatedLink.airlineId] + relatedLink.passenger
+                                forwardTransitPaxByAirlineId[relatedLink.airlineId] += relatedLink.passenger
                             }
                         }
                     })
@@ -88,7 +110,7 @@ function loadLinkHistory(linkId) {
                             if (!backwardTransitPaxByAirlineId[relatedLink.airlineId]) {
                                 backwardTransitPaxByAirlineId[relatedLink.airlineId] = relatedLink.passenger
                             } else {
-                                backwardTransitPaxByAirlineId[relatedLink.airlineId] = backwardTransitPaxByAirlineId[relatedLink.airlineId] + relatedLink.passenger
+                                backwardTransitPaxByAirlineId[relatedLink.airlineId] += relatedLink.passenger
                             }
                         }
                     })
@@ -127,13 +149,13 @@ function loadLinkHistory(linkId) {
 
                     $("#linkHistoryControlPanel .transitAirlineList").append(tableRow)
                 })
-
             }
+
             showLinkHistory(fromLinkCanvas)
         },
         error: function(jqXHR, textStatus, errorThrown) {
-                console.log(JSON.stringify(jqXHR));
-                console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
+            console.log(JSON.stringify(jqXHR));
+            console.log("AJAX error: " + textStatus + ' : ' + errorThrown);
         },
         beforeSend: function() {
             $('body .loadingSpinner').show()
@@ -145,6 +167,7 @@ function loadLinkHistory(linkId) {
 }
 
 
+
 function toggleLinkHistoryDirection(showForward, routeDiv) {
     routeDiv.siblings().removeClass("selected")
     routeDiv.addClass("selected")
@@ -153,330 +176,369 @@ function toggleLinkHistoryDirection(showForward, routeDiv) {
     showLinkHistory()
 }
 
+
 function hideLinkHistoryView() {
-	$.each(historyPaths, function(index, path) {
-	    path.setMap(null)
-	})
-    historyPaths = {}
+    // Remove all history paths from the map (Leaflet version)
+    $.each(historyPaths, function(index, path) {
+        // Each historyPath may have .polyline or multiple layers
+        if (path) {
+            // If this is a grouped object with main + shadow path
+            if (path.setMap) {
+                // Old safety for legacy compatibility
+                console.warn("Legacy setMap call skipped");
+            } else if (path.remove) {
+                // Leaflet polyline or marker
+                path.remove();
+            } else if (map.hasLayer(path)) {
+                map.removeLayer(path);
+            }
 
-	clearHistoryFlightMarkers()
-	updateLinksInfo() //redraw all flight paths
+            // Some implementations use {shadowPath, mainPath}
+            if (path.shadowPath) {
+                if (path.shadowPath.remove) {
+                    path.shadowPath.remove();
+                } else if (map.hasLayer(path.shadowPath)) {
+                    map.removeLayer(path.shadowPath);
+                }
+            }
+        }
+    });
 
-	$("#linkHistoryControlPanel").hide()
+    // Reset global structure
+    historyPaths = {};
 
-	if ($('.exitPaxMap').data("fromLinkCanvas")) {
-	    showLinksDetails()
-	}
+    // Clear any animated flight markers (Leaflet fix already applied earlier)
+    clearHistoryFlightMarkers();
+
+    // Redraw normal flight links on the main map
+    updateLinksInfo();
+
+    // Hide control panel
+    $("#linkHistoryControlPanel").hide();
+
+    // If we came from a link canvas view, restore it
+    if ($('.exitPaxMap').data("fromLinkCanvas")) {
+        showLinksDetails();
+    }
 }
+
 
 function drawLinkHistoryPath(link, inverted, watchedLinkId, step) {
-	var from = new google.maps.LatLng({lat: link.fromLatitude, lng: link.fromLongitude})
-	var to = new google.maps.LatLng({lat: link.toLatitude, lng: link.toLongitude})
-	var pathKey = link.fromAirportId + "|"  + link.toAirportId + "|" + inverted
+  const from = L.latLng(link.fromLatitude, link.fromLongitude);
+  const to = L.latLng(link.toLatitude, link.toLongitude);
+  const pathKey = link.fromAirportId + "|" + link.toAirportId + "|" + inverted;
+  const isWatchedLink = link.linkId === watchedLinkId;
 
-	var lineSymbol = {
-	    path: google.maps.SymbolPath.FORWARD_OPEN_ARROW
-	};
+  let relatedPath;
 
-	var isWatchedLink = link.linkId == watchedLinkId
+  // create new path if not already stored
+  if (!historyPaths[pathKey]) {
+    relatedPath = L.polyline([from, to], {
+      color: "#DC83FC",
+      weight: 2,
+      opacity: 0.8,
+      smoothFactor: 1,
+      interactive: true,
+    });
 
-	var relatedPath
-	if (!historyPaths[pathKey]) {
-		relatedPath = new google.maps.Polyline({
-			 geodesic: true,
-		     strokeColor: "#DC83FC",
-		     strokeOpacity: 0.8,
-		     strokeWeight: 2,
-		     path: [from, to],
-		     icons: [{
-			      icon: lineSymbol,
-			      offset: '50%'
-			    }],
-		     zIndex : 1100,
-		     inverted : inverted,
-		     watched : isWatchedLink,
-		     step : step
-		});
+    // transparent shadow layer for mouse events
+    const shadowPath = L.polyline([from, to], {
+      color: "#000000",
+      opacity: 0.0001,
+      weight: 25,
+      interactive: true,
+    });
 
-		shadowPath = new google.maps.Polyline({
-			 geodesic: true,
-		     strokeOpacity: 0.0001,
-		     strokeWeight: 25,
-		     path: [from, to],
-		     zIndex : 401,
-		     inverted : inverted,
-		     link : link,
-		     thisAirlinePassengers : 0,
-		     thisAlliancePassengers : 0,
-		     otherAirlinePassengers : 0
-		});
+    // attach metadata
+    shadowPath.link = link;
+    relatedPath.shadowPath = shadowPath;
+    relatedPath.inverted = inverted;
+    relatedPath.watched = isWatchedLink;
+    relatedPath.step = step;
 
-		relatedPath.shadowPath = shadowPath
+    shadowPath.link = link;
+    shadowPath.inverted = inverted;
+    shadowPath.thisAirlinePassengers = 0;
+    shadowPath.thisAlliancePassengers = 0;
+    shadowPath.otherAirlinePassengers = 0;
 
-		historyPaths[pathKey] = relatedPath
-	} else {
-		relatedPath = historyPaths[pathKey]
-	}
+    historyPaths[pathKey] = relatedPath;
+  } else {
+    relatedPath = historyPaths[pathKey];
+  }
 
-	if (link.airlineId == activeAirline.id) {
-		relatedPath.shadowPath.thisAirlinePassengers += link.passenger
-	} else if (currentAirlineAllianceMembers.length > 0 && $.inArray(link.airlineId, currentAirlineAllianceMembers) != -1) {
-		relatedPath.shadowPath.thisAlliancePassengers += link.passenger
-	} else {
-		relatedPath.shadowPath.otherAirlinePassengers += link.passenger
-	}
+  // passenger counting
+  if (link.airlineId === activeAirline.id) {
+    relatedPath.shadowPath.thisAirlinePassengers += link.passenger;
+  } else if (
+    currentAirlineAllianceMembers.length > 0 &&
+    $.inArray(link.airlineId, currentAirlineAllianceMembers) !== -1
+  ) {
+    relatedPath.shadowPath.thisAlliancePassengers += link.passenger;
+  } else {
+    relatedPath.shadowPath.otherAirlinePassengers += link.passenger;
+  }
 }
 
-function clearHistoryFlightMarkers() {
-    $.each(historyFlightMarkers, function(index, markersOnAStep) {
-        $.each(markersOnAStep, function(index, marker) {
-        //window.clearInterval(marker.animation)
-    	    marker.setMap(null)
-        })
-    })
-    historyFlightMarkers = []
 
-    if (historyFlightMarkerAnimation) {
-        window.clearInterval(historyFlightMarkerAnimation)
-        historyFlightMarkerAnimation = null
-    }
+function clearHistoryFlightMarkers() {
+  $.each(historyFlightMarkers, function (index, markersOnAStep) {
+    $.each(markersOnAStep, function (index, marker) {
+      map.removeLayer(marker);
+    });
+  });
+  historyFlightMarkers = [];
+
+  if (historyFlightMarkerAnimation) {
+    window.clearInterval(historyFlightMarkerAnimation);
+    historyFlightMarkerAnimation = null;
+  }
 }
 var historyFlightMarkerAnimation
 
+
 function animateHistoryFlightMarkers(framesPerAnimation) {
-    var currentStep = 0
-    var currentFrame = 0
-    var animationInterval = 50
-    historyFlightMarkerAnimation = window.setInterval(function() {
-        $.each(historyFlightMarkers[currentStep], function(index, marker) {
-            if (!marker.isActive) {
-                marker.isActive = true
-                marker.elapsedDuration = 0
-                marker.setPosition(marker.from)
-                marker.setMap(map)
-            } else  {
-                marker.elapsedDuration += 1
+  let currentStep = 0;
+  let currentFrame = 0;
+  const animationInterval = 50;
 
-                if (marker.elapsedDuration == marker.totalDuration) { //arrived
-                    marker.isActive = false
-                    //console.log("next departure " + marker.nextDepartureFrame)
-                } else {
-                    var newPosition = google.maps.geometry.spherical.interpolate(marker.from, marker.to, marker.elapsedDuration / marker.totalDuration)
-                    marker.setPosition(newPosition)
-                }
-            }
-  		})
-  		if (currentFrame == framesPerAnimation) {
-      	   fadeOutMarkers(historyFlightMarkers[currentStep], animationInterval)
-  		   currentStep = (++ currentStep) % historyFlightMarkers.length
-           currentFrame = 0
+  historyFlightMarkerAnimation = window.setInterval(function () {
+    $.each(historyFlightMarkers[currentStep], function (index, marker) {
+      if (!marker.isActive) {
+        marker.isActive = true;
+        marker.elapsedDuration = 0;
+        marker.setLatLng(marker.from);
+        marker.addTo(map);
+      } else {
+        marker.elapsedDuration += 1;
+        if (marker.elapsedDuration >= marker.totalDuration) {
+          marker.isActive = false;
         } else {
-           currentFrame ++
+          const t = marker.elapsedDuration / marker.totalDuration;
+          const newPos = L.latLng(
+            marker.from.lat + (marker.to.lat - marker.from.lat) * t,
+            marker.from.lng + (marker.to.lng - marker.from.lng) * t
+          );
+          marker.setLatLng(newPos);
         }
-    }, animationInterval)
+      }
+    });
 
+    if (currentFrame === framesPerAnimation) {
+      fadeOutMarkers(historyFlightMarkers[currentStep], animationInterval);
+      currentStep = (currentStep + 1) % historyFlightMarkers.length;
+      currentFrame = 0;
+    } else {
+      currentFrame++;
+    }
+  }, animationInterval);
 }
 
+
 function fadeOutMarkers(markers, animationInterval) {
-    var opacity = 1.0
-    var animation = window.setInterval(function () {
-        if (opacity <= 0) {
-            $.each(markers, function(index, marker) {
-                marker.setMap(null)
-                marker.setOpacity(1)
-            })
-            window.clearInterval(animation)
-        } else {
-            $.each(markers, function(index, marker) {
-                marker.setOpacity(opacity)
-            })
-            opacity -= 0.1
+  let opacity = 1.0;
+  const fadeStep = 0.1;
+  const fadeTimer = window.setInterval(function () {
+    if (opacity <= 0) {
+      $.each(markers, function (index, marker) {
+        map.removeLayer(marker); // ✅ removes marker from map
+        // reset icon opacity for reuse
+        if (marker._icon) {
+          marker._icon.style.opacity = 1.0;
         }
-    }, animationInterval)
+      });
+      window.clearInterval(fadeTimer);
+    } else {
+      $.each(markers, function (index, marker) {
+        if (marker._icon) {
+          marker._icon.style.opacity = opacity; // ✅ fade by setting CSS opacity
+        }
+      });
+      opacity -= fadeStep;
+    }
+  }, animationInterval);
 }
 
 
 function drawHistoryFlightMarker(line, framesPerAnimation, totalPassengers) {
-	if (currentAnimationStatus) {
-		var from = line.getPath().getAt(0)
-		var to = line.getPath().getAt(1)
-		var icon
-        if (totalPassengers > 200) {
-	       icon = "dot-5.png"
-        } else if (totalPassengers > 100) {
-           icon = "dot-4.png"
-        } else if (totalPassengers > 50) {
-           icon = "dot-3.png"
-        } else if (totalPassengers > 25) {
-           icon = "dot-2.png"
-        } else {
-           icon = "dot-1.png"
-        }
+  if (currentAnimationStatus) {
+    const from = line.getLatLngs()[0];
+    const to = line.getLatLngs()[1];
+    let iconName;
 
-		var image = {
-	        url: "assets/images/markers/" + icon,
-	        origin: new google.maps.Point(0, 0),
-	        anchor: new google.maps.Point(6, 6),
-	    };
+    if (totalPassengers > 200) iconName = "dot-5.png";
+    else if (totalPassengers > 100) iconName = "dot-4.png";
+    else if (totalPassengers > 50) iconName = "dot-3.png";
+    else if (totalPassengers > 25) iconName = "dot-2.png";
+    else iconName = "dot-1.png";
 
-        var marker = new google.maps.Marker({
-            position: from,
-            from : from,
-            to : to,
-            icon : image,
-            elapsedDuration : 0,
-            totalDuration : framesPerAnimation,
-            isActive: false,
-            clickable: false
-        });
+    const marker = L.marker(from, {
+      icon: L.icon({
+        iconUrl: "assets/images/markers/" + iconName,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+      }),
+      interactive: false,
+    });
 
-        //flightMarkers.push(marker)
-        var step = line.step
-        var historyFlightMarkersOfThisStep = historyFlightMarkers[step]
-        if (!historyFlightMarkersOfThisStep) {
-            historyFlightMarkersOfThisStep = []
-            historyFlightMarkers[step] = historyFlightMarkersOfThisStep
-        }
-        historyFlightMarkersOfThisStep.push(marker)
-	}
+    marker.from = from;
+    marker.to = to;
+    marker.elapsedDuration = 0;
+    marker.totalDuration = framesPerAnimation;
+    marker.isActive = false;
+
+    const step = line.step;
+    if (!historyFlightMarkers[step]) historyFlightMarkers[step] = [];
+    historyFlightMarkers[step].push(marker);
+  }
 }
-
-
 
 
 function showLinkHistory() {
-    var showAlliance = $("#linkHistoryControlPanel .showAlliance").is(":checked")
-    var showOther = $("#linkHistoryControlPanel .showOther").is(":checked")
-    var showForward = $("#linkHistoryControlPanel").data("showForward")
-    var showAnimation = $("#linkHistoryControlPanel .showAnimation").is(":checked")
+  const controlPanel = $("#linkHistoryControlPanel");
+  const showAlliance = controlPanel.find(".showAlliance").is(":checked");
+  const showOther = controlPanel.find(".showOther").is(":checked");
+  const showForward = controlPanel.data("showForward");
+  const showAnimation = controlPanel.find(".showAnimation").is(":checked");
+  const cycleDelta = controlPanel.data("cycleDelta");
 
-    var cycleDelta = $("#linkHistoryControlPanel").data('cycleDelta')
-    $("#linkHistoryControlPanel .cycleDeltaText").text(cycleDelta * -1 + 1)
-    var disablePrev = false
-    var disableNext= false
-    if (cycleDelta <= -29) {
-        disablePrev = true
-    } else if (cycleDelta >= 0) {
-        disableNext = true
-    }
+  controlPanel.find(".cycleDeltaText").text(cycleDelta * -1 + 1);
 
-    $("#linkHistoryControlPanel img.prev").prop("onclick", null).off("click");
-    if (disablePrev) {
-        $('#linkHistoryControlPanel img.prev').attr("src", "assets/images/icons/arrow-180-grey.png")
-        $('#linkHistoryControlPanel img.prev').removeClass('clickable')
+  let disablePrev = cycleDelta <= -29;
+  let disableNext = cycleDelta >= 0;
+
+  // Update navigation arrows
+  const prevImg = controlPanel.find("img.prev");
+  prevImg.off("click");
+  if (disablePrev) {
+    prevImg.attr("src", "assets/images/icons/arrow-180-grey.png").removeClass("clickable");
+  } else {
+    prevImg.attr("src", "assets/images/icons/arrow-180.png").addClass("clickable");
+    prevImg.on("click", function () {
+      controlPanel.data("cycleDelta", controlPanel.data("cycleDelta") - 1);
+      loadLinkHistory(selectedLink);
+    });
+  }
+
+  const nextImg = controlPanel.find("img.next");
+  nextImg.off("click");
+  if (disableNext) {
+    nextImg.attr("src", "assets/images/icons/arrow-grey.png").removeClass("clickable");
+  } else {
+    nextImg.attr("src", "assets/images/icons/arrow.png").addClass("clickable");
+    nextImg.on("click", function () {
+      controlPanel.data("cycleDelta", controlPanel.data("cycleDelta") + 1);
+      loadLinkHistory(selectedLink);
+    });
+  }
+
+  // Show forward/backward tables
+  controlPanel.find(".transitAirlineList .table-row").hide();
+  if (showForward) {
+    controlPanel.find(".transitAirlineList .table-row.forward").show();
+  } else {
+    controlPanel.find(".transitAirlineList .table-row.backward").show();
+  }
+
+  const framesPerAnimation = 50;
+  clearHistoryFlightMarkers();
+
+  $.each(historyPaths, function (key, historyPath) {
+    const shadow = historyPath.shadowPath;
+    const visibleDirection =
+      (showForward && !historyPath.inverted) || (!showForward && historyPath.inverted);
+    const shouldShow =
+      visibleDirection &&
+      (shadow.thisAirlinePassengers > 0 ||
+        (showAlliance && shadow.thisAlliancePassengers > 0) ||
+        (showOther && shadow.otherAirlinePassengers));
+
+    if (shouldShow) {
+      const totalPassengers =
+        shadow.thisAirlinePassengers +
+        shadow.thisAlliancePassengers +
+        shadow.otherAirlinePassengers;
+
+      // Adjust opacity by passenger count
+      if (totalPassengers < 100 && !historyPath.watched) {
+        const newOpacity = 0.2 + (totalPassengers / 100) * (0.8 - 0.2);
+        historyPath.setStyle({ opacity: newOpacity });
+      }
+
+      // Define hover popup behaviour
+      shadow.on("mouseover", function (event) {
+        const link = this.link;
+
+        $("#linkHistoryPopupFrom").html(
+          getCountryFlagImg(link.fromCountryCode) +
+            getAirportText(link.fromAirportCity, link.fromAirportCode)
+        );
+        $("#linkHistoryPopupTo").html(
+          getCountryFlagImg(link.toCountryCode) +
+            getAirportText(link.toAirportCity, link.toAirportCode)
+        );
+        $("#linkHistoryThisAirlinePassengers").text(this.thisAirlinePassengers);
+
+        if (showAlliance) {
+          $("#linkHistoryThisAlliancePassengers").text(this.thisAlliancePassengers);
+          $("#linkHistoryThisAlliancePassengers").closest(".table-row").show();
+        } else {
+          $("#linkHistoryThisAlliancePassengers").closest(".table-row").hide();
+        }
+
+        if (showOther) {
+          $("#linkHistoryOtherAirlinePassengers").text(this.otherAirlinePassengers);
+          $("#linkHistoryOtherAirlinePassengers").closest(".table-row").show();
+        } else {
+          $("#linkHistoryOtherAirlinePassengers").closest(".table-row").hide();
+        }
+
+        // Clone popup template
+        const popupContent = $("#linkHistoryPopup").clone().show()[0];
+        L.popup({ maxWidth: 400, closeButton: false })
+          .setLatLng(event.latlng)
+          .setContent(popupContent)
+          .openOn(map);
+
+        highlightPath(historyPath, false);
+      });
+
+      shadow.on("mouseout", function () {
+        map.closePopup();
+        if (!historyPath.watched) {
+          unhighlightPath(historyPath);
+        }
+      });
+
+      // Color based on airline type
+      if (shadow.thisAirlinePassengers > 0) {
+        historyPath.setStyle({ color: "#DC83FC" });
+      } else if (showAlliance && shadow.thisAlliancePassengers > 0) {
+        historyPath.setStyle({ color: "#E28413" });
+      } else {
+        historyPath.setStyle({ color: "#888888" });
+      }
+
+      // Highlight watched link
+      if (historyPath.watched) {
+        highlightPath(historyPath);
+      }
+
+      // Animate markers
+      if (showAnimation) {
+        drawHistoryFlightMarker(historyPath, framesPerAnimation, totalPassengers);
+      }
+
+      historyPath.addTo(map);
+      shadow.addTo(map);
+      polylines.push(historyPath, shadow);
     } else {
-        $('#linkHistoryControlPanel img.prev').attr("src", "assets/images/icons/arrow-180.png")
-        $('#linkHistoryControlPanel img.prev').addClass('clickable')
-        $("#linkHistoryControlPanel img.prev").click(function() {
-            $("#linkHistoryControlPanel").data('cycleDelta', $("#linkHistoryControlPanel").data('cycleDelta') - 1)
-            loadLinkHistory(selectedLink)
-        })
+      map.removeLayer(historyPath);
+      map.removeLayer(shadow);
     }
+  });
 
-    $("#linkHistoryControlPanel img.next").prop("onclick", null).off("click");
-    if (disableNext) {
-        $('#linkHistoryControlPanel img.next').attr("src", "assets/images/icons/arrow-grey.png")
-        $('#linkHistoryControlPanel img.next').removeClass('clickable')
-        $("#linkHistoryControlPanel img.next").prop("onclick", null).off("click");
-    } else {
-        $('#linkHistoryControlPanel img.next').attr("src", "assets/images/icons/arrow.png")
-        $('#linkHistoryControlPanel img.next').addClass('clickable')
-        $("#linkHistoryControlPanel img.next").click(function() {
-            $("#linkHistoryControlPanel").data('cycleDelta', $("#linkHistoryControlPanel").data('cycleDelta') + 1)
-            loadLinkHistory(selectedLink)
-        })
-    }
-
-    $("#linkHistoryControlPanel .transitAirlineList .table-row").hide()
-    if (showForward) {
-        $("#linkHistoryControlPanel .transitAirlineList .table-row.forward").show()
-    } else {
-        $("#linkHistoryControlPanel .transitAirlineList .table-row.backward").show()
-    }
-
-    var framesPerAnimation = 50
-    clearHistoryFlightMarkers()
-    $.each(historyPaths, function(key, historyPath) {
-        if (((showForward && !historyPath.inverted) || (!showForward && historyPath.inverted))  //match direction
-        && (historyPath.shadowPath.thisAirlinePassengers > 0
-         || (showAlliance && historyPath.shadowPath.thisAlliancePassengers > 0)
-         || (showOther && historyPath.shadowPath.otherAirlinePassengers))) {
-            var totalPassengers = historyPath.shadowPath.thisAirlinePassengers + historyPath.shadowPath.thisAlliancePassengers + historyPath.shadowPath.otherAirlinePassengers
-            if (totalPassengers < 100) {
-                var newOpacity = 0.2 + totalPassengers / 100 * (historyPath.strokeOpacity - 0.2)
-                if (!historyPath.watched) {
-                    historyPath.setOptions({strokeOpacity : newOpacity})
-                }
-            }
-            var infowindow;
-            historyPath.shadowPath.addListener('mouseover', function(event) {
-                var link = this.link
-
-                $("#linkHistoryPopupFrom").html(getCountryFlagImg(link.fromCountryCode) + getAirportText(link.fromAirportCity, link.fromAirportCode))
-                $("#linkHistoryPopupTo").html(getCountryFlagImg(link.toCountryCode) + getAirportText(link.toAirportCity, link.toAirportCode))
-                $("#linkHistoryThisAirlinePassengers").text(this.thisAirlinePassengers)
-                if (showAlliance) {
-                    $("#linkHistoryThisAlliancePassengers").text(this.thisAlliancePassengers)
-                    $("#linkHistoryThisAlliancePassengers").closest(".table-row").show()
-                } else {
-                    $("#linkHistoryThisAlliancePassengers").closest(".table-row").hide()
-                }
-                if (showOther) {
-                    $("#linkHistoryOtherAirlinePassengers").text(this.otherAirlinePassengers)
-                    $("#linkHistoryOtherAirlinePassengers").closest(".table-row").show()
-                 } else {
-                    $("#linkHistoryOtherAirlinePassengers").closest(".table-row").hide()
-                 }
-
-                infowindow = new google.maps.InfoWindow({
-                     maxWidth : 400});
-
-                var popup = $("#linkHistoryPopup").clone()
-    			popup.show()
-                infowindow.setContent(popup[0])
-
-                infowindow.setPosition(event.latLng);
-                infowindow.open(map);
-
-                highlightPath(historyPath, false)
-            })
-            historyPath.shadowPath.addListener('mouseout', function(event) {
-                infowindow.close()
-                if (!historyPath.watched) { //do not unhighlight if it's watched link
-                    unhighlightPath(historyPath)
-                }
-            })
-
-
-            if (historyPath.shadowPath.thisAirlinePassengers > 0) {
-                historyPath.setOptions({strokeColor: "#DC83FC"})
-            } else if (showAlliance && historyPath.shadowPath.thisAlliancePassengers > 0) {
-                historyPath.setOptions({strokeColor: "#E28413"})
-            } else {
-                historyPath.setOptions({strokeColor: "#888888"})
-            }
-
-
-            if (historyPath.watched) {
-                highlightPath(historyPath)
-            }
-
-            if (showAnimation) {
-                drawHistoryFlightMarker(historyPath, framesPerAnimation, totalPassengers)
-            }
-
-            historyPath.setMap(map)
-            historyPath.shadowPath.setMap(map)
-            polylines.push(historyPath)
-            polylines.push(historyPath.shadowPath)
-         } else {
-            historyPath.setMap(null)
-            historyPath.shadowPath.setMap(null)
-         }
-    })
-    if (showAnimation) {
-        animateHistoryFlightMarkers(framesPerAnimation)
-    }
-
+  if (showAnimation) {
+    animateHistoryFlightMarkers(framesPerAnimation);
+  }
 }
-

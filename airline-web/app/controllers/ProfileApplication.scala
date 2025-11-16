@@ -31,8 +31,8 @@ class ProfileApplication @Inject()(cc: ControllerComponents) extends AbstractCon
     }
   }
 
-  val BASE_CAPITAL = 40000000
-  val BONUS_PER_DIFFICULTY_POINT = 1000000
+  val BASE_CAPITAL = 750_000_000
+  val BONUS_PER_DIFFICULTY_POINT = 10_000_000
 
   def generateAirplanes(value : Int, capacityRange : scala.collection.immutable.Range, homeAirport : Airport, condition : Double, airline : Airline, random : Random) : List[Airplane] =  {
     val eligibleModels = allAirplaneModels.filter(model => capacityRange.contains(model.capacity))
@@ -68,26 +68,97 @@ class ProfileApplication @Inject()(cc: ControllerComponents) extends AbstractCon
   def generateProfiles(airline : Airline, airport : Airport) : List[Profile] = {
     val difficulty = airport.rating.overallDifficulty
     val capital = BASE_CAPITAL + difficulty * BONUS_PER_DIFFICULTY_POINT
-
     val profiles = ListBuffer[Profile]()
-    val cashProfile = Profile(name = "Entrepreneurial spirit", description = "You have sold all your assets to create this new airline of your dream! Plan carefully but make bold moves to thrive in this brave new world. Recommended for new players.", cash = capital, airport = airport)
-    profiles.append(cashProfile)
     val random = new Random(airport.id)
-    val smallAirplanes = generateAirplanes(capital, (15 to 50), airport, 90, airline, random)
-    if (!smallAirplanes.isEmpty) {
-      val smallAirplaneProfile = Profile(
-        name = "A humble beginning",
-        description = "A newly acquired airline with a modest aircraft fleet of young age. Grow this humble airline into the most powerful and respected brand in the aviation world!",
-        cash = (capital * 1.5).toInt - smallAirplanes.map(_.value).sum +  difficulty * BONUS_PER_DIFFICULTY_POINT / 2,
-        airport = airport,
-        reputation = 10,
-        airplanes = smallAirplanes,
-        loan = Some(Bank.getLoanOptions((capital * 1).toInt, BASE_INTEREST_RATE, CycleSource.loadCycle()).last.copy(airlineId = airline.id)))
+    val currentCycle = CycleSource.loadCycle()
+    val condition = 95.0 // High condition for young, premium starter fleet
+    val planeBudgetMultiplier = 2.0
+    val cashMultiplier = 3.0
+    val planeBudget = (capital * planeBudgetMultiplier).toInt
+    val valueSmall = planeBudget / 2
+    val valueBig = planeBudget - valueSmall
+    val smallRange = 76 to 134
+    val bigRange = 135 to 212
 
+    // Filter eligible models for small category (76-134 pax)
+    val eligibleSmall = allAirplaneModels.filter(model => smallRange.contains(model.capacity))
+      .filter(model => model.purchasableWithRelationship(allCountryRelationships.getOrElse((airport.countryCode, model.countryCode), 0)))
+      .filter(model => model.price * condition / Airplane.MAX_CONDITION <= valueSmall / 3)
+      .filter(model => model.runwayRequirement <= airport.runwayLength)
+    val countrySmall = eligibleSmall.filter(_.countryCode == airport.countryCode)
+    val selectedSmallModel = if (eligibleSmall.nonEmpty) {
+      val candidates = if (countrySmall.nonEmpty) countrySmall else eligibleSmall
+      Some(candidates.maxBy(_.capacity)) // Select biggest (max capacity) model
+    } else None
 
-      profiles.append(smallAirplaneProfile)
+    // Generate small airplanes
+    val smallAirplanes = selectedSmallModel match {
+      case Some(model) =>
+        val amount = valueSmall / model.price
+        val age = (Airplane.MAX_CONDITION - condition) / (Airplane.MAX_CONDITION.toDouble / model.lifespan)
+        val constructedCycle = Math.max(0, currentCycle - age.toInt)
+        (0 until amount).map { _ =>
+          Airplane(model, airline, constructedCycle, constructedCycle, condition, depreciationRate = 0,
+            value = (model.price * condition / Airplane.MAX_CONDITION).toInt, home = airport)
+        }.toList
+      case None => List.empty
     }
 
+    // Filter eligible models for big category (135-212 pax)
+    val eligibleBig = allAirplaneModels.filter(model => bigRange.contains(model.capacity))
+      .filter(model => model.purchasableWithRelationship(allCountryRelationships.getOrElse((airport.countryCode, model.countryCode), 0)))
+      .filter(model => model.price * condition / Airplane.MAX_CONDITION <= valueBig / 3)
+      .filter(model => model.runwayRequirement <= airport.runwayLength)
+    val countryBig = eligibleBig.filter(_.countryCode == airport.countryCode)
+    val selectedBigModel = if (eligibleBig.nonEmpty) {
+      val candidates = if (countryBig.nonEmpty) countryBig else eligibleBig
+      Some(candidates(random.nextInt(candidates.length))) // Select random model
+    } else None
+
+    // Generate big airplanes
+    val bigAirplanes = selectedBigModel match {
+      case Some(model) =>
+        val amount = valueBig / model.price
+        val age = (Airplane.MAX_CONDITION - condition) / (Airplane.MAX_CONDITION.toDouble / model.lifespan)
+        val constructedCycle = Math.max(0, currentCycle - age.toInt)
+        (0 until amount).map { _ =>
+          Airplane(model, airline, constructedCycle, constructedCycle, condition, depreciationRate = 0,
+            value = (model.price * condition / Airplane.MAX_CONDITION).toInt, home = airport)
+        }.toList
+      case None => List.empty
+    }
+
+    val airplanes = smallAirplanes ++ bigAirplanes
+    val totalPlaneValue = airplanes.map(_.value).sum
+    val entrepreneurialCash = (capital * cashMultiplier).toInt - totalPlaneValue + (difficulty * BONUS_PER_DIFFICULTY_POINT / 2).toInt
+
+    // Updated "Entrepreneurial spirit" profile with custom fleet, reputation 100, no loan
+    val entrepreneurialProfile = Profile(
+      name = "Entrepreneurial spirit",
+      description = "You channel your entrepreneurial spirit into a prime starter fleet of efficient small and medium aircraft, exceptional reputation, and generous cash reserves. Plan carefully but make bold moves to thrive in this brave new world. Recommended for new players.",
+      cash = entrepreneurialCash,
+      airport = airport,
+      reputation = 100,
+      airplanes = airplanes
+      // No loan, as per original
+    )
+    profiles.append(entrepreneurialProfile)
+
+    // Existing "A humble beginning" profile (unchanged)
+    val humbleAirplanes = generateAirplanes(capital, (90 to 180), airport, 90, airline, random)
+    if (!humbleAirplanes.isEmpty) {
+      val humbleAirplaneProfile = Profile(
+        name = "A humble beginning",
+        description = "A newly acquired airline with a modest aircraft fleet of young age. Grow this humble airline into the most powerful and respected brand in the aviation world!",
+        cash = (capital * 1.5).toInt - humbleAirplanes.map(_.value).sum + difficulty * BONUS_PER_DIFFICULTY_POINT / 2,
+        airport = airport,
+        reputation = 10,
+        airplanes = humbleAirplanes,
+        loan = Some(Bank.getLoanOptions((capital * 1).toInt, BASE_INTEREST_RATE, CycleSource.loadCycle()).last.copy(airlineId = airline.id)))
+      profiles.append(humbleAirplaneProfile)
+    }
+
+    // Existing "Revival of past glory" profile (unchanged)
     val largeAirplanes = generateAirplanes(capital * 3, (70 to 200), airport, 70, airline, random)
     if (!largeAirplanes.isEmpty) {
       val largeAirplaneProfile = Profile(

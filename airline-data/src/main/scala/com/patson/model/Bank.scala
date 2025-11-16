@@ -9,13 +9,16 @@ import com.patson.data.AirplaneSource
 object Bank {
   //val LOAN_TERMS = Map(52 -> 0.25 , 2 * 52 -> 0.28, 3 *52 -> 0.32, 5 * 52 -> 0.35)
   val WEEKS_PER_YEAR = 52
-  val LOAN_TERMS = List[Int](WEEKS_PER_YEAR, 2 * WEEKS_PER_YEAR, 3 * WEEKS_PER_YEAR, 4 * WEEKS_PER_YEAR, 5 * WEEKS_PER_YEAR)
+  val LOAN_TERMS = List[Int](2 * WEEKS_PER_YEAR, 4 * WEEKS_PER_YEAR, 6 * WEEKS_PER_YEAR, 12 * WEEKS_PER_YEAR)
   val MAX_LOANS = 10
-  val MIN_LOAN_AMOUNT = 10000
-  val MAX_LOAN_AMOUNT = 500000000 //500 million as max
+  val MIN_LOAN_AMOUNT = 10_000_000
+  val MAX_LOAN_AMOUNT = 2_000_000_000 //2 Bil. max loan 
   val LOAN_REAPPLY_MIN_INTERVAL = 13 //only every quarter
   def getMaxLoan(airlineId : Int) : LoanReply = {
     val existingLoans = BankSource.loadLoansByAirline(airlineId)
+
+    println(s"[DEBUG] Active MAX_LOAN_AMOUNT = $MAX_LOAN_AMOUNT")
+
     
     if (existingLoans.size >= MAX_LOANS) {
       return LoanReply(0, Some("Only up to " + MAX_LOANS + " loans are allowed"))
