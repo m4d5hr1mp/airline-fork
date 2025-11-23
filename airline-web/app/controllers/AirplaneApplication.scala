@@ -294,7 +294,7 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
     airplanesCountByOwner.get(airlineId) match {
       case Some(count) =>
         val ownershipPercentage = count * 100.0 / airplanes.length
-        if (ownershipPercentage >= ModelDiscount.MAKE_FAVORITE_PERCENTAGE_THRESHOLD) {
+        if (ownershipPercentage >= ModelDiscount.FAVORITE_PERCENTAGE_THRESHOLD) {
           ModelSource.loadFavoriteModelId(airlineId) match {
             case Some((favoriteModelId, startCycle)) =>
               if (favoriteModelId == modelId) {
@@ -313,7 +313,7 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
 
         } else {
 
-          Left(s"Cannot set ${model.name} as Favorite as you do not own at least ${ModelDiscount.MAKE_FAVORITE_PERCENTAGE_THRESHOLD}% of this model in circulation. You currently own ${BigDecimal(ownershipPercentage).setScale(2, BigDecimal.RoundingMode.HALF_UP)}%")
+          Left(s"Cannot set ${model.name} as Favorite as you do not own at least ${ModelDiscount.FAVORITE_PERCENTAGE_THRESHOLD}% of this model in circulation. You currently own ${BigDecimal(ownershipPercentage).setScale(2, BigDecimal.RoundingMode.HALF_UP)}%")
         }
       case None => Left(s"Cannot set ${model.name} as Favorite as you do not own any airplane of this model.")
     }

@@ -14,7 +14,7 @@ object Issue485ReplaceGenericTransitPatcher extends App {
 
   def mainFlow() {
     compensateShuttleService()
-    GenericTransitGenerator.generateGenericTransit(4000, 50)
+    GenericTransitGenerator.generateGenericTransit()
   }
 
   def compensateShuttleService() = {

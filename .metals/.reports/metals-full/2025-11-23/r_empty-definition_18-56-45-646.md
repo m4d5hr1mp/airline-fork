@@ -1,3 +1,19 @@
+error id: file://<WORKSPACE>/airline-data/src/main/scala/com/patson/init/GenericTransitGenerator.scala:`<none>`.
+file://<WORKSPACE>/airline-data/src/main/scala/com/patson/init/GenericTransitGenerator.scala
+empty definition using pc, found symbol in pc: `<none>`.
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+	 -com/patson/data/airport.
+	 -com/patson/data/airplane/airport.
+	 -com/patson/model/airport.
+	 -com/patson/model/airplane/airport.
+	 -airport.
+	 -scala/Predef.airport.
+offset: 5524
+uri: file://<WORKSPACE>/airline-data/src/main/scala/com/patson/init/GenericTransitGenerator.scala
+text:
+```scala
 package com.patson.init
 
 import com.patson.{Authentication, DemandGenerator, Util}
@@ -236,13 +252,12 @@ object GenericTransitGenerator {
     
     for (airport <- airports) {
       val range = {
-        if (airport.size >= 10) 100
-        else if (airport.size >= 9) 90
-        else if (airport.size >= 8) 80
-        else if (airport.size >= 7) 70
-        else if (airport.size >= 7) 60
-        else 50
+        if (List("CDG", "IST", "ATL", "DEN", "DFW", "ORD", "SFO", "NRT", "PEK", "ICN", "PVG", "SYD").contains(airport.iata)) 240
+        else if (List("MEX", "BLR", "HYD", "BOM", "MUC", "TFU", "YYZ", "YVR", "YYC", "YUL", "LAS", "BOS", "SEA", "PHX", "MSP", "FCO", "NCE", "BCN", "FRA", "ARN", "LHR", "MAN", "MXP", "WAW").contains(airport.iata)) 160
+        else if (@@airport.size >= 6) 105
+        else 65
       }
+      if (airport.size >= 7) 120 else 65
       val boundaryLongitude = calculateLongitudeBoundary(airport.latitude, airport.longitude, range)
       val airportsInRange = scala.collection.mutable.ListBuffer[(Airport, Double)]()
       
@@ -270,8 +285,9 @@ object GenericTransitGenerator {
       }
 
       airportsInRange.foreach { case (targetAirport, distance) =>
+        val isDomesticAirport = if(targetAirport.isDomesticAirport() || airport.isDomesticAirport()) 2 else 0
         val isGatewayAirport = if(targetAirport.isGateway() || airport.isGateway()) 3.5 else 0
-        val multiplier = Math.min(airport.size, targetAirport.size) + isGatewayAirport
+        val multiplier = Math.min(airport.size, targetAirport.size) + isDomesticAirport + isGatewayAirport
         val capacity = (multiplier * 12000).toInt
         
         try {
@@ -304,3 +320,9 @@ object GenericTransitGenerator {
     }
   }
 }
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: `<none>`.

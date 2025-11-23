@@ -11,6 +11,8 @@ import play.api.mvc._
 import javax.inject.Inject
 
 class AirportAssetApplication @Inject()(cc: ControllerComponents) extends AbstractController(cc) {
+  val DISABLEMENT_MESSAGE = "Airport Assets Functionality was disabled for game balance reasons. Assets Purchases are no longer possible"
+
   implicit object AirportAssetWrites extends Writes[AirportAsset] {
     def writes(entry : AirportAsset): JsValue = {
       val name = entry.status match {
@@ -119,76 +121,23 @@ class AirportAssetApplication @Inject()(cc: ControllerComponents) extends Abstra
   }
 
   def getAirportAssets(airportId : Int) = Action { request =>
-    val assets = AirportAssetSource.loadAirportAssetsByAirport(airportId).map { asset =>
-
-      asset.status match {
-        case AirportAssetStatus.BLUEPRINT => { //for display purpose, set boosts for blueprints as well
-          asset.boosts = asset.baseBoosts
-          asset
-        }
-        case AirportAssetStatus.UNDER_CONSTRUCTION => { //for display purpose, if level 1, display the blueprint boosts
-          if (asset.level == 1) {
-            asset.boosts = asset.baseBoosts
-            asset
-          } else { //otherwise just display current boosts
-            asset
-          }
-        }
-        case _ => asset
-      }
-    }.sortBy(_.cost)
-    Ok(Json.toJson(assets))
+    // Return empty list instead of loading from backend
+    Ok(Json.arr())
   }
 
   def getAirportAssetsWithAirline(airlineId : Int) = AuthenticatedAirline(airlineId) { request =>
-    val assets = AirportAssetSource.loadAirportAssetsByAirline(airlineId)
-    Ok(Json.toJson(assets)(Writes.list(OwnedAirportAssetWrites)))
+    // Return empty list instead of loading from backend
+    Ok(Json.arr())
   }
 
   def getAirportAssetDetailsWithoutAirline(assetId : Int) = Action { request =>
-    getAirportAssetDetails(None, assetId)
+    // Return empty object instead of loading from backend
+    Ok(Json.obj())
   }
 
   def getAirportAssetDetailsWithAirline(airlineId : Int, assetId : Int) = AuthenticatedAirline(airlineId) { request =>
-    val airline : Airline = request.user
-    getAirportAssetDetails(Some(airline), assetId)
-  }
-
-  private[this] def getAirportAssetDetails(airlineOption : Option[Airline], assetId : Int) = {
-    AirportAssetSource.loadAirportAssetByAssetId(assetId) match {
-      case Some(asset) =>
-
-        asset.airline match {
-          case Some(owner) =>
-            var result : JsObject =
-              if (airlineOption.isEmpty || owner.id != airlineOption.get.id) {
-                Json.toJson(asset).asInstanceOf[JsObject]
-              } else {
-                var ownerResult = Json.toJson(asset)(OwnedAirportAssetWrites).asInstanceOf[JsObject]
-                getUpgradeRejection(airlineOption.get, asset).foreach { rejection =>
-                  ownerResult = ownerResult + ("rejection" -> JsString(rejection))
-                }
-                getDowngradeRejection(airlineOption.get, asset).foreach { rejection =>
-                  ownerResult = ownerResult + ("downgradeRejection" -> JsString(rejection))
-                }
-
-                ownerResult
-              }
-            //load boost history
-            result = result + ("boostHistory" -> Json.toJson(AirportAssetSource.loadAirportBoostHistoryByAssetId(assetId).sortBy(_.boostType.id).sortBy(_.level)(Ordering.Int.reverse)))
-
-            Ok(result)
-          case None =>
-            var result = Json.toJson(asset).asInstanceOf[JsObject]
-            airlineOption.foreach { airline =>
-              getUpgradeRejection(airline, asset).foreach { rejection =>
-                result = result + ("rejection" -> JsString(rejection))
-              }
-            }
-            Ok(result)
-        }
-      case None => NotFound(s"Asset $assetId is not found")
-    }
+    // Return empty object instead of loading from backend
+    Ok(Json.obj())
   }
 
   /**
@@ -263,84 +212,18 @@ class AirportAssetApplication @Inject()(cc: ControllerComponents) extends Abstra
 
 
   def deleteAirportAsset(airlineId : Int, assetId : Int)= AuthenticatedAirline(airlineId) { request =>
-    val airline : Airline = request.user
-    AirportAssetSource.loadAirportAssetByAssetId(assetId) match {
-      case Some(asset) =>
-        asset.airline match {
-          case Some(owner) =>
-            if (owner.id != airline.id) {
-              Forbidden(s"Airline $airline does not own $asset")
-            } else {
-              //OK
-              AirportAssetSource.deleteAirportAsset(assetId)
-              AirlineSource.adjustAirlineBalance(airline.id, asset.sellValue)
-              AirlineSource.saveCashFlowItem(AirlineCashFlowItem(airline.id, CashFlowType.ASSET_TRANSACTION, asset.sellValue))
-              Ok(Json.toJson(asset)(OwnedAirportAssetWrites))
-            }
-          case None =>
-              Forbidden(s"Airline $airline cannot sell blueprint $asset")
-        }
-      case None => NotFound(s"Asset $assetId is not found")
-    }
+    // Return disablement message instead of backend operations
+    BadRequest(Json.obj("error" -> DISABLEMENT_MESSAGE))
   }
 
   def downgradeAirportAsset(airlineId : Int, assetId : Int) = AuthenticatedAirline(airlineId) { request =>
-    val airline : Airline = request.user
-    AirportAssetSource.loadAirportAssetByAssetId(assetId) match {
-      case Some(asset) =>
-        asset.airline match {
-          case Some(owner) =>
-            if (owner.id != airline.id) {
-              Forbidden(s"Airline $airline does not own $asset")
-            } else  {
-              getDowngradeRejection(airline, asset) match {
-                case Some(rejection) => BadRequest(s"Rejected: $rejection")
-                case None => //OK
-                  val name = request.body.asInstanceOf[AnyContentAsJson].json.asInstanceOf[JsObject].value("name").as[String]
-                  getNameRejection(name) match {
-                    case Some(nameRejection) => Ok(Json.obj("nameRejection" -> nameRejection))
-                    case None => //OK
-                      val newAsset = asset.levelDown(name)
-                      AirportAssetSource.updateAirportAsset(newAsset)
-                      Ok(Json.toJson(newAsset)(OwnedAirportAssetWrites))
-                  }
-              }
-            }
-          case None =>
-            Forbidden(s"Airline $airline cannot sell blueprint $asset")
-        }
-      case None => NotFound(s"Asset $assetId is not found")
-    }
+    // Return disablement message instead of backend operations
+    BadRequest(Json.obj("error" -> DISABLEMENT_MESSAGE))
   }
 
   def putAirportAsset(airlineId : Int, assetId : Int)= AuthenticatedAirline(airlineId) { request =>
-    val airline : Airline = request.user
-    AirportAssetSource.loadAirportAssetByAssetId(assetId) match {
-      case Some(asset) =>
-        getUpgradeRejection(airline, asset) match {
-          case Some(rejection) => BadRequest(s"Cannot put $asset by $airline : $rejection")
-          case None =>
-
-            val name = request.body.asInstanceOf[AnyContentAsJson].json.asInstanceOf[JsObject].value("name").as[String]
-            getNameRejection(name) match {
-              case Some(nameRejection) =>  Ok(Json.obj("nameRejection" -> nameRejection))
-              case None => //OK
-                val newAsset = {
-                  asset.airline match {
-                    case Some(owner) => asset.levelUp(name)
-                    case None => AirportAsset.buildNewAsset(airline, asset.blueprint, name)
-                  }
-                }
-
-                AirportAssetSource.updateAirportAsset(newAsset)
-                AirlineSource.adjustAirlineBalance(airline.id, -1 * newAsset.cost)
-                AirlineSource.saveCashFlowItem(AirlineCashFlowItem(airline.id, CashFlowType.ASSET_TRANSACTION, -1 * newAsset.cost))
-                Ok(Json.toJson(newAsset)(OwnedAirportAssetWrites))
-            }
-        }
-      case None =>
-        NotFound(s"Asset $assetId is not found")
-    }
+    // Return disablement message instead of backend operations
+    BadRequest(Json.obj("error" -> DISABLEMENT_MESSAGE))
   }
 
 

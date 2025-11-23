@@ -65,8 +65,8 @@ object MainSimulation extends App {
         case (airport, demand) => (airport.id, demand)
       }))
 
-      println("Airport assets simulation")
-      AirportAssetSimulation.simulate(cycle, linkRidershipDetails)
+      println("Airport assets simulation has been disabled!")
+      //AirportAssetSimulation.simulate(cycle, linkRidershipDetails)
 
       println("Airplane simulation")
       val airplanes = AirplaneSimulation.airplaneSimulation(cycle)

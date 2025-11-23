@@ -4,14 +4,14 @@ empty definition using pc, found symbol in pc: `<none>`.
 empty definition using semanticdb
 empty definition using fallback
 non-local guesses:
-	 -com/patson/data/newLounge.
-	 -com/patson/model/newLounge.
-	 -com/patson/util/newLounge.
-	 -play/api/libs/json/newLounge.
-	 -play/api/mvc/newLounge.
-	 -newLounge.
-	 -scala/Predef.newLounge.
-offset: 15681
+	 -com/patson/data/scala/collection/mutable.
+	 -com/patson/model/scala/collection/mutable.
+	 -com/patson/util/scala/collection/mutable.
+	 -play/api/libs/json/scala/collection/mutable.
+	 -play/api/mvc/scala/collection/mutable.
+	 -scala/collection/mutable.
+	 -scala/Predef.scala.collection.mutable.
+offset: 4664
 uri: file://<WORKSPACE>/airline-web/app/controllers/AirlineApplication.scala
 text:
 ```scala
@@ -121,7 +121,7 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
 
   def getAllAirlines(loginStatus : Boolean, hideInactive : Boolean) = Authenticated { implicit request =>
      //val airlines = AirlineSource.loadAllAirlines(fullLoad = true)
-    val airlinesByUser = scala.collection.mutable.Map[Airline, User]()
+    val airlinesByUser = scala.collection.mutabl@@e.Map[Airline, User]()
     val sevenDaysAgo = Calendar.getInstance();
     sevenDaysAgo.add(Calendar.DATE, -7)
     val thirtyDaysAgo = Calendar.getInstance()
@@ -356,7 +356,7 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
      }
 
      if (newLounge.level < 0) {
-       return Consideration(0, newLoung@@e.copy(level = 0), Some("Cannot downgrade further"))
+       return Consideration(0, newLounge.copy(level = 0), Some("Cannot downgrade further"))
      } else if (newLounge.level > Lounge.MAX_LEVEL) {
        return Consideration(0, newLounge.copy(level = Lounge.MAX_LEVEL), Some("Cannot upgrade further"))
      }
@@ -378,42 +378,11 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
       return Consideration(cost, newLounge, Some("Not enough cash to build/upgrade the lounge"))
     }
 
-    //check whether there is a base
+    //check whether there is a base (This is kinda redundant? Could merge with previous base check later if we ever do code cleenup?)
     if (airline.getBases().find( _.airport.id ==  airport.id).isEmpty) {
       return Consideration(cost, newLounge, Some("Cannot build lounge without a base"))
     }
-
-    //check whether it fulfills ranking requirement
-    val linkStatisticsFromThisAirport : Map[Airline, List[LinkStatistics]] = LinkStatisticsSource.loadLinkStatisticsByFromAirport(airport.id).groupBy(_.key.airline)
-    val linkStatisticsToThisAirport : Map[Airline, List[LinkStatistics]] = LinkStatisticsSource.loadLinkStatisticsByToAirport(airport.id).groupBy(_.key.airline)
-    val passengersOnThisAirport : Map[Airline, Long] = (linkStatisticsFromThisAirport.toList ++ linkStatisticsToThisAirport.toList).groupBy(_._1) //this gives Map[Airline, List[(Airline, List[LinkStatistics])]]
-                                      .view.mapValues(_.map(_._2).flatten) //this gives Map[Airline, List[LinkStatistics]]
-                                      .mapValues(_.map(_.passengers.toLong).sum).toMap
-
-    val airlineIdsWithBase = airport.getAirlineBases().keys.toList
-    val sortedPassengersOnThisAirport : List[(Airline, Long)] = passengersOnThisAirport.toList.filter{
-      case(airline, _) => airlineIdsWithBase.contains(airline.id) //only count airlines that has a base here
-    }.sortBy(_._2)
-    val eligibleAirlines : List[(Airline, Long)] = sortedPassengersOnThisAirport.takeRight(newLounge.getActiveRankingThreshold)
-
-    if (levelChange > 0) { //upgrade - has to consider ranking
-      eligibleAirlines.find(_._1.id == airline.id) match {
-        case Some((airline, passengers)) => //ok
-          return Consideration(cost, newLounge)
-        case None => //does not make the cut
-          var currentRank = 1
-          sortedPassengersOnThisAirport.reverse.foreach {
-            case (rankedAirline, passengers) =>
-              if (rankedAirline.id == airline.id) {
-                return Consideration(cost, newLounge, Some("Your passenger volume of " + passengers + " is ranked as number " + currentRank + " (of airlines with base here). Has to be top " + newLounge.getActiveRankingThreshold + " to build lounge in this airport"))
-              }
-              currentRank += 1
-          }
-          return Consideration(cost, newLounge, Some("Your have no passengers here. Has to be top " + newLounge.getActiveRankingThreshold + " to build lounge in this airport"))
-      }
-    } else {
-      return Consideration(cost, newLounge)
-    }
+     return Consideration(cost, newLounge)
   }
 
 

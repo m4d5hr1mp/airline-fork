@@ -317,14 +317,15 @@ function initMap() {
   window.map = L.map('map', {
     zoomControl: true,
     worldCopyJump: true,
-  }).setView([20, 150.644], 2);
+  }).setView([0,0], 2);
 
-    // Add dark CartoDB tiles (low-clutter)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    // Add dark CartoDB tiles (low-clutter) 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    //attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
     subdomains: 'abcd',
     minZoom: 2,
-    maxZoom: 12
+    maxZoom: 8
     }).addTo(map);
 
     // ✅ Define Leaflet icons (replacing old Google Maps icon references)

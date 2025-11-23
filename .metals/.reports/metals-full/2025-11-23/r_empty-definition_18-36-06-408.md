@@ -4,25 +4,22 @@ empty definition using pc, found symbol in pc: `<none>`.
 empty definition using semanticdb
 empty definition using fallback
 non-local guesses:
-	 -com/patson/model/airplane/CountryCache.
-	 -com/patson/model/airplane/CountryCache#
-	 -com/patson/model/airplane/CountryCache().
-	 -com/patson/model/CountryCache.
-	 -com/patson/model/CountryCache#
-	 -com/patson/model/CountryCache().
-	 -play/api/mvc/CountryCache.
-	 -play/api/mvc/CountryCache#
-	 -play/api/mvc/CountryCache().
-	 -com/patson/util/CountryCache.
-	 -com/patson/util/CountryCache#
-	 -com/patson/util/CountryCache().
-	 -CountryCache.
-	 -CountryCache#
-	 -CountryCache().
-	 -scala/Predef.CountryCache.
-	 -scala/Predef.CountryCache#
-	 -scala/Predef.CountryCache().
-offset: 825
+	 -com/patson/model/airplane/airplane/dealerValue.
+	 -com/patson/model/airplane/airplane/dealerValue#
+	 -com/patson/model/airplane/airplane/dealerValue().
+	 -com/patson/model/airplane/dealerValue.
+	 -com/patson/model/airplane/dealerValue#
+	 -com/patson/model/airplane/dealerValue().
+	 -play/api/mvc/airplane/dealerValue.
+	 -play/api/mvc/airplane/dealerValue#
+	 -play/api/mvc/airplane/dealerValue().
+	 -airplane/dealerValue.
+	 -airplane/dealerValue#
+	 -airplane/dealerValue().
+	 -scala/Predef.airplane.dealerValue.
+	 -scala/Predef.airplane.dealerValue#
+	 -scala/Predef.airplane.dealerValue().
+offset: 12805
 uri: file://<WORKSPACE>/airline-web/app/controllers/AirplaneApplication.scala
 text:
 ```scala
@@ -44,7 +41,7 @@ import com.patson.model.CashFlowType
 import com.patson.model.CashFlowType
 import com.patson.model.AirlineCashFlowItem
 import com.patson.model.airplane.Model.Category
-import com.patson.util.{AirplaneOwnershipCache, CountryCach@@e}
+import com.patson.util.{AirplaneOwnershipCache, CountryCache}
 
 import javax.inject.Inject
 import scala.collection.{MapView, mutable}
@@ -306,7 +303,7 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
     
     val rejections = scala.collection.mutable.Map[Airplane, String]()
     usedAirplanes.foreach { airplane =>
-      if (airplane.dealerValue > airline.getBalance()) {
+      if (airplane.dealer@@Value > airline.getBalance()) {
          rejections.put(airplane, "Not enough cash to purchase this airplane")  
       }
     }
@@ -322,14 +319,14 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
     airplanesCountByOwner.get(airlineId) match {
       case Some(count) =>
         val ownershipPercentage = count * 100.0 / airplanes.length
-        if (ownershipPercentage >= ModelDiscount.MAKE_FAVORITE_PERCENTAGE_THRESHOLD) {
+        if (ownershipPercentage >= ModelDiscount.FAVORITE_PERCENTAGE_THRESHOLD) {
           ModelSource.loadFavoriteModelId(airlineId) match {
             case Some((favoriteModelId, startCycle)) =>
               if (favoriteModelId == modelId) {
                 Right(()) //ok, already the favorite
               } else {
                 val cycleSinceLastFavorite = CycleSource.loadCycle() - startCycle
-                if (cycleSinceLastFavorite >= ModelDiscount.MAKE_FAVORITE_RESET_THRESHOLD) {
+                if (cycleSinceLastFavorite >= ModelDiscount.FAVORITE_RESET_THRESHOLD) {
                   Right(())
                 } else {
                   val remainingCycles = ModelDiscount.MAKE_FAVORITE_RESET_THRESHOLD - cycleSinceLastFavorite
