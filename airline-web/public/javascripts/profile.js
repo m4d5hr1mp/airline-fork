@@ -10,38 +10,52 @@ function updateProfiles(profiles) {
 
 function createProfileDiv(profile, profileId) {
 	var $profileDiv = $('<div style="float:left;" class="profile-section verticalGroup" onclick="selectProfile(' + profileId + ', this)"><h1>' + profile.name +'</h1><br/><span>' + profile.description + '</span></div>')
-//	$.each(profile.outlines, function(index, outline) {
-//		html += '<li>' + outline + '</li>'
-//	})
-//	html += '</ul></div>'
     var $list = $('<ul></ul>').appendTo($profileDiv)
     $list.append('<li class="dot">$' + commaSeparateNumber(profile.cash) + '&nbsp;cash</li>')
+    
     if (profile.airplanes.length > 0) {
-        var $airplaneLi = $('<li class="dot"></li>')
-        $airplaneLi.appendTo($list).append('<span>' + profile.airplanes.length + ' X&nbsp;</span>')
-        var $airplaneSpan = $('<span>' + profile.airplanes[0].name + '</span>')
-        //$airplaneSpan.css('text-decoration-style', 'dashed')
-        $airplaneSpan.css('text-decoration', 'underline dashed')
+        // Group airplanes by model name for display
+        var airplaneGroups = {};
+        profile.airplanes.forEach(function(airplane) {
+            var name = airplane.name;
+            if (!airplaneGroups[name]) {
+                airplaneGroups[name] = { count: 0, airplane: airplane };
+            }
+            airplaneGroups[name].count++;
+        });
 
-        $airplaneSpan.bind('click', function() {
-            showAirplaneQuickSummary($(this), profile.airplanes[0])
-        })
-        $airplaneSpan.mouseover(function() {
-            showAirplaneQuickSummary($(this), profile.airplanes[0])
-        }).mouseout(function() {
-            $('#airplaneSummaryTooltip').hide()
-        })
-
-
-        $airplaneLi.append($airplaneSpan)
+        Object.keys(airplaneGroups).forEach(function(name) {
+            var group = airplaneGroups[name];
+            var $airplaneLi = $('<li class="dot"></li>');
+            $airplaneLi.append('<span>' + group.count + ' X&nbsp;</span>');
+            var $airplaneSpan = $('<span>' + name + '</span>');
+            $airplaneSpan.css('text-decoration', 'underline dashed');
+            $airplaneSpan.bind('click', function() {
+                showAirplaneQuickSummary($(this), group.airplane);
+            }).mouseover(function() {
+                showAirplaneQuickSummary($(this), group.airplane);
+            }).mouseout(function() {
+                $('#airplaneSummaryTooltip').hide();
+            });
+            $airplaneLi.append($airplaneSpan).appendTo($list);
+        });
     }
+    
     $('<li class="dot"></li>').appendTo($list).text(profile.reputation + " reputation")
-    if (profile.loan) {
+    
+    if (profile.loans && profile.loans.length > 0) {
+        var totalRemaining = 0;
+        var totalWeekly = 0;
+        profile.loans.forEach(function(loan) {
+            totalRemaining += loan.remainingAmount;
+            totalWeekly += loan.weeklyPayment;
+        });
+        $('<li class="dot"></li>').appendTo($list).text("Outstanding loans of $" + commaSeparateNumber(totalRemaining) + " weekly payments of $" + commaSeparateNumber(totalWeekly))
+    } else if (profile.loan) { // Fallback for single loan if needed
         $('<li class="dot"></li>').appendTo($list).text("Outstanding loan of $" + commaSeparateNumber(profile.loan.remainingAmount) + " weekly payment of $" + commaSeparateNumber(profile.loan.weeklyPayment))
     }
-    $profileDiv.append($list)
-
-	if ($('#profileId').val() == profileId) {
+    
+    if ($('#profileId').val() == profileId) {
 		selectProfile(profileId, $profileDiv)
 	}
 
@@ -71,13 +85,6 @@ function showAirplaneQuickSummary($trigger, airplane) {
     $('#airplaneSummaryTooltip').off('click.close').on('click.close', function() {
         $(this).hide()
     })
-
-//    $('#airplaneSummaryTooltip .table .table-row').empty()
-//    $.each(bonusDetails, function(index, entry) {
-//        var $row = $('<div class="table-row"><div class="cell" style="width: 70%;">' + entry.description + '</div><div class="cell" style="width: 70%;">+' + entry.value + '</div></div>')
-//        $row.css('color', 'white')
-//        $('#appealBonusDetailsTooltip .table').append($row)
-//    })
 }
 
 function buildHqWithProfile() {
