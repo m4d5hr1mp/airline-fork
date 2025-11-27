@@ -44,7 +44,7 @@ object ProfileConfigs {
     isAvailable: Airport => Boolean = _ => true
   )
 
-  val specificIatas = List("DXB", "AUH", "DOH", "BAH", "KWI", "JED", "SIN", "HKG", "TPE")
+  val specificIatas = List("DXB", "AUH", "DOH", "BAH", "KWI", "JED", "SIN", "KUL", "BKK", "HKG", "TPE", "TLV", "IST")
   val bushExtendedCountries = List("AU", "CA", "NZ")
 
   val all: List[Config] = List(
@@ -72,8 +72,8 @@ object ProfileConfigs {
       description = "Establish a prestigious national airline with a modern fleet supported by government subsidies. Moderate difficulty.",
       cashBase = 500000000L,
       planeConfigs = List(
-        PlaneConfig(2000000000L, 100.0, List("Boeing 787","Boeing 777","Airbus A350","Airbus A340","Airbus A330")),
-        PlaneConfig(1000000000L, 100.0, List("Airbus A320","Boeing 737","Comac C919","Irkut MC-21","Tupolev Tu-204","Bombardier CS","Boeing 757"))
+        PlaneConfig(2000000000L, 100.0, List("Boeing 787","Boeing 777","Airbus A350","Airbus A330","Airbus A380","Boeing 747")),
+        PlaneConfig(1000000000L, 100.0, List("Airbus A320","Boeing 737"))
       ),
       reputation = 50,
       loanConfigs = List(
@@ -115,8 +115,8 @@ object ProfileConfigs {
       description = "Revive a once-great airline with a large fleet of widebody and narrowbody aircraft, but burdened with significant debt. Hard Difficulty",
       cashBase = 550000000L,
       planeConfigs = List(
-        PlaneConfig(1100000000L, 60.0, List("Boeing 777","Boeing 767","Boeing 747","Airbus A340","Airbus A330","Airbus A300/A310"), maxLifespan = Some(1560)),
-        PlaneConfig(1200000000L, 60.0, List("Airbus A320","Boeing 737","Boeing 757","Comac C919","Tupolev Tu-204","McDonnell Douglas MD-90"), maxLifespan = Some(1560))
+        PlaneConfig(1100000000L, 60.0, List("Boeing 777","Boeing 767","Boeing 757","Boeing 747","Airbus A340","Airbus A330","Airbus A300/A310"), maxLifespan = Some(1560)),
+        PlaneConfig(1200000000L, 60.0, List("Airbus A320","Boeing 737","Comac C919","Tupolev Tu-204","McDonnell Douglas MD-90"), maxLifespan = Some(1560))
       ),
       reputation = 70,
       loanConfigs = List(
