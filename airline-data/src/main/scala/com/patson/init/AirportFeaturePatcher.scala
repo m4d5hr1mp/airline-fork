@@ -1218,7 +1218,7 @@ object AirportFeaturePatcher extends App {
     list -= "HND" // Remove Haneda as gateway
     list += "NRT" // Add Narita as gateway
     list -= "KTI"
-    List += "PNH"
+    list += "PNH"
 
 
     //add extra ones for bigger countries
