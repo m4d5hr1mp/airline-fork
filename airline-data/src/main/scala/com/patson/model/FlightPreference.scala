@@ -375,24 +375,6 @@ object AppealPreference {
   
 }
 
-
-//class DrawPool(appealList : Map[Airline, AirlineAppeal]) {
-//  val asList = appealList.toList.map(_._1)
-//  def draw() : Airline = {
-//    val pickedNumber = Random.nextInt(weightSum)
-//    var walkerSum = pickedNumber
-//    for (Tuple2(airline, weight) <- loyaltyList) {
-//      walkerSum -= weight
-//      if (walkerSum < 0) {
-//        return Some(airline)
-//      }
-//    }
-//    None
-//    asList(Random.nextInt(asList.length))
-//  }
-//}
-
-
 class FlightPreferencePool(preferencesWithWeight : List[(FlightPreference, Int)]) {
   val pool : Map[LinkClass, List[FlightPreference]] = preferencesWithWeight.groupBy {
     case (flightPrefernce, weight) => flightPrefernce.preferredLinkClass
@@ -404,20 +386,9 @@ class FlightPreferencePool(preferencesWithWeight : List[(FlightPreference, Int)]
     }
   }.toMap
   
-  
-  
-//  val pool = preferencesWithWeight.foldRight(List[FlightPreference]()) {
-//    (entry, foldList) => 
-//      Range(0, entry._2, 1).foldRight(List[FlightPreference]())((_, childFoldList) => entry._1 :: childFoldList) ::: foldList
-//  }
-  
   def draw(linkClass: LinkClass, fromAirport : Airport, toAirport : Airport) : FlightPreference = {
     //Random.shuffle(pool).apply(0)
     val poolForClass = pool(linkClass).filter(_.isApplicable(fromAirport, toAirport))
     poolForClass(ThreadLocalRandom.current().nextInt(poolForClass.length))
   }
 }
-
-
-
-

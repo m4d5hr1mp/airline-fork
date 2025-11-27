@@ -48,49 +48,18 @@ object DemandGenerator {
         }
         println(s"$a1 -> $a2 $y/$j/$f")
     }
-
-
   }
-//  implicit val actorSystem = ActorSystem("rabbit-akka-stream")
-//
-//  import actorSystem.dispatcher
-//
-//  implicit val materializer = FlowMaterializer()
-//  private[this] val FIRST_CLASS_INCOME_MIN = 15000
   private[this] val FIRST_CLASS_INCOME_MAX = 100_000
   private[this] val FIRST_CLASS_PERCENTAGE_MAX = Map(PassengerType.BUSINESS -> 0.08, PassengerType.TOURIST -> 0.02, PassengerType.OLYMPICS -> 0.03) //max 8% first (Business passenger), 2% first (Tourist)
   private[this] val BUSINESS_CLASS_INCOME_MAX = 100_000
   private[this] val BUSINESS_CLASS_PERCENTAGE_MAX = Map(PassengerType.BUSINESS -> 0.3, PassengerType.TOURIST -> 0.10, PassengerType.OLYMPICS -> 0.15) //max 30% business (Business passenger), 10% business (Tourist)
 
   private val DROP_DEMAND_THRESHOLDS = new Array[Int](FlightType.values.size)
-//  FlightType.values.foreach {  flightType =>
-//    val threshold = flightType match {
-//      case SHORT_HAUL_DOMESTIC => 5
-//      case MEDIUM_HAUL_DOMESTIC => 5
-//      case LONG_HAUL_DOMESTIC => 5
-//      case SHORT_HAUL_INTERNATIONAL | SHORT_HAUL_INTERCONTINENTAL => 5
-//
-//      case _ => 0
-//    }
-//    DROP_DEMAND_THRESHOLDS(flightType.id) = threshold
-//  }
 
   val MIN_DISTANCE = 50
   val DIMINISHED_DEMAND_THRESHOLD = 400 //distance within this range will be diminished
   
-//  val defaultTotalWorldPower = {
-//    AirportSource.loadAllAirports(false).filter { _.iata != ""  }.map { _.power }.sum
-//  }
-//  mainFlow
-//  
-//  def mainFlow() = {
-//    Await.ready(computeDemand(), Duration.Inf)
-//    
-//    actorSystem.shutdown()
-//  }
   import scala.collection.JavaConverters._
-
-
 
   def computeDemand(cycle: Int, sourceAirports : List[Airport], plainDemand : Boolean = false) : List[(PassengerGroup, Airport, Int)] = {
     val airports =
@@ -112,18 +81,16 @@ object DemandGenerator {
 	  airports.foreach {  fromAirport =>
 	    val demandList = Collections.synchronizedList(new ArrayList[(Airport, (PassengerType.Value, LinkClassValues))]())
 	    airports.par.foreach { toAirport =>
-//	      if (fromAirport != toAirport) {
-          val relationship = countryRelationships.getOrElse((fromAirport.countryCode, toAirport.countryCode), 0)
-          val businessDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.BUSINESS)
-          val touristDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.TOURIST)
+        val relationship = countryRelationships.getOrElse((fromAirport.countryCode, toAirport.countryCode), 0)
+        val businessDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.BUSINESS)
+        val touristDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.TOURIST)
     	          
-          if (businessDemand.total > 0) {
-            demandList.add((toAirport, (PassengerType.BUSINESS, businessDemand)))
-          } 
-          if (touristDemand.total > 0) {
-            demandList.add((toAirport, (PassengerType.TOURIST, touristDemand)))
-          }
-//	      }
+        if (businessDemand.total > 0) {
+          demandList.add((toAirport, (PassengerType.BUSINESS, businessDemand)))
+        } 
+        if (touristDemand.total > 0) {
+          demandList.add((toAirport, (PassengerType.TOURIST, touristDemand)))
+        }
 	    }
 	    allDemands.add((fromAirport, demandList.asScala.toList))
     }
@@ -158,14 +125,9 @@ object DemandGenerator {
               }
             }
         }
-
 	  }
-
-
     allDemandChunks.toList
   }
-
-
 
   def computeDemandBetweenAirports(fromAirport : Airport, toAirport : Airport, relationship : Int, passengerType : PassengerType.Value) : LinkClassValues = {
     val distance = Computation.calculateDistance(fromAirport, toAirport)
@@ -218,7 +180,6 @@ object DemandGenerator {
         baseDemand = baseDemand * mutliplier
       }
 
-
       var adjustedDemand = baseDemand
       //adjustment : extra bonus to tourist supply for rich airports, up to double at every 20 income level increment
 
@@ -249,8 +210,6 @@ object DemandGenerator {
         }
       }
 
-      
-      
       //adjustments : China has very extensive highspeed rail network
       if (fromAirport.countryCode == "CN" && toAirport.countryCode == "CN") {
         adjustedDemand *= 0.5
@@ -311,15 +270,7 @@ object DemandGenerator {
 
       val demand = LinkClassValues.getInstance(economyClassDemand, businessClassDemand, firstClassDemand)
 
-      //drop tiny demand to speed up sim
-//      if (demand.total < DROP_DEMAND_THRESHOLDS(flightType.id)) {
-//        LinkClassValues.getInstance(0, 0, 0)
-//      } else {
-//        demand
-//      }
-
       demand
-
     }
   }
 
@@ -331,11 +282,9 @@ object DemandGenerator {
         case olympics : Olympics => eventDemand.appendAll(generateOlympicsDemand(cycle, olympics, airports))
         case _ => //
       }
-
     }
     eventDemand.toList
   }
-
 
   val OLYMPICS_DEMAND_BASE = 50000
   def generateOlympicsDemand(cycle: Int, olympics : Olympics, airports : List[Airport]) : List[(Airport, List[(Airport, (PassengerType.Value, LinkClassValues))])]  = {
@@ -389,17 +338,11 @@ object DemandGenerator {
             (fromAirport, (passengerType, unscaledDemand * multiplier))
         })
     }.toList
-
     scaledDemands
-
   }
   
   def getFlightPreferencePoolOnAirport(homeAirport : Airport) : FlightPreferencePool = {
     val flightPreferences = ListBuffer[(FlightPreference, Int)]()
-    //ECONOMY prefs
-//    flightPreferences.append((SimplePreference(homeAirport, 0.7, ECONOMY), 1)) //someone that does not care much
-//    flightPreferences.append((SimplePreference(homeAirport, 0.9, ECONOMY), 1))
-    
     val budgetTravelerMultiplier =
       if (homeAirport.income < Country.LOW_INCOME_THRESHOLD / 2) {
         3
@@ -439,7 +382,6 @@ object DemandGenerator {
     flightPreferences.append((AppealPreference.getAppealPreferenceWithId(homeAirport, FIRST, loungeLevelRequired = 1, loyaltyRatio = 1.1), 1))
     flightPreferences.append((AppealPreference.getAppealPreferenceWithId(homeAirport, FIRST, loungeLevelRequired = 2, loyaltyRatio = 1.1), 1))
     flightPreferences.append((AppealPreference.getAppealPreferenceWithId(homeAirport, FIRST, loungeLevelRequired = 3, loyaltyRatio = 1.2), 1))
-    
     
     new FlightPreferencePool(flightPreferences.toList)
   }

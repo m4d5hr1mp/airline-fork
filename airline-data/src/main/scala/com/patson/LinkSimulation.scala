@@ -69,6 +69,7 @@ object LinkSimulation {
         case _ => //
       }
     }
+    
     //save all consumptions
     var startTime = System.currentTimeMillis()
     println("Saving " + consumptionResult.size + " consumptions")
@@ -97,6 +98,7 @@ object LinkSimulation {
       case nonFlightLink => //only compute for flights (class Link)
         linkConsumptionDetails += LinkConsumptionDetails(nonFlightLink, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cycle)
     }
+
     endTime = System.currentTimeMillis()
     println(s"Finished calculation on profits by links. Took ${endTime - startTime} millisecs")
     purgeAlerts()
@@ -128,6 +130,7 @@ object LinkSimulation {
   val minorDelayCriticalThreshold = 0.5 // so it's around 50% at 0% condition (multiplier at 1) to run into minor delay OR worse
   val majorDelayCriticalThreshold = 0.2 // so it's around 20% at 0% condition (multiplier at 1) to run into major delay OR worse
   val cancellationCriticalThreshold = 0.05 // so it's around 5% at 0% condition (multiplier at 1) to run into cancellation
+
   def simulateLinkError(links : List[Link]) = {
     links.foreach {
       link => {
@@ -164,12 +167,14 @@ object LinkSimulation {
       }
     }
   }
+
   /**
     * Only called by test cases
     * @param link
     * @param cycle
     * @return
     */
+    
   def computeFlightLinkConsumptionDetail(link : Link, cycle : Int) : LinkConsumptionDetails = {
     //for testing, assuming all airplanes are only assigned to this link
     val assignmentsToThis = link.getAssignedAirplanes().filter(_._1.isReady).toList.map {
@@ -244,6 +249,7 @@ object LinkSimulation {
     
     // delays incur extra cost
     var delayCompensation = Computation.computeCompensation(flightLink)
+
     // lounge cost
     val fromLounge = flightLink.from.getLounge(flightLink.airline.id, flightLink.airline.getAllianceId(), activeOnly = true)
     val toLounge = flightLink.to.getLounge(flightLink.airline.id, flightLink.airline.getAllianceId(), activeOnly = true)
@@ -270,6 +276,7 @@ object LinkSimulation {
           })
       }
     }
+
     val profit = revenue - fuelCost - maintenanceCost - crewCost - airportFees - inflightCost - delayCompensation - depreciation - loungeCost
     //calculation overall satisifaction
     var satisfactionTotalValue : Double = 0
@@ -282,12 +289,14 @@ object LinkSimulation {
         satisfactionTotalValue += satisfaction * passengerCount
         totalPassengerCount += passengerCount
     }
+
     val overallSatisfaction = if (totalPassengerCount == 0) 0 else satisfactionTotalValue / totalPassengerCount
     //val result = LinkConsumptionDetails(link.id, link.price, link.capacity, link.soldSeats, link.computedQuality, fuelCost, crewCost, airportFees, inflightCost, delayCompensation = delayCompensation, maintenanceCost, depreciation = depreciation, revenue, profit, link.cancellationCount, linklink.from.id, link.to.id, link.airline.id, link.distance, cycle)
     val result = LinkConsumptionDetails(flightLink, fuelCost, crewCost, airportFees, inflightCost, delayCompensation = delayCompensation, maintenanceCost, depreciation = depreciation, loungeCost = loungeCost, revenue, profit, overallSatisfaction, cycle)
     //println("model : " + link.getAssignedModel().get + " profit : " + result.profit + " result: " + result)
     (result, loungeConsumptionDetails.toList)
   }
+
   val BASE_INFLIGHT_COST = 20
   val computeInflightCost = (linkClass : LinkClass, link : Link, soldSeats : Int) => {
     val star = link.rawQuality / 20
@@ -309,9 +318,11 @@ object LinkSimulation {
   val LOAD_FACTOR_ALERT_LINK_COUNT_THRESHOLD = 3 //how many airlines before load factor is checked
   val LOAD_FACTOR_ALERT_THRESHOLD = 0.5 //LF threshold
   val LOAD_FACTOR_ALERT_DURATION = 52
+
   /**
     * Purge alerts that are no longer valid
     */
+
   def purgeAlerts() = {
     //only purge link cancellation alerts for now
     val existingAlerts = AlertSource.loadAlertsByCategory(AlertCategory.LINK_CANCELLATION)
@@ -321,6 +332,7 @@ object LinkSimulation {
     AlertSource.deleteAlerts(deadAlerts)
     println("Purged alerts with no corresponding links... " + deadAlerts.size)
   }
+
   def checkLoadFactor(links : List[Link], cycle : Int) = {
     val existingAlerts = AlertSource.loadAlertsByCategory(AlertCategory.LINK_CANCELLATION)
     //group links by from and to airport ID Tuple(id1, id2), smaller ID goes first in the tuple
@@ -381,6 +393,7 @@ object LinkSimulation {
     AlertSource.deleteAlerts(deletingAlerts.toList)
     LogSource.insertLogs(newLogs.toList)
   }
+
   def generateFlightStatistics(consumptionResult: scala.collection.immutable.Map[(PassengerGroup, Airport, Route), Int], cycle : Int) : List[LinkStatistics] = {
     val statistics = Map[LinkStatisticsKey, Int]()
     consumptionResult.foreach {
@@ -435,6 +448,7 @@ object LinkSimulation {
       }
     }.toList
   }
+
   case class PassengerTransportStats(cycle : Int, transported : Int, total : Int)
   /**
     * Stats on how much pax from a country was carried/missed
@@ -442,6 +456,7 @@ object LinkSimulation {
     * @param missedOlympicsPassengers
     * @return Map[countryCode, transportRate]
     */
+
   def generateOlympicsCountryStats(cycle : Int, olympicsConsumptions: immutable.Map[(PassengerGroup, Airport, Route), Int], missedOlympicsPassengers: immutable.Map[(PassengerGroup, Airport), Int]) : immutable.Map[String, PassengerTransportStats] = {
     val passengersByCountry = mutable.HashMap[String, Int]()
     val missedPassengersByCountry = mutable.HashMap[String, Int]()
@@ -472,6 +487,7 @@ object LinkSimulation {
       (countryCode, transportStats)
     }.toMap
   }
+
   /**
     *
     * @param olympicsConsumptions
@@ -490,6 +506,7 @@ object LinkSimulation {
     }
     scoresByAirline.view.mapValues( score => (cycle, score)).toMap
   }
+
   /**
     * Refresh link capacity and frequency if necessary
     */
@@ -509,11 +526,13 @@ object LinkSimulation {
       }
     }
   }
+
   def simulatePostCycle(cycle : Int) = {
     //now update the link capacity if necessary
     LinkSimulation.refreshLinksPostCycle()
     purgeNegotiationCoolDowns(cycle)
   }
+
   def purgeNegotiationCoolDowns(cycle: Int): Unit = {
     LinkSource.purgeNegotiationCoolDowns(cycle)
     NegotiationSource.deleteLinkDiscountBeforeExpiry(cycle)

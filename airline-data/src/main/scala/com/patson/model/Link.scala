@@ -192,20 +192,6 @@ object Link {
     Link(from = Airport.fromId(0), to = Airport.fromId(0), Airline.fromId(0), price = LinkClassValues.getInstance(), distance = 0, capacity = LinkClassValues.getInstance(), rawQuality = 0, duration = 0, frequency = 0, flightType = FlightType.SHORT_HAUL_DOMESTIC, id = id)
   }
   
-   //adjust by quality
-//  import FlightType._
-//  val neutralQualityOfClass = (linkClass : LinkClass, from : Airport, to : Airport, flightType : FlightType.Value) => {
-//    val linkClassMultiplier = linkClass.level - 1
-//    flightType match {
-//      case SHORT_HAUL_DOMESTIC => 30 + linkClassMultiplier * 15
-//      case SHORT_HAUL_INTERNATIONAL => 35 + linkClassMultiplier * 15
-//      case SHORT_HAUL_INTERCONTINENTAL => 40 + linkClassMultiplier * 15
-//      case LONG_HAUL_DOMESTIC => 45 + linkClassMultiplier * 15
-//      case LONG_HAUL_INTERNATIONAL => 50 + linkClassMultiplier * 15
-//      case LONG_HAUL_INTERCONTINENTAL => 55 + linkClassMultiplier * 15
-//      case ULTRA_LONG_HAUL_INTERCONTINENTAL => 60 + linkClassMultiplier * 15
-//    }
-//  }
   val staffScheme : Map[model.FlightType.Value, StaffSchemeBreakdown] = {
       val basicLookup = Map(
         SHORT_HAUL_DOMESTIC -> 5,
@@ -219,7 +205,6 @@ object Link {
         LONG_HAUL_INTERCONTINENTAL -> 15,
         ULTRA_LONG_HAUL_INTERCONTINENTAL -> 15)
 
-
       val multiplyFactorLookup = Map(
         SHORT_HAUL_DOMESTIC -> 2,
         MEDIUM_HAUL_DOMESTIC -> 2,
@@ -231,7 +216,6 @@ object Link {
         MEDIUM_HAUL_INTERCONTINENTAL -> 3,
         LONG_HAUL_INTERCONTINENTAL -> 4,
         ULTRA_LONG_HAUL_INTERCONTINENTAL -> 4)
-
 
       val lookup = FlightType.values.toList.map { flightType =>
         val basic = basicLookup(flightType)
@@ -255,7 +239,6 @@ trait CostModifier {
 }
 
 object ExplicitLinkConsideration {
-
 }
 
 object LinkConsideration {
@@ -264,7 +247,6 @@ object LinkConsideration {
     LinkConsideration(link, linkClass, inverted, DUMMY_PASSENGER_GROUP, None, SimpleCostProvider(cost), id)
   }
 }
-
 
 /**
  * Cost is the adjusted price
@@ -283,10 +265,7 @@ case class LinkConsideration(link : Transport,
       s"Consideration [${linkClass} -  Flight $id; ${link.airline.name}; ${from.city}(${from.iata}) => ${to.city}(${to.iata}); capacity ${link.capacity}; price ${link.price}; cost: $cost]"
     }
 
-
     lazy val cost : Double = costProvider(this)
-
-      //costSet.getOrElse()
 
     def copyWithCost(explicitCost : Double) : LinkConsideration = {
       this.copy(costProvider = SimpleCostProvider(explicitCost))
@@ -303,7 +282,6 @@ case class CostStoreProvider() extends CostProvider {
   var computed = false
   var computedValue : Double = 0
   override def apply(linkConsideration: LinkConsideration) : Double = {
-    //this.synchronized { //no sync as it does not have to be threadsafe
       if (!computed) {
         computedValue = linkConsideration.passengerGroup.preference.computeCost(
           linkConsideration.link,
@@ -311,13 +289,9 @@ case class CostStoreProvider() extends CostProvider {
           linkConsideration.modifier.map(_.value(linkConsideration.link, linkConsideration.linkClass)).getOrElse(1.0))
         computed = true
       }
-    //}
     computedValue
   }
-
-
 }
-
 
 sealed abstract class LinkClass(val code : String, val spaceMultiplier : Double, val resourceMultiplier : Double, val priceMultiplier : Double, val priceSensitivity : Double, val level : Int) {
   def label : String //level for sorting/comparison purpose
@@ -328,9 +302,20 @@ case object FIRST extends LinkClass("F", spaceMultiplier = 6, resourceMultiplier
 case object BUSINESS extends LinkClass("J", spaceMultiplier = 2.5, resourceMultiplier = 2, priceMultiplier = 3, priceSensitivity = 0.9, level = 2) {
   override def label = "business"
 }
+
+/* GIGA IMPORTANT! WHEN ACTUALLY UN-COMMENYING THIS MAKE SURE YOU RE-NUMBER LEVELS! OTHERWISE SHIT WILL BREAK!
+case object PREMIUM_ECONOMY extends LinkClass("W", spaceMultiplier = 1.5, resourceMultiplier = 1.5, priceMultiplier = 1.8, priceSensitivity = 0.95, level = 2) {
+  override def label = "premium economy"
+}
+*/
 case object ECONOMY extends LinkClass("Y", spaceMultiplier = 1, resourceMultiplier = 1, priceMultiplier = 1, priceSensitivity = 1, level =1) {
   override def label = "economy"
 }
+
+/* THIS IS A MODIFIED VERSION WITH PREMIUM ECONOMY INCLUDED, UNCOMMENT AFTER "W" CLASS IS IMPLEMENTED!
+object LinkClass {
+  val values = List(FIRST, BUSINESS, PREMIUM_ECONOMY, ECONOMY) // Ordered by level descending for consistency in iterations
+ */
 object LinkClass {
   val values = List(FIRST, BUSINESS, ECONOMY)
   
