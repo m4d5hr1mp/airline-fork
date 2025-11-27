@@ -64,3 +64,21 @@ object Pricing {
         
   }
 }
+
+/* REFACTORED "GetNormalizedPrice" method, that should work with addition of premium economy:
+
+  /**
+   * Get a normalized priced link based on the referencing Link class, and multiply the price with a multiplier
+   */
+  def getNormalizedPrice(referencePrice: Int, referenceClass: LinkClass, multiplier: Double): LinkClassValues = {
+    val unitPrice = referencePrice / referenceClass.priceMultiplier
+    val normalizedPrice = LinkClassValues.getInstance(
+      (unitPrice * ECONOMY.priceMultiplier * multiplier).toInt,
+      (unitPrice * PREMIUM_ECONOMY.priceMultiplier * multiplier).toInt,
+      (unitPrice * BUSINESS.priceMultiplier * multiplier).toInt,
+      (unitPrice * FIRST.priceMultiplier * multiplier).toInt
+    )
+    normalizedPrice
+  }
+
+ */
