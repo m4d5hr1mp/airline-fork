@@ -14,7 +14,7 @@ object AirportSizeAdjust {
         "BOS" -> 7,
         "JFK" -> 10,
         "EWR" -> 8,
-        "LGA" -> 4,
+        "LGA" -> 5,
         "PHL" -> 8,
         "BWI" -> 7,
         "IAD" -> 8,
@@ -54,12 +54,16 @@ object AirportSizeAdjust {
         "SEA" -> 8,
         "YVR" -> 8,
 
+        // Honolulu:
+        "HNL" -> 7,
+
         // Asian Airports by Facilities Capacity, Moving North to South, India separately.
         // Japan:
         "HND" -> 10,
         "NRT" -> 8,
         "NGO" -> 7,
         "KIX" -> 8,
+        "ITM" -> 6,
         "FUK" -> 7,
 
         // Korea:

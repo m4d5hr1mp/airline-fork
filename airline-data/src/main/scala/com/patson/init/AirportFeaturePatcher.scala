@@ -1213,35 +1213,68 @@ object AirportFeaturePatcher extends App {
     list -= "SUV"
     list -= "AEP" //Argentina
     list += "EZE"
+    list -= "OPO" //Porto, Portugal accidentally becomes gateway
+    list += "LIS"
+    list -= "HND" // Remove Haneda as gateway
+    list += "NRT" // Add Narita as gateway
+    list -= "KTI"
+    List += "PNH"
 
 
     //add extra ones for bigger countries
     list.appendAll(List(
-      "CAN", //China
+      //China
+      "CAN", 
       "PVG",
       "PEK",
-      "JFK", //US
+
+      //USA
+      "JFK", 
       "LAX",
       "SFO",
       "MIA",
-      "BOM", //India
-      "AUH", //UAE
-      "CPT", //South Africa
-      "GIG", //Brazil
+
+      //Vietnam
+      "HAN",
+
+      //India
+      "BOM",
+      
+      //UAE
+      "AUH",
+
+      //South Africa 
+      "CPT",
+
+      //Brazil
+      "GIG", 
       "GRU",
-      "NRT", //Japan
+
+      //Japan 
       "KIX",
-      "SVO", //Russia
+
+      //Russia
+      "SVO", 
       "LED",
-      "FCO", //Italy
+
+      //Italy
+      "FCO",
       "MXP",
-      "MAD", //Spain
+
+      //Spain
+      "MAD", 
       "BCN",
-      "FRA", //Germany
+
+      //Germany
+      "FRA", 
       "MUC",
-      "SYD", //Australia
+
+      //Australia
+      "SYD", 
       "MEL",
-      "YVR", //Canada
+
+      //Canada
+      "YVR", 
       "YYZ"))
     list.toList
   }
