@@ -18,8 +18,6 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
   private[this] val airlineAdjustedAppeals = new java.util.HashMap[Int, AirlineAppeal]() //base appeals + bonus
   private[this] val allAirlineBonuses = new java.util.HashMap[Int, List[AirlineBonus]]() //bonus appeals
   private[this] var airlineAppealsLoaded = false
-//  private[this] val slotAssignments = scala.collection.mutable.Map[Int, Int]()
-//  private[this] var slotAssignmentsLoaded = false
   private[this] val airlineBases = scala.collection.mutable.Map[Int, AirlineBase]()
   private[this] var airlineBasesLoaded = false
   private[this] val baseFeatures = ListBuffer[AirportFeature]()
@@ -31,19 +29,9 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
   lazy val transitModifiers = getTransitModifiers()
   lazy val assetPassengerCostModifiers = getPassengerCostModifiers()
 
-
   private[this] var runways = List.empty[Runway]
 
-
-  //private[this] var loungesLoaded = false
-
-//  private[this] var airportImageUrl : Option[String] = None
-//  private[this] var cityImageUrl : Option[String] = None
-
   private[model] var country : Option[Country] = None
-
-  //val baseIncome = if (basePopulation > 0) (power / basePopulation).toInt  else 0
-
 
   private[this] var assetBoostFactors : Map[AirportBoostType.Value, List[(AirportAsset, AirportBoost)]] = Map.empty
 
@@ -89,21 +77,11 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     }
   }
 
-
   lazy val population = basePopulation + populationBoost
   lazy val power = income * population
   val basePower = baseIncome * basePopulation
 
-
   lazy val features : List[AirportFeature] = computeFeatures()
-
-//  def availableSlots : Int = {
-//    if (slotAssignmentsLoaded) {
-//      slots - slotAssignments.foldLeft(0)(_ + _._2)
-//    } else {
-//      throw new IllegalStateException("airline slot assignment is not properly initialized! If loaded from DB, please use fullload")
-//    }
-//  }
 
   lazy val rating =  AirportRating.rateAirport(this)
 
@@ -179,20 +157,6 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     allAirlineBonuses.asScala.toMap
   }
   
-//  def setAirlineBaseLoyalty(airlineId : Int, value : Double) = {
-//    if (!airlineAppealsLoaded) {
-//      throw new IllegalStateException("airline appeal is not properly initialized! If loaded from DB, please use fullload")
-//    }
-//    val oldAppeal = airlineBaseAppeals.getOrDefault(airlineId, AirlineAppeal(0, 0))
-//    airlineBaseAppeals.put(airlineId, AirlineAppeal(value, oldAppeal.awareness))
-//  }
-//  def setAirlineBaseAwareness(airlineId : Int, value : Double) = {
-//    if (!airlineAppealsLoaded) {
-//      throw new IllegalStateException("airline appeal is not properly initialized! If loaded from DB, please use fullload")
-//    }
-//    val oldAppeal = airlineAppeals.getOrDefault(airlineId, AirlineAppeal(0, 0))
-//    airlineBaseAppeals.put(airlineId, AirlineAppeal(oldAppeal.loyalty, value))
-//  }
   def getAirlineLoyalty(airlineId : Int) : Double = {
     if (!airlineAppealsLoaded) {
       throw new IllegalStateException("airline appeal is not properly initialized! If loaded from DB, please use fullload")
@@ -298,11 +262,7 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
 
     airlineAppealsLoaded = true
   }
-//  def initSlotAssignments(slotAssignments : Map[Int, Int]) = {
-//    this.slotAssignments.clear()
-//    this.slotAssignments ++= slotAssignments
-//    slotAssignmentsLoaded = true
-//  }
+
   def initAirlineBases(airlineBases : List[AirlineBase]) = {
     this.airlineBases.clear()
     airlineBases.foreach { airlineBase =>
@@ -328,7 +288,6 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     }
     assetBoostFactors = result.view.mapValues(_.toList).toMap
   }
-
 
   private[this] def getTransitModifiers() : List[TransitModifier] = {
     if (!assetsLoaded) {
@@ -562,18 +521,19 @@ object Airport {
   val NON_BASE_MAX_SLOT = 70
   val MIN_RUNWAY_LENGTH = 750
 
+// Flight Quality Adjusts for cabin classes! ADJUST THIS BEFORE ADDING PREMIUM ECONOMY OR SHIT WILL BREAK!
   import FlightType._
   val qualityExpectationFlightTypeAdjust =
-  Map(SHORT_HAUL_DOMESTIC -> LinkClassValues.getInstance(-15, -5, 5),
-        SHORT_HAUL_INTERNATIONAL ->  LinkClassValues.getInstance(-10, 0, 10),
-        SHORT_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(-5, 5, 15),
-        MEDIUM_HAUL_DOMESTIC -> LinkClassValues.getInstance(-5, 5, 15),
-        MEDIUM_HAUL_INTERNATIONAL ->  LinkClassValues.getInstance(0, 5, 15),
-        MEDIUM_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(0, 5, 15),
-        LONG_HAUL_DOMESTIC -> LinkClassValues.getInstance(0, 5, 15),
-        LONG_HAUL_INTERNATIONAL -> LinkClassValues.getInstance(5, 10, 20),
-        LONG_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(10, 15, 20),
-        ULTRA_LONG_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(10, 15, 20))
+  Map(SHORT_HAUL_DOMESTIC -> LinkClassValues.getInstance(-15, -5, 5),             //(-15, -10, -5, 5)
+        SHORT_HAUL_INTERNATIONAL ->  LinkClassValues.getInstance(-10, 0, 10),     //(-10, -5, 0, 10)
+        SHORT_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(-5, 5, 15),    //(-5, 0, 5, 15)
+        MEDIUM_HAUL_DOMESTIC -> LinkClassValues.getInstance(-5, 5, 15),           //(-5, 0, 5, 15)
+        MEDIUM_HAUL_INTERNATIONAL ->  LinkClassValues.getInstance(0, 5, 15),      //(0, 5, 5, 15)
+        MEDIUM_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(0, 5, 15),    //(0, 5, 5, 15)
+        LONG_HAUL_DOMESTIC -> LinkClassValues.getInstance(0, 5, 15),              //(0, 5, 5, 15)
+        LONG_HAUL_INTERNATIONAL -> LinkClassValues.getInstance(5, 10, 20),        //(5, 10, 10, 20)
+        LONG_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(10, 15, 20),    //(10, 10, 15, 20)
+        ULTRA_LONG_HAUL_INTERCONTINENTAL -> LinkClassValues.getInstance(10, 15, 20))  //(10, 10, 15, 20)
 }
 
 case class Runway(length : Int, code : String, runwayType : RunwayType.Value, lighted : Boolean)
