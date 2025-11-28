@@ -328,6 +328,15 @@ function initMap() {
     maxZoom: 8
     }).addTo(map);
 
+    // Set maximum bounds to prevent panning beyond poles vertically
+    const southWest = L.latLng(-85, -999999);
+    const northEast = L.latLng(85, 999999);
+    const bounds = L.latLngBounds(southWest, northEast);
+    map.setMaxBounds(bounds);
+    
+    // Enable viscosity for sticky boundary
+    map.options.maxBoundsViscosity = 1.0;
+
     // ✅ Define Leaflet icons (replacing old Google Maps icon references)
   const largeAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-darker.png",

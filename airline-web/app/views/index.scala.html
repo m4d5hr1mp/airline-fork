@@ -4633,7 +4633,17 @@
 	<div id="modelConfigurationModal" class="modal">
 		<div class="modal-content"  style="width : 800px; height: 800px; margin: 5% auto; overflow:auto;">
 			<span class="close" onclick="closeModal($('#modelConfigurationModal'))">&times;</span>
-			<h4 style="margin-bottom: 10px;"><span class="modelName"></span>&nbsp;Configuration</h4>
+			<h3 style="margin-bottom: 10px;"><span class="modelName"></span>&nbsp;Configuration</h3>
+				<div id="ConfigMinimumSeatMessage"; style="margin-bottom: 10px;">
+					<h4>This model can be minimally configured with:</h4>
+					<h5 id="BusinessMinimumMessage"></h5> <!-- Dynamic Content-->
+					<h5 id="FirstMinimumMessage"></h5> <!-- Dynamic Content-->
+					<h6 style="font-style: italic;">* Attempt to configure this model with less seats than indicated minimum will fail.</h6>
+				</div>
+				<div id="ConfigurationGalleyMessage"; style="margin-bottom: 20px;">
+					<h4> Adding Premium Cabin on this model requires installation of additional galley! </h4>
+					<h5 id="GalleyMessage"></h5> <!-- Dynamic Content-->
+				</div>
 			<div>
 				<input type="checkbox" onclick="toggleUtilizationRate($('#modelConfigurationModal'), $(this))" class="toggleUtilizationRateBox"><img src='@routes.Assets.versioned("images/icons/clock-select-remain.png")' title="Toggle Utilization Rate"/>
 				<input type="checkbox" onclick="toggleCondition($('#modelConfigurationModal'), $(this))" class="toggleConditionBox"><img src='@routes.Assets.versioned("images/icons/gear.png")' title="Toggle Airplane Condition"/>
