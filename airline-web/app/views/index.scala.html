@@ -58,10 +58,12 @@
 	<script src='@routes.Assets.versioned("javascripts/emojify/emojify.js")' defer></script>
     <script src='@routes.Assets.versioned("javascripts/splitting/splitting.min.js")'></script>
 
-    <script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts.js")' defer></script>
-    <script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts.widgets.js")' defer></script>
-	<script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/themes/fusioncharts.theme.zune.js")' defer></script>
-	<script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts-jquery-plugin.js")' defer></script>
+	<!-- Fusion Charts Libraries, used to be defered, undefered as an attempt to fix plane config not opening-->
+    <script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts.js")'></script>
+    <script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts.widgets.js")'></script>
+	<script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/themes/fusioncharts.theme.zune.js")'></script>
+	<script type="text/javascript" src='@routes.Assets.versioned("fusioncharts/fusioncharts-jquery-plugin.js")'></script>
+	<!-- This was defered, loading synchronously now so config window doesn't fail to open-->
 	<script src='@routes.Assets.versioned("javascripts/plot-fusioncharts.js")' defer></script>
 	
 	<script type="text/javascript" src='@routes.Assets.versioned("progress-bar/progress-bar.js")' defer></script>
