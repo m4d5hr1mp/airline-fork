@@ -265,101 +265,128 @@ function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMul
         "chart": chartConfig
     };
 
-    function updateDataSource(configuration) {
-        const airplaneType = configuration.model.airplaneType;
-        const hasPremium = configuration.business > 0 || configuration.first > 0;
-        const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
-        console.log("Calculated galleySpace:", galleySpace); // Debug log
+	function updateDataSource(configuration) {
+		// Declare this to give "Unused" and "Galley" labels sufficient margins, so there's no text wrapping
+		const MIN_RANGE_PERCENT = 15;
+		const airplaneType = configuration.model.airplaneType;
+		const hasPremium = configuration.business > 0 || configuration.first > 0;
+		const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
+		console.log("Calculated galleySpace:", galleySpace); // Debug log
 
-        // Calculate effective spaces for each section
-        const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
-        const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
-        const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
+		// Calculate effective spaces for each section, uses current input values
+		const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
+		const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
+		const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
 
-        // Total used space including galley
-        const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
+		// Total used space including galley
+		const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
 
-        // Unused space as the remainder
-        const unusedSpace = maxSeats - totalUsedSpace;
+		// Unused space as the remainder
+		const unusedSpace = maxSeats - totalUsedSpace;
 
-        // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
-        let currentPosition = 0;
+		// Calculate initial percentages for Unused and Galley
+		let unusedPercent = (unusedSpace / maxSeats * 100);
+		let galleyPercent = (galleySpace / maxSeats * 100);
 
-        const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
-        currentPosition = unusedEnd;
+		// Adjust Unused if below minimum (expand and track borrowed amount to subtract from economy later)
+		let borrowedFromEconomy = 0;
+		let adjustedUnusedPercent = unusedPercent;
+		if (unusedSpace > 0 && unusedPercent < MIN_RANGE_PERCENT) {
+			borrowedFromEconomy += MIN_RANGE_PERCENT - unusedPercent;
+			adjustedUnusedPercent = MIN_RANGE_PERCENT;
+		}
 
-        const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
-        currentPosition = economyEnd;
+		// Adjust Galley if below minimum (expand and add to borrowed amount)
+		let adjustedGalleyPercent = galleyPercent;
+		if (hasPremium && galleySpace > 0 && galleyPercent < MIN_RANGE_PERCENT) {
+			borrowedFromEconomy += MIN_RANGE_PERCENT - galleyPercent;
+			adjustedGalleyPercent = MIN_RANGE_PERCENT;
+		}
 
-        let galleyEnd = currentPosition;
-        if (hasPremium && galleySpace > 0) {
-            galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
-            currentPosition = galleyEnd;
-        }
+		// Adjust economy space to compensate for borrowed amounts (ensures total remains 100%)
+		let adjustedEffectiveEconomySpace = effectiveEconomySpace - (borrowedFromEconomy / 100 * maxSeats);
+		if (adjustedEffectiveEconomySpace < 0) {
+			adjustedEffectiveEconomySpace = 0; // Prevent negative; fallback to no adjustment if insufficient
+		}
 
-        const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
-        currentPosition = businessEnd;
+		// Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
+		let currentPosition = 0;
 
-        const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
+		const unusedEnd = currentPosition + adjustedUnusedPercent;
+		currentPosition = unusedEnd;
 
-        // Build color ranges conditionally
-        dataSource["colorRange"] = { "color": [] };
+		const economyEnd = currentPosition + (adjustedEffectiveEconomySpace / maxSeats * 100);
+		currentPosition = economyEnd;
 
-        // Unused range (if > 0)
-        if (unusedSpace > 0) {
-            dataSource["colorRange"].color.push({
-                "minValue": "0",
-                "maxValue": unusedEnd,
-                "label": "Unused : " + unusedSpace,
-                "tooltext": "Unused Space",
-                "code": "#D3D3D3"
-            });
-        }
+		let galleyEnd = currentPosition;
+		if (hasPremium && galleySpace > 0) {
+			galleyEnd = currentPosition + adjustedGalleyPercent;
+			currentPosition = galleyEnd;
+		}
 
-        // Economy range (if > 0)
-        if (configuration.economy > 0) {
-            dataSource["colorRange"].color.push({
-                "minValue": unusedEnd,
-                "maxValue": economyEnd,
-                "label": "Y : " + configuration.economy,
-                "tooltext": "Economy Class",
-                "code": "#6baa01"
-            });
-        }
+		const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
+		currentPosition = businessEnd;
 
-        // Galley range (if applicable)
-        if (hasPremium && galleySpace > 0) {
-            dataSource["colorRange"].color.push({
-                "minValue": economyEnd,
-                "maxValue": galleyEnd,
-                "label": "Galley : " + galleySpace,
-                "tooltext": "Galley Space",
-                "code": "#A9A9A9"
-            });
-        }
+		const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
 
-        // Business range (if > 0)
-        if (configuration.business > 0) {
-            dataSource["colorRange"].color.push({
-                "minValue": galleyEnd,
-                "maxValue": businessEnd,
-                "label": "J : " + configuration.business,
-                "tooltext": "Business Class",
-                "code": "#0077CC"
-            });
-        }
+		// Build color ranges conditionally (using adjusted ends for Unused and Galley)
+		dataSource["colorRange"] = { "color": [] };
 
-        // First range (if > 0)
-        if (configuration.first > 0) {
-            dataSource["colorRange"].color.push({
-                "minValue": businessEnd,
-                "maxValue": "100",
-                "label": "F : " + configuration.first,
-                "tooltext": "First Class",
-                "code": "#FFE62B"
-            });
-        }
-    }
+		// Unused range (if > 0)
+		if (unusedSpace > 0) {
+			dataSource["colorRange"].color.push({
+				"minValue": "0",
+				"maxValue": unusedEnd,
+				"label": "Unused : " + unusedSpace,
+				"tooltext": "Unused Space",
+				"code": "#D3D3D3"
+			});
+		}
+
+		// Economy range (if > 0)
+		if (configuration.economy > 0) {
+			dataSource["colorRange"].color.push({
+				"minValue": unusedEnd,
+				"maxValue": economyEnd,
+				"label": "Y : " + configuration.economy,
+				"tooltext": "Economy Class",
+				"code": "#6baa01"
+			});
+		}
+
+		// Galley range (if applicable)
+		if (hasPremium && galleySpace > 0) {
+			dataSource["colorRange"].color.push({
+				"minValue": economyEnd,
+				"maxValue": galleyEnd,
+				"label": "Galley : " + galleySpace,
+				"tooltext": "Galley Space",
+				"code": "#A9A9A9"
+			});
+		}
+
+		// Business range (if > 0)
+		if (configuration.business > 0) {
+			dataSource["colorRange"].color.push({
+				"minValue": galleyEnd,
+				"maxValue": businessEnd,
+				"label": "J : " + configuration.business,
+				"tooltext": "Business Class",
+				"code": "#0077CC"
+			});
+		}
+
+		// First range (if > 0)
+		if (configuration.first > 0) {
+			dataSource["colorRange"].color.push({
+				"minValue": businessEnd,
+				"maxValue": "100",
+				"label": "F : " + configuration.first,
+				"tooltext": "First Class",
+				"code": "#FFE62B"
+			});
+		}
+	}
 
     updateDataSource(configuration);
     var chart = container.insertFusionCharts({
