@@ -6,6 +6,8 @@ function showAirplaneModelConfigurationsFromPlanLink(modelId) {
 }
 
 function showAirplaneModelConfigurations(modelId) {
+    // Debuging suspicious model ID and data missmatches
+    console.log("Fetching configurations for modelId:", modelId);
     var airlineId = activeAirline.id
     $.ajax({
         type: 'GET',
@@ -13,6 +15,8 @@ function showAirplaneModelConfigurations(modelId) {
         contentType: 'application/json; charset=utf-8',
         dataType: 'json',
         success: function(result) {
+            // Yet another log message for suspicious missmatches:
+            console.log("Full API response:", result);
             loadedModelConfigInfo = result
             showAirplaneModelConfigurationsModal(result)
         },
@@ -53,6 +57,11 @@ function showAirplaneModelConfigurationsModal(modelConfigurationInfo) {
 
     //This is for actual configuration display panels
     $.each(modelConfigurationInfo.configurations, function(index, configuration) {
+        // We need to replace partial model details in API response with full detaild for new mechanics to work:
+        // (e.g. Rendering Galley Space on the seat chart, etc)
+        configuration.model = model; // Override to ensure consistency
+
+        // Declare target div and data to be inserted:
         var configurationDiv = $("<div style='width : 95%; min-height : 130px;' class='section config'></div>")
         configurationDiv.data("existingConfiguration", { "economy" : configuration.economy, "business" : configuration.business, "first" : configuration.first}) //for revert
         configurationDiv.data("spaceMultipliers", spaceMultipliers) //for revert
@@ -253,6 +262,10 @@ function updateConfigurationGauge(configurationDiv) {
     }
 }
 
+/*
+
+Double-Declaration! Keeping In place for the time being to test load order scenarios
+
 const galleySpaceByType = {
     "LIGHT": 0,
     "SMALL": 0,
@@ -263,6 +276,7 @@ const galleySpaceByType = {
     "JUMBO": 20,
     "SUPERSONIC": 16
 };
+*/
 
 function getGalleySpace(airplaneType) {
     return galleySpaceByType[airplaneType] || 0;

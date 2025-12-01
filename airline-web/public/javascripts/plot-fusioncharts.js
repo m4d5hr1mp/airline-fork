@@ -89,13 +89,12 @@ function getGalleySpace(airplaneType) {
     return galleySpaceByType[airplaneType] || 0;
 }
 
-//unmodifiable seat configuration bar
+// unmodifiable seat configuration bar
 function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMultipliers, hideValues, height) {
     container.children(':FusionCharts').each((function(i) {
-          $(this)[0].dispose();
-    }))
-    container.empty()
-
+        $(this)[0].dispose();
+    }));
+    container.empty();
     var dataSource = {
         "chart": {
             "theme": "fint",
@@ -105,186 +104,272 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
             "showTickValues": "0",
             "showborder": "0",
             "chartBottomMargin": "0",
-            "bgAlpha":"0",
+            "bgAlpha": "0",
             "valueFontSize": "11",
             "valueFontBold": "0",
             "animation": "0",
             "editMode": "0",
-            "containerBackgroundOpacity" :'0',
-            "pointerBgAlpha":"0",
-            "pointerBorderAlpha":"0",
+            "containerBackgroundOpacity": '0',
+            "pointerBgAlpha": "0",
+            "pointerBorderAlpha": "0",
             "chartLeftMargin": "0",
             "chartTopMargin": "0",
             "chartRightMargin": "0",
             "chartBottomMargin": "0",
             "baseFontColor": "#FFFFFF"
         }
-    }
+    };
 
-	// Calculate galley space based on whether premium classes are present
-    const airplaneType = configuration.model.airplaneType; // Assuming available from configuration.model
+    // Calculate galley space based on whether premium classes are present
+    const airplaneType = configuration.model.airplaneType;
     const hasPremium = configuration.business > 0 || configuration.first > 0;
     const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
 
-    // Calculate positions with galley included between Economy and Business
-    const economyPosition = (configuration.economy * spaceMultipliers.economy) / maxSeats * 100;
-    const galleyPosition = economyPosition + (galleySpace / maxSeats * 100); // Galley after Economy
-    const businessPosition = galleyPosition + (configuration.business * spaceMultipliers.business / maxSeats * 100);
-    const firstPosition = businessPosition + (configuration.first * spaceMultipliers.first / maxSeats * 100);
+    // Calculate effective spaces for each section
+    const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
+    const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
+    const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
 
-    var economyRange = {
-                         "minValue": "0",
-                         "maxValue": businessPosition,
-                         "code": "#6baa01"
-                       }
-	var galleyRange = {
-        				"minValue": economyPosition,
-        				"maxValue": galleyPosition,
-        				"code": "#A9A9A9"  // Custom color for galley (dark gray)
-						}
-    var businessRange = {
-                          "minValue": businessPosition,
-                          "maxValue": firstPosition,
-                          "code": "#0077CC"
-                         }
-    var firstRange = {
-                      "minValue": firstPosition,
-                      "maxValue": "100",
-                      "code": "#FFE62B"
-                      }
-	var unusedRange = {
-						"minValue": firstPosition,
-						"maxValue": "100",
-						"code": "#D3D3D3"  // Light gray for unused (optional addition for completeness)
-						}
-	if (!hideValues) {
-			economyRange.label = "Y : " + configuration.economy
-			if (hasPremium) {
-				galleyRange.label = "Galley : " + galleySpace
-			}
-			businessRange.label = "J : " + configuration.business
-			firstRange.label = "F : " + configuration.first
-			unusedRange.label = "Unused : " + (maxSeats - (configuration.economy * spaceMultipliers.economy + configuration.business * spaceMultipliers.business + configuration.first * spaceMultipliers.first + galleySpace))
-		}
+    // Total used space including galley
+    const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
 
-	// Include galley range only if premium present
-    dataSource["colorRange"] = { "color": [economyRange] };
-    if (hasPremium) {
+    // Unused space as the remainder
+    const unusedSpace = maxSeats - totalUsedSpace;
+
+    // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
+    let currentPosition = 0;
+
+    const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
+    currentPosition = unusedEnd;
+
+    const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
+    currentPosition = economyEnd;
+
+    let galleyEnd = currentPosition;
+    if (hasPremium && galleySpace > 0) {
+        galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
+        currentPosition = galleyEnd;
+    }
+
+    const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
+    currentPosition = businessEnd;
+
+    const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
+
+    // Build color ranges conditionally
+    dataSource["colorRange"] = { "color": [] };
+
+    // Unused range (if > 0)
+    if (unusedSpace > 0) {
+        let unusedRange = {
+            "minValue": "0",
+            "maxValue": unusedEnd,
+            "code": "#D3D3D3"
+        };
+        if (!hideValues) {
+            unusedRange.label = "Unused : " + unusedSpace;
+        }
+        dataSource["colorRange"].color.push(unusedRange);
+    }
+
+    // Economy range (if > 0)
+    if (configuration.economy > 0) {
+        let economyRange = {
+            "minValue": unusedEnd,
+            "maxValue": economyEnd,
+            "code": "#6baa01"
+        };
+        if (!hideValues) {
+            economyRange.label = "Y : " + configuration.economy;
+        }
+        dataSource["colorRange"].color.push(economyRange);
+    }
+
+    // Galley range (if applicable)
+    if (hasPremium && galleySpace > 0) {
+        let galleyRange = {
+            "minValue": economyEnd,
+            "maxValue": galleyEnd,
+            "code": "#A9A9A9"
+        };
+        if (!hideValues) {
+            galleyRange.label = "Galley : " + galleySpace;
+        }
         dataSource["colorRange"].color.push(galleyRange);
     }
-    dataSource["colorRange"].color.push(businessRange, firstRange, unusedRange);
 
-    if (!height) {
-        height = "20px"
+    // Business range (if > 0)
+    if (configuration.business > 0) {
+        let businessRange = {
+            "minValue": galleyEnd,
+            "maxValue": businessEnd,
+            "code": "#0077CC"
+        };
+        if (!hideValues) {
+            businessRange.label = "J : " + configuration.business;
+        }
+        dataSource["colorRange"].color.push(businessRange);
     }
 
+    // First range (if > 0)
+    if (configuration.first > 0) {
+        let firstRange = {
+            "minValue": businessEnd,
+            "maxValue": "100",
+            "code": "#FFE62B"
+        };
+        if (!hideValues) {
+            firstRange.label = "F : " + configuration.first;
+        }
+        dataSource["colorRange"].color.push(firstRange);
+    }
+
+    if (!height) {
+        height = "20px";
+    }
     var chart = container.insertFusionCharts({
         type: 'hlineargauge',
         width: '100%',
         height: height,
         dataFormat: 'json',
-        dataSource: dataSource,
-    })
-
+        dataSource: dataSource
+    });
 }
 
 function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMultipliers, callback) {
-	console.log("plotSeatConfigurationGauge called with configuration:", configuration); // Log to verify data
-	container.children(':FusionCharts').each((function(i) {
-		  $(this)[0].dispose();
-	}))
-	container.empty()
-	var chartConfig = {
-                      	    	"theme": "fint",
-                      	        "lowerLimit": "0",
-                      	        "upperLimit": "100",
-                      	        "showTickMarks": "0",
-                      	        "showTickValues": "0",
-                      	        "showborder": "0",
-                      	        "showtooltip": "0",
-                      	        "chartBottomMargin": "0",
-                      	        "bgAlpha":"0",
-                      	        "valueFontSize": "11",
-                      	        "valueFontBold": "0",
-                      	        "animation": "0",
-                      	        "editMode": "0",
-                      	        "pointerBgAlpha":"0",
-                                  "pointerBorderAlpha":"0",
-                      	        containerBackgroundOpacity :'0',
-                      	        "baseFontColor": "#FFFFFF"
-                      	    }
+    console.log("plotSeatConfigurationGauge called with configuration:", configuration); // Log to verify data
+    container.children(':FusionCharts').each((function(i) {
+        $(this)[0].dispose();
+    }));
+    container.empty();
+    var chartConfig = {
+        "theme": "fint",
+        "lowerLimit": "0",
+        "upperLimit": "100",
+        "showTickMarks": "0",
+        "showTickValues": "0",
+        "showborder": "0",
+        "showtooltip": "0",
+        "chartBottomMargin": "0",
+        "bgAlpha": "0",
+        "valueFontSize": "11",
+        "valueFontBold": "0",
+        "animation": "0",
+        "editMode": "0",
+        "pointerBgAlpha": "0",
+        "pointerBorderAlpha": "0",
+        "containerBackgroundOpacity": '0',
+        "baseFontColor": "#FFFFFF"
+    };
+    var dataSource = {
+        "chart": chartConfig
+    };
 
-	var dataSource = { 
-		"chart": chartConfig
-	}
-	
-	function updateDataSource(configuration) {
-		// New: Determine if premium classes are present and calculate galley space
-		const airplaneType = configuration.model.airplaneType; // Assuming available; add to backend if needed
-		const hasPremium = configuration.business > 0 || configuration.first > 0;
-		const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
-		// Debug for galley space verification
-		console.log("Calculated galleySpace:", galleySpace);
+    function updateDataSource(configuration) {
+        const airplaneType = configuration.model.airplaneType;
+        const hasPremium = configuration.business > 0 || configuration.first > 0;
+        const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
+        console.log("Calculated galleySpace:", galleySpace); // Debug log
 
-		// Adjust positions to include galley after Economy if premium present
-        var economyPosition = configuration.economy / maxSeats * 100;
-        var galleyPosition = hasPremium ? economyPosition + (galleySpace / maxSeats * 100) : economyPosition;
-        var businessPosition = galleyPosition;
+        // Calculate effective spaces for each section
+        const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
+        const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
+        const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
+
+        // Total used space including galley
+        const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
+
+        // Unused space as the remainder
+        const unusedSpace = maxSeats - totalUsedSpace;
+
+        // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
+        let currentPosition = 0;
+
+        const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
+        currentPosition = unusedEnd;
+
+        const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
+        currentPosition = economyEnd;
+
+        let galleyEnd = currentPosition;
+        if (hasPremium && galleySpace > 0) {
+            galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
+            currentPosition = galleyEnd;
+        }
+
+        const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
+        currentPosition = businessEnd;
+
+        const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
+
+        // Build color ranges conditionally
+        dataSource["colorRange"] = { "color": [] };
+
+        // Unused range (if > 0)
+        if (unusedSpace > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": "0",
+                "maxValue": unusedEnd,
+                "label": "Unused : " + unusedSpace,
+                "tooltext": "Unused Space",
+                "code": "#D3D3D3"
+            });
+        }
+
+        // Economy range (if > 0)
+        if (configuration.economy > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": unusedEnd,
+                "maxValue": economyEnd,
+                "label": "Y : " + configuration.economy,
+                "tooltext": "Economy Class",
+                "code": "#6baa01"
+            });
+        }
+
+        // Galley range (if applicable)
+        if (hasPremium && galleySpace > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": economyEnd,
+                "maxValue": galleyEnd,
+                "label": "Galley : " + galleySpace,
+                "tooltext": "Galley Space",
+                "code": "#A9A9A9"
+            });
+        }
+
+        // Business range (if > 0)
         if (configuration.business > 0) {
-            businessPosition = (maxSeats - configuration.first * spaceMultipliers.first - configuration.business * spaceMultipliers.business - galleySpace) / maxSeats * 100;
-        }
-        var firstPosition = businessPosition;
-        if (configuration.first > 0) {
-            firstPosition = (maxSeats - configuration.first * spaceMultipliers.first - galleySpace) / maxSeats * 100;
+            dataSource["colorRange"].color.push({
+                "minValue": galleyEnd,
+                "maxValue": businessEnd,
+                "label": "J : " + configuration.business,
+                "tooltext": "Business Class",
+                "code": "#0077CC"
+            });
         }
 
-		// Define color ranges with galley included
-        dataSource["colorRange"] = {
-            "color": [
-                {
-                    "minValue": "0",
-                    "maxValue": economyPosition,
-                    "label": "Y : " + configuration.economy,
-                    "tooltext": "Economy Class",
-                    "code": "#6baa01"
-                },
-                ...(hasPremium ? [  // Conditionally add galley range if premium present
-                    {
-                        "minValue": economyPosition,
-                        "maxValue": galleyPosition,
-                        "label": "Galley : " + galleySpace,
-                        "tooltext": "Galley Space",
-                        "code": "#A9A9A9"  // Custom gray color for galley
-                    }
-                ] : []),
-                {
-                    "minValue": galleyPosition,
-                    "maxValue": firstPosition,
-                    "label": "J : " + configuration.business,
-                    "tooltext": "Business Class",
-                    "code": "#0077CC"
-                },
-                {
-                    "minValue": firstPosition,
-                    "maxValue": "100",
-                    "label": "F : " + configuration.first,
-                    "tooltext": "First Class",
-                    "code": "#FFE62B"
-                }
-            ]
+        // First range (if > 0)
+        if (configuration.first > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": businessEnd,
+                "maxValue": "100",
+                "label": "F : " + configuration.first,
+                "tooltext": "First Class",
+                "code": "#FFE62B"
+            });
         }
     }
-	
-	updateDataSource(configuration)
-		var chart = container.insertFusionCharts(
-			{
-				type: 'hlineargauge',
-				width: '100%',
-				height: '40px',
-				dataFormat: 'json',
-				containerBackgroundOpacity :'0',
-				dataSource: dataSource
-			})
+
+    updateDataSource(configuration);
+    var chart = container.insertFusionCharts({
+        type: 'hlineargauge',
+        width: '100%',
+        height: '40px',
+        dataFormat: 'json',
+        containerBackgroundOpacity: '0',
+        dataSource: dataSource
+    });
 }
 
 function plotAirportShares(airportShares, currentAirportId, container) {
@@ -1510,4 +1595,3 @@ function checkDarkTheme(chartConfig, keepPallette) {
     //                "legendIconBorderThickness": "3"
     }
 }
-
