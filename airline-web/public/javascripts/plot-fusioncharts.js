@@ -73,6 +73,22 @@ function plotMaintenanceLevelGauge(container, maintenanceLevelInput, onchangeFun
 	
 }
 
+// Define galley space map and function here to make it accessible in this file
+const galleySpaceByType = {
+    "LIGHT": 0,
+    "SMALL": 0,
+    "REGIONAL": 10,
+    "MEDIUM": 12,
+    "LARGE": 16,
+    "X_LARGE": 20,
+    "JUMBO": 20,
+    "SUPERSONIC": 16
+};
+
+function getGalleySpace(airplaneType) {
+    return galleySpaceByType[airplaneType] || 0;
+}
+
 //unmodifiable seat configuration bar
 function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMultipliers, hideValues, height) {
     container.children(':FusionCharts').each((function(i) {
@@ -105,15 +121,27 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
         }
     }
 
+	// Calculate galley space based on whether premium classes are present
+    const airplaneType = configuration.model.airplaneType; // Assuming available from configuration.model
+    const hasPremium = configuration.business > 0 || configuration.first > 0;
+    const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
 
-    var businessPosition = configuration.economy / maxSeats * 100
-    var firstPosition = (maxSeats - configuration.first * spaceMultipliers.first) / maxSeats * 100
+    // Calculate positions with galley included between Economy and Business
+    const economyPosition = (configuration.economy * spaceMultipliers.economy) / maxSeats * 100;
+    const galleyPosition = economyPosition + (galleySpace / maxSeats * 100); // Galley after Economy
+    const businessPosition = galleyPosition + (configuration.business * spaceMultipliers.business / maxSeats * 100);
+    const firstPosition = businessPosition + (configuration.first * spaceMultipliers.first / maxSeats * 100);
 
     var economyRange = {
                          "minValue": "0",
                          "maxValue": businessPosition,
                          "code": "#6baa01"
                        }
+	var galleyRange = {
+        				"minValue": economyPosition,
+        				"maxValue": galleyPosition,
+        				"code": "#A9A9A9"  // Custom color for galley (dark gray)
+						}
     var businessRange = {
                           "minValue": businessPosition,
                           "maxValue": firstPosition,
@@ -124,20 +152,33 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
                       "maxValue": "100",
                       "code": "#FFE62B"
                       }
-    if (!hideValues) {
-        economyRange.label = "Y : " + configuration.economy
-        businessRange.label = "J : " + configuration.business
-        firstRange.label = "F : " + configuration.first
-    }
+	var unusedRange = {
+						"minValue": firstPosition,
+						"maxValue": "100",
+						"code": "#D3D3D3"  // Light gray for unused (optional addition for completeness)
+						}
+	if (!hideValues) {
+			economyRange.label = "Y : " + configuration.economy
+			if (hasPremium) {
+				galleyRange.label = "Galley : " + galleySpace
+			}
+			businessRange.label = "J : " + configuration.business
+			firstRange.label = "F : " + configuration.first
+			unusedRange.label = "Unused : " + (maxSeats - (configuration.economy * spaceMultipliers.economy + configuration.business * spaceMultipliers.business + configuration.first * spaceMultipliers.first + galleySpace))
+		}
 
-    dataSource["colorRange"] = { "color": [economyRange, businessRange, firstRange] }
+	// Include galley range only if premium present
+    dataSource["colorRange"] = { "color": [economyRange] };
+    if (hasPremium) {
+        dataSource["colorRange"].color.push(galleyRange);
+    }
+    dataSource["colorRange"].color.push(businessRange, firstRange, unusedRange);
 
     if (!height) {
         height = "20px"
     }
 
-    var chart = container.insertFusionCharts(
-    {
+    var chart = container.insertFusionCharts({
         type: 'hlineargauge',
         width: '100%',
         height: height,
@@ -148,12 +189,11 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
 }
 
 function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMultipliers, callback) {
+	console.log("plotSeatConfigurationGauge called with configuration:", configuration); // Log to verify data
 	container.children(':FusionCharts').each((function(i) {
 		  $(this)[0].dispose();
 	}))
-	
 	container.empty()
-
 	var chartConfig = {
                       	    	"theme": "fint",
                       	        "lowerLimit": "0",
@@ -174,113 +214,77 @@ function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMul
                       	        "baseFontColor": "#FFFFFF"
                       	    }
 
-
 	var dataSource = { 
 		"chart": chartConfig
-//	    ,
-//	    "pointers": {
-//	        //Multiple pointers defined here
-//	        "pointer": [
-//	            {
-//	                "bgColor": "#FFE62B",
-//	                "bgAlpha": "50",
-//	                "showValue": "0",
-//	                //"sides" : "4",
-//	                "borderColor": "#FFE62B",
-//	                "borderAlpha": "20",
-//	            },
-//	            {
-//	                "bgColor": "#0077CC",
-//	                "bgAlpha": "50",
-//	                "showValue": "0",
-//	                //"sides" : "3",
-//	                "borderColor": "#0077CC",
-//	                "borderAlpha": "20",
-//	            }
-//	        ]
-//	    }
 	}
 	
 	function updateDataSource(configuration) {
-		var businessPosition = configuration.economy / maxSeats * 100
-		var firstPosition
-		 if (configuration.business == 0) {
-		    firstPosition = businessPosition
-		 } else {
-		    firstPosition = (maxSeats - configuration.first * spaceMultipliers.first) / maxSeats * 100
-		 }
-		dataSource["colorRange"] = {
+		// New: Determine if premium classes are present and calculate galley space
+		const airplaneType = configuration.model.airplaneType; // Assuming available; add to backend if needed
+		const hasPremium = configuration.business > 0 || configuration.first > 0;
+		const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
+		// Debug for galley space verification
+		console.log("Calculated galleySpace:", galleySpace);
+
+		// Adjust positions to include galley after Economy if premium present
+        var economyPosition = configuration.economy / maxSeats * 100;
+        var galleyPosition = hasPremium ? economyPosition + (galleySpace / maxSeats * 100) : economyPosition;
+        var businessPosition = galleyPosition;
+        if (configuration.business > 0) {
+            businessPosition = (maxSeats - configuration.first * spaceMultipliers.first - configuration.business * spaceMultipliers.business - galleySpace) / maxSeats * 100;
+        }
+        var firstPosition = businessPosition;
+        if (configuration.first > 0) {
+            firstPosition = (maxSeats - configuration.first * spaceMultipliers.first - galleySpace) / maxSeats * 100;
+        }
+
+		// Define color ranges with galley included
+        dataSource["colorRange"] = {
             "color": [
-                      {
-                          "minValue": "0",
-                          "maxValue": businessPosition,
-                          "label": "Y : " + configuration.economy,
-                          "tooltext": "Economy Class",
-                          "code": "#6baa01"
-                      },
-                      {
-                          "minValue": businessPosition,
-                          "maxValue": firstPosition,
-                          "label": "J : " + configuration.business,
-                          "tooltext": "Business Class",
-                          "code": "#0077CC"
-                      },
-                      {
-                          "minValue": firstPosition,
-                          "maxValue": "100",
-                          "label": "F : " + configuration.first,
-                          "tooltext": "First Class",
-                          "code": "#FFE62B"
-                      }
-                  ]
-              }
-//	    dataSource["pointers"]["pointer"][0].value = firstPosition
-//	    dataSource["pointers"]["pointer"][1].value = businessPosition
-	}
+                {
+                    "minValue": "0",
+                    "maxValue": economyPosition,
+                    "label": "Y : " + configuration.economy,
+                    "tooltext": "Economy Class",
+                    "code": "#6baa01"
+                },
+                ...(hasPremium ? [  // Conditionally add galley range if premium present
+                    {
+                        "minValue": economyPosition,
+                        "maxValue": galleyPosition,
+                        "label": "Galley : " + galleySpace,
+                        "tooltext": "Galley Space",
+                        "code": "#A9A9A9"  // Custom gray color for galley
+                    }
+                ] : []),
+                {
+                    "minValue": galleyPosition,
+                    "maxValue": firstPosition,
+                    "label": "J : " + configuration.business,
+                    "tooltext": "Business Class",
+                    "code": "#0077CC"
+                },
+                {
+                    "minValue": firstPosition,
+                    "maxValue": "100",
+                    "label": "F : " + configuration.first,
+                    "tooltext": "First Class",
+                    "code": "#FFE62B"
+                }
+            ]
+        }
+    }
 	
 	updateDataSource(configuration)
-
-	var chart = container.insertFusionCharts(
-	{	
-		type: 'hlineargauge',
-        width: '100%',
-        height: '40px',
-        dataFormat: 'json',
-        containerBackgroundOpacity :'0',
-	    dataSource: dataSource
-//	    ,
-//        "events": {
-//            "realTimeUpdateComplete" : function (evt, arg){
-//                var firstPosition = evt.sender.getData(1)
-//                var businessPosition = evt.sender.getData(2)
-//
-//                var tinyAdjustment = 0.001 //the tiny adjustment is to avoid precision problem that causes floor to truncate number like 0.99999
-//                configuration["first"] = Math.floor(tinyAdjustment + maxSeats * (100 - firstPosition) / 100 / spaceMultipliers.first)
-//
-//                if (firstPosition < businessPosition) {  //dragging first past business to the left => eliminate all business
-//                	configuration["business"] = 0
-//                } else {
-//                	configuration["business"] = Math.floor(tinyAdjustment + (maxSeats * (100 - businessPosition) / 100 - configuration["first"] * spaceMultipliers.first) / spaceMultipliers.business)
-//                }
-//
-//                if (businessPosition == 0) { //allow elimination of all economy seats
-//                	configuration["economy"] = 0
-//                } else {
-//                	configuration["economy"] = Math.floor(tinyAdjustment + (maxSeats - configuration["first"] * spaceMultipliers.first - configuration["business"] * spaceMultipliers.business) / spaceMultipliers.economy)
-//                }
-//
-//
-//                //console.log(configuration)
-//
-//                updateDataSource(configuration)
-//                callback(configuration)
-//
-//                container.updateFusionCharts({
-//                	"dataSource": dataSource
-//                });
-//            }
-//        }
-	})
+		var chart = container.insertFusionCharts(
+			{
+				type: 'hlineargauge',
+				width: '100%',
+				height: '40px',
+				dataFormat: 'json',
+				containerBackgroundOpacity :'0',
+				dataSource: dataSource
+			})
 }
 
 function plotAirportShares(airportShares, currentAirportId, container) {
@@ -294,10 +298,6 @@ function plotAirportShares(airportShares, currentAirportId, container) {
 			label : airportShare.airportName,
 			value : airportShare.share
 		}
-//		if (currentAirportId == airportShare.airportId) {
-//			entry["sliced"] = true
-//			entry["selected"] = true
-//		}
 		data.push(entry)
 	})
 	$("#cityPie").insertFusionCharts({
@@ -446,9 +446,7 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 		business : [],
         first : []
 	}
-
-
-		
+	
 	var category = []
 
     if (plotUnit === undefined) {
@@ -507,7 +505,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 			}
 
 			var mark = Math.floor(linkConsumption.cycle / weeksPerMark)
-			//var week = linkConsumption.cycle % 4 + 1
 			category.push({ label : mark.toString()})
 		})
 	}
@@ -515,7 +512,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	var chartConfig = {
                       	    		"xAxisname": xLabel,
                       	    		"YAxisName": "Seats Consumption",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"sNumberSuffix" : "%",
                       	            "sYAxisMaxValue" : "100",
                       	            "transposeAxis":"1",
@@ -533,7 +529,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
                                       "labelDisplay":"wrap",
                                       "labelStep": weeksPerMark
                       	    	}
-
 	checkDarkTheme(chartConfig, true)
 	
 	var ridershipChart = ridershipContainer.insertFusionCharts( {
@@ -559,7 +554,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	chartConfig = {
 	"xAxisname": xLabel,
     	    		"YAxisName": "Revenue",
-    	    		//"sYAxisName": "Load Factor %",
     	    		"sYAxisMaxValue" : "100",
     	    		"transposeAxis":"1",
     	    		"useroundedges": "1",
@@ -598,7 +592,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	chartConfig =  {
                   	    		"xAxisname": xLabel,
                   	    		"YAxisName": "Ticket Price",
-                  	    		//"sYAxisName": "Load Factor %",
                   	    		"numberPrefix": "$",
                   	    		"sYAxisMaxValue" : "100",
                   	    		"useroundedges": "1",
@@ -696,8 +689,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
     var chartConfig = {
                         "xAxisname": xLabel,
                         "YAxisName": "Seats Consumption",
-                        //"sYAxisName": "Load Factor %",
-                        //"YAxisMaxValue" : maxCapacity * 1.2,
                         "transposeAxis":"1",
                         "useroundedges": "1",
                         "animation": "0",
@@ -720,7 +711,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
 
 	checkDarkTheme(chartConfig, true)
 
-	//var ridershipChart = container.insertFusionCharts( {
 	var ridershipChart = new FusionCharts( {
 		type: 'stackedcolumn2d',
 	    width: '100%',
@@ -737,7 +727,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
             "alpha": "100",
             "category" : category}],
 			"dataset" : dataset,
-
 	    },
 	    events : {
             "dataplotrollover": function (eventObj, dataObj) {
@@ -801,19 +790,13 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 			    maxCapacity = capacity
 			}
 
-			//var mark = Math.floor(linkConsumption.cycle / weeksPerMark)
-			//var week = linkConsumption.cycle % 4 + 1
 			category.push({ label : linkConsumption.cycle.toString() , cycle : linkConsumption.cycle })
-
-
-
 		})
 	}
 
 	var chartConfig = {
                       	    		"xAxisname": xLabel,
                       	    		"YAxisName": "Seats Consumption",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"YAxisMaxValue" : maxCapacity * 1.2,
                       	            "transposeAxis":"1",
                       	    		"useroundedges": "1",
@@ -840,8 +823,6 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 
 	var currentWeekHover = 0
 
-
-	//var ridershipChart = linkEventContainer.insertFusionCharts( {
 	var ridershipChart = new FusionCharts( {
 		type: 'stackedcolumn2d',
 	    width: '100%',
@@ -863,17 +844,13 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 						 ,{"seriesName": "Sold Seats (First)", "type": "first", "data" : soldSeatsData.first}
 						 ,{ "seriesName": "Cancelled Seats", "type": "cancelled", "data" : cancelledSeatsData}
 						 ,{ "seriesName": "Empty Seats", "type": "empty", "data" : emptySeatsData, "alpha":"10"}
-
-			            //, {"seriesName": "Load Factor", "renderAs" : "line", "parentYAxis": "S", "data" : loadFactorData}
 			            ],
-
 	    },
 	    events : {
             "dataplotrollover": function (eventObj, dataObj) {
                 if (cycleHoverFunc != null) {
                     cycleHoverFunc(category[dataObj.index].cycle)
                 }
-
             },
             "chartRollOut": function (eventObj, dataObj) {
                 if (chartOutFunc != null) {
@@ -884,7 +861,6 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 	}).render()
 	return ridershipChart
 }
-
 
 function toggleLinkEventBar(chart, cycle, on) {
     if (chart && chart.lastToggledCycle == cycle) {
@@ -912,8 +888,6 @@ function toggleLinkEventBar(chart, cycle, on) {
     })
     chart.setJSONData(jsonData)
 }
-
-
 
 function stringHashCode(s) {
   var h = 0, l = s.length, i = 0;
@@ -950,6 +924,7 @@ function colorFromString(s) {
     return `#${rr}${gg}${bb}`
 }
 
+// This Needs to change when we add more preferences!
 var defaultPieColors = {
     "Business" : "#2e287d",
     "Tourist" : "#fc7a57",
@@ -963,7 +938,6 @@ var defaultPieColors = {
     "departure/arrival passengers" : "#FC7A57",
     "transit passengers": "#9BF3F0",
 }
-
 
 function plotPie(dataSource, currentKey, container, keyName, valueName) {
 	container.children(':FusionCharts').each((function(i) {
@@ -992,15 +966,9 @@ function plotPie(dataSource, currentKey, container, keyName, valueName) {
 		} else {
 		    entry.color = colorFromString(keyLabel)
 		}
-		
 		if (currentKey && keyLabel == currentKey) {
 			entry.issliced = "1"
 		}
-		
-//		if (currentAirportId == airportShare.airportId) {
-//			entry["sliced"] = true
-//			entry["selected"] = true
-//		}
 		data.push(entry)
 	})
 
@@ -1214,7 +1182,6 @@ function plotOilPriceChart(oilPrices, container) {
 	})
 }
 
-
 function plotLoanInterestRatesChart(rates, container) {
 	container.children(':FusionCharts').each((function(i) {
 		  $(this)[0].dispose();
@@ -1349,7 +1316,6 @@ function plotRivalHistoryChart(allRivalLinkConsumptions, priceContainer, linkCla
 
     var chartConfig = {
                       	    		"xAxisname": "Month",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"numberPrefix": numberPrefix,
                       	    		"sYAxisMaxValue" : "100",
                       	    		"useroundedges": "1",
@@ -1397,8 +1363,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
 	var category = []
 
 	var dataSet = []
-//    var maxValue = -1
-//    var minValue = 99999
     var dataByAirlineId = {}
     var airlineNameByAirlineId = {}
     if (!jQuery.isEmptyObject(loyalistHistory)) { //link consumptions is array (by each rival link) of array (by cycle),
@@ -1412,11 +1376,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
                 if (!dataByAirlineId[airlineId]) {
                     dataByAirlineId[airlineId] = []
                 }
-//                var lineColor = "#f6bf1b"
-//                if (activeAirline && activeAirline.id == airlineId) {
-//                    lineColor = "#d84f4f"
-//                }
-//                dataByAirlineId[airlineId].push({"value": entry.amount, "color": lineColor})
                 dataByAirlineId[airlineId].push({"value": entry.amount})
                 airlineNameByAirlineId[airlineId] = entry.airlineName
             })
@@ -1427,8 +1386,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
         })
     }
 
-//     var yAxisMax = Math.round(maxValue * 1.1)
-//     var yAxisMin = Math.round(minValue * 0.8)
     var chartConfig = {
                       	    		"xAxisname": "Week",
                       	    		"yAxisName": "Loyalist Amount",
@@ -1525,7 +1482,6 @@ function plotMissionStatsGraph(stats, threshold, container) {
 		dataSource: dataSource
 	})
 }
-
 
 function checkDarkTheme(chartConfig, keepPallette) {
     if (document.documentElement.getAttribute("data-theme") === "dark") {

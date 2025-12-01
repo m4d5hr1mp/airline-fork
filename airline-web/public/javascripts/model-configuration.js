@@ -329,15 +329,19 @@ function computeConfiguration(existingConfiguration, model, spaceMultipliers, lo
     let maxSpace = model.capacity - galleySpace;
 
     let errorMsg = '';
+    // Error messages for violating plane category cabin restrictions:
+    // Error message when adding premium to Light / Small planes
     if ((airplaneType === "LIGHT" || airplaneType === "SMALL") && (tempConfig.business > 0 || tempConfig.first > 0)) {
         errorMsg = "" + prettifiedType + " models can't be outfited with premium seats.";
-
+    // Error message when adding First Class on Regionals & Supersonics
     } else if ((airplaneType === "REGIONAL" || airplaneType === "SUPERSONIC") && tempConfig.first > 0) {
         errorMsg = "" + prettifiedType + " models can't be outfited with First Class seats.";
-
+    // Error message when adding Economy on Supersonics
     } else if (airplaneType === "SUPERSONIC" && (tempConfig.economy > 0 || tempConfig.first > 0)) {
         errorMsg = "Supersonic models can be configured exclusively with Business Class seats.";
     } else {
+
+        // Error messages for violating minimum seats per class rules:
         const minBusiness = getMinBusiness(airplaneType);
         const minFirst = getMinFirst(airplaneType);
         if (tempConfig.business > 0 && tempConfig.business < minBusiness) {
@@ -351,10 +355,10 @@ function computeConfiguration(existingConfiguration, model, spaceMultipliers, lo
                 totalSpace += tempConfig[linkClass] * spaceMultipliers[linkClass];
             });
             if (totalSpace > maxSpace) {
-                // Refinement: Detailed formula for capacity exceedance
+                // Error Message on exceeding available space:
                 const requiredCapacity = totalSpace + galleySpace;
                 const formula = tempConfig.economy + ' + (' + tempConfig.business + ' * ' + spaceMultipliers.business + ') + (' + tempConfig.first + ' * ' + spaceMultipliers.first + ') + ' + galleySpace;
-                errorMsg = "Configuration exceeds effective capacity (" + maxSpace + "): " + formula + " = " + requiredCapacity;
+                errorMsg = "Configuration exceeds effective capacity (" + model.capacity + "): " + formula + " = " + requiredCapacity;
             }
         }
     }
