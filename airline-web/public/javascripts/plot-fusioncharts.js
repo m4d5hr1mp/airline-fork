@@ -73,13 +73,28 @@ function plotMaintenanceLevelGauge(container, maintenanceLevelInput, onchangeFun
 	
 }
 
-//unmodifiable seat configuration bar
+// Define galley space map and function here to make it accessible in this file
+const galleySpaceByType = {
+    "LIGHT": 0,
+    "SMALL": 0,
+    "REGIONAL": 10,
+    "MEDIUM": 12,
+    "LARGE": 16,
+    "X_LARGE": 20,
+    "JUMBO": 20,
+    "SUPERSONIC": 16
+};
+
+function getGalleySpace(airplaneType) {
+    return galleySpaceByType[airplaneType] || 0;
+}
+
+// unmodifiable seat configuration bar
 function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMultipliers, hideValues, height) {
     container.children(':FusionCharts').each((function(i) {
-          $(this)[0].dispose();
-    }))
-    container.empty()
-
+        $(this)[0].dispose();
+    }));
+    container.empty();
     var dataSource = {
         "chart": {
             "theme": "fint",
@@ -89,198 +104,272 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
             "showTickValues": "0",
             "showborder": "0",
             "chartBottomMargin": "0",
-            "bgAlpha":"0",
+            "bgAlpha": "0",
             "valueFontSize": "11",
             "valueFontBold": "0",
             "animation": "0",
             "editMode": "0",
-            "containerBackgroundOpacity" :'0',
-            "pointerBgAlpha":"0",
-            "pointerBorderAlpha":"0",
+            "containerBackgroundOpacity": '0',
+            "pointerBgAlpha": "0",
+            "pointerBorderAlpha": "0",
             "chartLeftMargin": "0",
             "chartTopMargin": "0",
             "chartRightMargin": "0",
             "chartBottomMargin": "0",
             "baseFontColor": "#FFFFFF"
         }
+    };
+
+    // Calculate galley space based on whether premium classes are present
+    const airplaneType = configuration.model.airplaneType;
+    const hasPremium = configuration.business > 0 || configuration.first > 0;
+    const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
+
+    // Calculate effective spaces for each section
+    const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
+    const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
+    const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
+
+    // Total used space including galley
+    const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
+
+    // Unused space as the remainder
+    const unusedSpace = maxSeats - totalUsedSpace;
+
+    // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
+    let currentPosition = 0;
+
+    const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
+    currentPosition = unusedEnd;
+
+    const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
+    currentPosition = economyEnd;
+
+    let galleyEnd = currentPosition;
+    if (hasPremium && galleySpace > 0) {
+        galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
+        currentPosition = galleyEnd;
     }
 
+    const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
+    currentPosition = businessEnd;
 
-    var businessPosition = configuration.economy / maxSeats * 100
-    var firstPosition = (maxSeats - configuration.first * spaceMultipliers.first) / maxSeats * 100
+    const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
 
-    var economyRange = {
-                         "minValue": "0",
-                         "maxValue": businessPosition,
-                         "code": "#6baa01"
-                       }
-    var businessRange = {
-                          "minValue": businessPosition,
-                          "maxValue": firstPosition,
-                          "code": "#0077CC"
-                         }
-    var firstRange = {
-                      "minValue": firstPosition,
-                      "maxValue": "100",
-                      "code": "#FFE62B"
-                      }
-    if (!hideValues) {
-        economyRange.label = "Y : " + configuration.economy
-        businessRange.label = "J : " + configuration.business
-        firstRange.label = "F : " + configuration.first
+    // Build color ranges conditionally
+    dataSource["colorRange"] = { "color": [] };
+
+    // Unused range (if > 0)
+    if (unusedSpace > 0) {
+        let unusedRange = {
+            "minValue": "0",
+            "maxValue": unusedEnd,
+            "code": "#D3D3D3"
+        };
+        if (!hideValues) {
+            unusedRange.label = "Unused : " + unusedSpace;
+        }
+        dataSource["colorRange"].color.push(unusedRange);
     }
 
-    dataSource["colorRange"] = { "color": [economyRange, businessRange, firstRange] }
+    // Economy range (if > 0)
+    if (configuration.economy > 0) {
+        let economyRange = {
+            "minValue": unusedEnd,
+            "maxValue": economyEnd,
+            "code": "#6baa01"
+        };
+        if (!hideValues) {
+            economyRange.label = "Y : " + configuration.economy;
+        }
+        dataSource["colorRange"].color.push(economyRange);
+    }
+
+    // Galley range (if applicable)
+    if (hasPremium && galleySpace > 0) {
+        let galleyRange = {
+            "minValue": economyEnd,
+            "maxValue": galleyEnd,
+            "code": "#A9A9A9"
+        };
+        if (!hideValues) {
+            galleyRange.label = "Galley : " + galleySpace;
+        }
+        dataSource["colorRange"].color.push(galleyRange);
+    }
+
+    // Business range (if > 0)
+    if (configuration.business > 0) {
+        let businessRange = {
+            "minValue": galleyEnd,
+            "maxValue": businessEnd,
+            "code": "#0077CC"
+        };
+        if (!hideValues) {
+            businessRange.label = "J : " + configuration.business;
+        }
+        dataSource["colorRange"].color.push(businessRange);
+    }
+
+    // First range (if > 0)
+    if (configuration.first > 0) {
+        let firstRange = {
+            "minValue": businessEnd,
+            "maxValue": "100",
+            "code": "#FFE62B"
+        };
+        if (!hideValues) {
+            firstRange.label = "F : " + configuration.first;
+        }
+        dataSource["colorRange"].color.push(firstRange);
+    }
 
     if (!height) {
-        height = "20px"
+        height = "20px";
     }
-
-    var chart = container.insertFusionCharts(
-    {
+    var chart = container.insertFusionCharts({
         type: 'hlineargauge',
         width: '100%',
         height: height,
         dataFormat: 'json',
-        dataSource: dataSource,
-    })
-
+        dataSource: dataSource
+    });
 }
 
 function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMultipliers, callback) {
-	container.children(':FusionCharts').each((function(i) {
-		  $(this)[0].dispose();
-	}))
-	
-	container.empty()
+    console.log("plotSeatConfigurationGauge called with configuration:", configuration); // Log to verify data
+    container.children(':FusionCharts').each((function(i) {
+        $(this)[0].dispose();
+    }));
+    container.empty();
+    var chartConfig = {
+        "theme": "fint",
+        "lowerLimit": "0",
+        "upperLimit": "100",
+        "showTickMarks": "0",
+        "showTickValues": "0",
+        "showborder": "0",
+        "showtooltip": "0",
+        "chartBottomMargin": "0",
+        "bgAlpha": "0",
+        "valueFontSize": "11",
+        "valueFontBold": "0",
+        "animation": "0",
+        "editMode": "0",
+        "pointerBgAlpha": "0",
+        "pointerBorderAlpha": "0",
+        "containerBackgroundOpacity": '0',
+        "baseFontColor": "#FFFFFF"
+    };
+    var dataSource = {
+        "chart": chartConfig
+    };
 
-	var chartConfig = {
-                      	    	"theme": "fint",
-                      	        "lowerLimit": "0",
-                      	        "upperLimit": "100",
-                      	        "showTickMarks": "0",
-                      	        "showTickValues": "0",
-                      	        "showborder": "0",
-                      	        "showtooltip": "0",
-                      	        "chartBottomMargin": "0",
-                      	        "bgAlpha":"0",
-                      	        "valueFontSize": "11",
-                      	        "valueFontBold": "0",
-                      	        "animation": "0",
-                      	        "editMode": "0",
-                      	        "pointerBgAlpha":"0",
-                                  "pointerBorderAlpha":"0",
-                      	        containerBackgroundOpacity :'0',
-                      	        "baseFontColor": "#FFFFFF"
-                      	    }
+    function updateDataSource(configuration) {
+        const airplaneType = configuration.model.airplaneType;
+        const hasPremium = configuration.business > 0 || configuration.first > 0;
+        const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
+        console.log("Calculated galleySpace:", galleySpace); // Debug log
 
+        // Calculate effective spaces for each section
+        const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
+        const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
+        const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
 
-	var dataSource = { 
-		"chart": chartConfig
-//	    ,
-//	    "pointers": {
-//	        //Multiple pointers defined here
-//	        "pointer": [
-//	            {
-//	                "bgColor": "#FFE62B",
-//	                "bgAlpha": "50",
-//	                "showValue": "0",
-//	                //"sides" : "4",
-//	                "borderColor": "#FFE62B",
-//	                "borderAlpha": "20",
-//	            },
-//	            {
-//	                "bgColor": "#0077CC",
-//	                "bgAlpha": "50",
-//	                "showValue": "0",
-//	                //"sides" : "3",
-//	                "borderColor": "#0077CC",
-//	                "borderAlpha": "20",
-//	            }
-//	        ]
-//	    }
-	}
-	
-	function updateDataSource(configuration) {
-		var businessPosition = configuration.economy / maxSeats * 100
-		var firstPosition
-		 if (configuration.business == 0) {
-		    firstPosition = businessPosition
-		 } else {
-		    firstPosition = (maxSeats - configuration.first * spaceMultipliers.first) / maxSeats * 100
-		 }
-		dataSource["colorRange"] = {
-            "color": [
-                      {
-                          "minValue": "0",
-                          "maxValue": businessPosition,
-                          "label": "Y : " + configuration.economy,
-                          "tooltext": "Economy Class",
-                          "code": "#6baa01"
-                      },
-                      {
-                          "minValue": businessPosition,
-                          "maxValue": firstPosition,
-                          "label": "J : " + configuration.business,
-                          "tooltext": "Business Class",
-                          "code": "#0077CC"
-                      },
-                      {
-                          "minValue": firstPosition,
-                          "maxValue": "100",
-                          "label": "F : " + configuration.first,
-                          "tooltext": "First Class",
-                          "code": "#FFE62B"
-                      }
-                  ]
-              }
-//	    dataSource["pointers"]["pointer"][0].value = firstPosition
-//	    dataSource["pointers"]["pointer"][1].value = businessPosition
-	}
-	
-	updateDataSource(configuration)
+        // Total used space including galley
+        const totalUsedSpace = effectiveEconomySpace + effectiveBusinessSpace + effectiveFirstSpace + galleySpace;
 
-	var chart = container.insertFusionCharts(
-	{	
-		type: 'hlineargauge',
+        // Unused space as the remainder
+        const unusedSpace = maxSeats - totalUsedSpace;
+
+        // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
+        let currentPosition = 0;
+
+        const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
+        currentPosition = unusedEnd;
+
+        const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
+        currentPosition = economyEnd;
+
+        let galleyEnd = currentPosition;
+        if (hasPremium && galleySpace > 0) {
+            galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
+            currentPosition = galleyEnd;
+        }
+
+        const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
+        currentPosition = businessEnd;
+
+        const firstEnd = currentPosition + (effectiveFirstSpace / maxSeats * 100);
+
+        // Build color ranges conditionally
+        dataSource["colorRange"] = { "color": [] };
+
+        // Unused range (if > 0)
+        if (unusedSpace > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": "0",
+                "maxValue": unusedEnd,
+                "label": "Unused : " + unusedSpace,
+                "tooltext": "Unused Space",
+                "code": "#D3D3D3"
+            });
+        }
+
+        // Economy range (if > 0)
+        if (configuration.economy > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": unusedEnd,
+                "maxValue": economyEnd,
+                "label": "Y : " + configuration.economy,
+                "tooltext": "Economy Class",
+                "code": "#6baa01"
+            });
+        }
+
+        // Galley range (if applicable)
+        if (hasPremium && galleySpace > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": economyEnd,
+                "maxValue": galleyEnd,
+                "label": "Galley : " + galleySpace,
+                "tooltext": "Galley Space",
+                "code": "#A9A9A9"
+            });
+        }
+
+        // Business range (if > 0)
+        if (configuration.business > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": galleyEnd,
+                "maxValue": businessEnd,
+                "label": "J : " + configuration.business,
+                "tooltext": "Business Class",
+                "code": "#0077CC"
+            });
+        }
+
+        // First range (if > 0)
+        if (configuration.first > 0) {
+            dataSource["colorRange"].color.push({
+                "minValue": businessEnd,
+                "maxValue": "100",
+                "label": "F : " + configuration.first,
+                "tooltext": "First Class",
+                "code": "#FFE62B"
+            });
+        }
+    }
+
+    updateDataSource(configuration);
+    var chart = container.insertFusionCharts({
+        type: 'hlineargauge',
         width: '100%',
         height: '40px',
         dataFormat: 'json',
-        containerBackgroundOpacity :'0',
-	    dataSource: dataSource
-//	    ,
-//        "events": {
-//            "realTimeUpdateComplete" : function (evt, arg){
-//                var firstPosition = evt.sender.getData(1)
-//                var businessPosition = evt.sender.getData(2)
-//
-//                var tinyAdjustment = 0.001 //the tiny adjustment is to avoid precision problem that causes floor to truncate number like 0.99999
-//                configuration["first"] = Math.floor(tinyAdjustment + maxSeats * (100 - firstPosition) / 100 / spaceMultipliers.first)
-//
-//                if (firstPosition < businessPosition) {  //dragging first past business to the left => eliminate all business
-//                	configuration["business"] = 0
-//                } else {
-//                	configuration["business"] = Math.floor(tinyAdjustment + (maxSeats * (100 - businessPosition) / 100 - configuration["first"] * spaceMultipliers.first) / spaceMultipliers.business)
-//                }
-//
-//                if (businessPosition == 0) { //allow elimination of all economy seats
-//                	configuration["economy"] = 0
-//                } else {
-//                	configuration["economy"] = Math.floor(tinyAdjustment + (maxSeats - configuration["first"] * spaceMultipliers.first - configuration["business"] * spaceMultipliers.business) / spaceMultipliers.economy)
-//                }
-//
-//
-//                //console.log(configuration)
-//
-//                updateDataSource(configuration)
-//                callback(configuration)
-//
-//                container.updateFusionCharts({
-//                	"dataSource": dataSource
-//                });
-//            }
-//        }
-	})
+        containerBackgroundOpacity: '0',
+        dataSource: dataSource
+    });
 }
 
 function plotAirportShares(airportShares, currentAirportId, container) {
@@ -294,10 +383,6 @@ function plotAirportShares(airportShares, currentAirportId, container) {
 			label : airportShare.airportName,
 			value : airportShare.share
 		}
-//		if (currentAirportId == airportShare.airportId) {
-//			entry["sliced"] = true
-//			entry["selected"] = true
-//		}
 		data.push(entry)
 	})
 	$("#cityPie").insertFusionCharts({
@@ -446,9 +531,7 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 		business : [],
         first : []
 	}
-
-
-		
+	
 	var category = []
 
     if (plotUnit === undefined) {
@@ -507,7 +590,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 			}
 
 			var mark = Math.floor(linkConsumption.cycle / weeksPerMark)
-			//var week = linkConsumption.cycle % 4 + 1
 			category.push({ label : mark.toString()})
 		})
 	}
@@ -515,7 +597,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	var chartConfig = {
                       	    		"xAxisname": xLabel,
                       	    		"YAxisName": "Seats Consumption",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"sNumberSuffix" : "%",
                       	            "sYAxisMaxValue" : "100",
                       	            "transposeAxis":"1",
@@ -533,7 +614,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
                                       "labelDisplay":"wrap",
                                       "labelStep": weeksPerMark
                       	    	}
-
 	checkDarkTheme(chartConfig, true)
 	
 	var ridershipChart = ridershipContainer.insertFusionCharts( {
@@ -559,7 +639,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	chartConfig = {
 	"xAxisname": xLabel,
     	    		"YAxisName": "Revenue",
-    	    		//"sYAxisName": "Load Factor %",
     	    		"sYAxisMaxValue" : "100",
     	    		"transposeAxis":"1",
     	    		"useroundedges": "1",
@@ -598,7 +677,6 @@ function plotLinkConsumption(linkConsumptions, ridershipContainer, revenueContai
 	chartConfig =  {
                   	    		"xAxisname": xLabel,
                   	    		"YAxisName": "Ticket Price",
-                  	    		//"sYAxisName": "Load Factor %",
                   	    		"numberPrefix": "$",
                   	    		"sYAxisMaxValue" : "100",
                   	    		"useroundedges": "1",
@@ -696,8 +774,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
     var chartConfig = {
                         "xAxisname": xLabel,
                         "YAxisName": "Seats Consumption",
-                        //"sYAxisName": "Load Factor %",
-                        //"YAxisMaxValue" : maxCapacity * 1.2,
                         "transposeAxis":"1",
                         "useroundedges": "1",
                         "animation": "0",
@@ -720,7 +796,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
 
 	checkDarkTheme(chartConfig, true)
 
-	//var ridershipChart = container.insertFusionCharts( {
 	var ridershipChart = new FusionCharts( {
 		type: 'stackedcolumn2d',
 	    width: '100%',
@@ -737,7 +812,6 @@ function plotRivalHistory(rivalHistory, container, cycleHoverFunc, chartOutFunc)
             "alpha": "100",
             "category" : category}],
 			"dataset" : dataset,
-
 	    },
 	    events : {
             "dataplotrollover": function (eventObj, dataObj) {
@@ -801,19 +875,13 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 			    maxCapacity = capacity
 			}
 
-			//var mark = Math.floor(linkConsumption.cycle / weeksPerMark)
-			//var week = linkConsumption.cycle % 4 + 1
 			category.push({ label : linkConsumption.cycle.toString() , cycle : linkConsumption.cycle })
-
-
-
 		})
 	}
 
 	var chartConfig = {
                       	    		"xAxisname": xLabel,
                       	    		"YAxisName": "Seats Consumption",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"YAxisMaxValue" : maxCapacity * 1.2,
                       	            "transposeAxis":"1",
                       	    		"useroundedges": "1",
@@ -840,8 +908,6 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 
 	var currentWeekHover = 0
 
-
-	//var ridershipChart = linkEventContainer.insertFusionCharts( {
 	var ridershipChart = new FusionCharts( {
 		type: 'stackedcolumn2d',
 	    width: '100%',
@@ -863,17 +929,13 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 						 ,{"seriesName": "Sold Seats (First)", "type": "first", "data" : soldSeatsData.first}
 						 ,{ "seriesName": "Cancelled Seats", "type": "cancelled", "data" : cancelledSeatsData}
 						 ,{ "seriesName": "Empty Seats", "type": "empty", "data" : emptySeatsData, "alpha":"10"}
-
-			            //, {"seriesName": "Load Factor", "renderAs" : "line", "parentYAxis": "S", "data" : loadFactorData}
 			            ],
-
 	    },
 	    events : {
             "dataplotrollover": function (eventObj, dataObj) {
                 if (cycleHoverFunc != null) {
                     cycleHoverFunc(category[dataObj.index].cycle)
                 }
-
             },
             "chartRollOut": function (eventObj, dataObj) {
                 if (chartOutFunc != null) {
@@ -884,7 +946,6 @@ function plotLinkEvent(linkConsumptions, linkEventContainer, cycleHoverFunc, cha
 	}).render()
 	return ridershipChart
 }
-
 
 function toggleLinkEventBar(chart, cycle, on) {
     if (chart && chart.lastToggledCycle == cycle) {
@@ -912,8 +973,6 @@ function toggleLinkEventBar(chart, cycle, on) {
     })
     chart.setJSONData(jsonData)
 }
-
-
 
 function stringHashCode(s) {
   var h = 0, l = s.length, i = 0;
@@ -950,6 +1009,7 @@ function colorFromString(s) {
     return `#${rr}${gg}${bb}`
 }
 
+// This Needs to change when we add more preferences!
 var defaultPieColors = {
     "Business" : "#2e287d",
     "Tourist" : "#fc7a57",
@@ -963,7 +1023,6 @@ var defaultPieColors = {
     "departure/arrival passengers" : "#FC7A57",
     "transit passengers": "#9BF3F0",
 }
-
 
 function plotPie(dataSource, currentKey, container, keyName, valueName) {
 	container.children(':FusionCharts').each((function(i) {
@@ -992,15 +1051,9 @@ function plotPie(dataSource, currentKey, container, keyName, valueName) {
 		} else {
 		    entry.color = colorFromString(keyLabel)
 		}
-		
 		if (currentKey && keyLabel == currentKey) {
 			entry.issliced = "1"
 		}
-		
-//		if (currentAirportId == airportShare.airportId) {
-//			entry["sliced"] = true
-//			entry["selected"] = true
-//		}
 		data.push(entry)
 	})
 
@@ -1214,7 +1267,6 @@ function plotOilPriceChart(oilPrices, container) {
 	})
 }
 
-
 function plotLoanInterestRatesChart(rates, container) {
 	container.children(':FusionCharts').each((function(i) {
 		  $(this)[0].dispose();
@@ -1349,7 +1401,6 @@ function plotRivalHistoryChart(allRivalLinkConsumptions, priceContainer, linkCla
 
     var chartConfig = {
                       	    		"xAxisname": "Month",
-                      	    		//"sYAxisName": "Load Factor %",
                       	    		"numberPrefix": numberPrefix,
                       	    		"sYAxisMaxValue" : "100",
                       	    		"useroundedges": "1",
@@ -1397,8 +1448,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
 	var category = []
 
 	var dataSet = []
-//    var maxValue = -1
-//    var minValue = 99999
     var dataByAirlineId = {}
     var airlineNameByAirlineId = {}
     if (!jQuery.isEmptyObject(loyalistHistory)) { //link consumptions is array (by each rival link) of array (by cycle),
@@ -1412,11 +1461,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
                 if (!dataByAirlineId[airlineId]) {
                     dataByAirlineId[airlineId] = []
                 }
-//                var lineColor = "#f6bf1b"
-//                if (activeAirline && activeAirline.id == airlineId) {
-//                    lineColor = "#d84f4f"
-//                }
-//                dataByAirlineId[airlineId].push({"value": entry.amount, "color": lineColor})
                 dataByAirlineId[airlineId].push({"value": entry.amount})
                 airlineNameByAirlineId[airlineId] = entry.airlineName
             })
@@ -1427,8 +1471,6 @@ function plotLoyalistHistoryChart(loyalistHistory, container) {
         })
     }
 
-//     var yAxisMax = Math.round(maxValue * 1.1)
-//     var yAxisMin = Math.round(minValue * 0.8)
     var chartConfig = {
                       	    		"xAxisname": "Week",
                       	    		"yAxisName": "Loyalist Amount",
@@ -1526,7 +1568,6 @@ function plotMissionStatsGraph(stats, threshold, container) {
 	})
 }
 
-
 function checkDarkTheme(chartConfig, keepPallette) {
     if (document.documentElement.getAttribute("data-theme") === "dark") {
     //if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -1554,4 +1595,3 @@ function checkDarkTheme(chartConfig, keepPallette) {
     //                "legendIconBorderThickness": "3"
     }
 }
-
