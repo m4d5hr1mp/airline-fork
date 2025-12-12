@@ -265,13 +265,15 @@ function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMul
         "chart": chartConfig
     };
 
-    function updateDataSource(configuration) {
+	function updateDataSource(configuration) {
+		// Declare this to give "Unused" and "Galley" labels sufficient margins, so there's no text wrapping
+		const MIN_RANGE_PERCENT = 15;
         const airplaneType = configuration.model.airplaneType;
         const hasPremium = configuration.business > 0 || configuration.first > 0;
         const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
         console.log("Calculated galleySpace:", galleySpace); // Debug log
 
-        // Calculate effective spaces for each section
+		// Calculate effective spaces for each section, uses current input values
         const effectiveEconomySpace = configuration.economy * spaceMultipliers.economy;
         const effectiveBusinessSpace = configuration.business * spaceMultipliers.business;
         const effectiveFirstSpace = configuration.first * spaceMultipliers.first;
@@ -282,20 +284,45 @@ function plotSeatConfigurationGauge(container, configuration, maxSeats, spaceMul
         // Unused space as the remainder
         const unusedSpace = maxSeats - totalUsedSpace;
 
+		// Calculate initial percentages for Unused and Galley
+		let unusedPercent = (unusedSpace / maxSeats * 100);
+		let galleyPercent = (galleySpace / maxSeats * 100);
+
+		// Adjust Unused if below minimum (expand and track borrowed amount to subtract from economy later)
+		let borrowedFromEconomy = 0;
+		let adjustedUnusedPercent = unusedPercent;
+		if (unusedSpace > 0 && unusedPercent < MIN_RANGE_PERCENT) {
+			borrowedFromEconomy += MIN_RANGE_PERCENT - unusedPercent;
+			adjustedUnusedPercent = MIN_RANGE_PERCENT;
+		}
+
+		// Adjust Galley if below minimum (expand and add to borrowed amount)
+		let adjustedGalleyPercent = galleyPercent;
+		if (hasPremium && galleySpace > 0 && galleyPercent < MIN_RANGE_PERCENT) {
+			borrowedFromEconomy += MIN_RANGE_PERCENT - galleyPercent;
+			adjustedGalleyPercent = MIN_RANGE_PERCENT;
+		}
+
+		// Adjust economy space to compensate for borrowed amounts (ensures total remains 100%)
+		let adjustedEffectiveEconomySpace = effectiveEconomySpace - (borrowedFromEconomy / 100 * maxSeats);
+		if (adjustedEffectiveEconomySpace < 0) {
+			adjustedEffectiveEconomySpace = 0; // Prevent negative; fallback to no adjustment if insufficient
+		}
+
         // Cumulative positions starting from 0 (left to right: unused, economy, galley, business, first)
         let currentPosition = 0;
 
-        const unusedEnd = currentPosition + (unusedSpace / maxSeats * 100);
-        currentPosition = unusedEnd;
+		const unusedEnd = currentPosition + adjustedUnusedPercent;
+		currentPosition = unusedEnd;
 
-        const economyEnd = currentPosition + (effectiveEconomySpace / maxSeats * 100);
-        currentPosition = economyEnd;
+		const economyEnd = currentPosition + (adjustedEffectiveEconomySpace / maxSeats * 100);
+		currentPosition = economyEnd;
 
-        let galleyEnd = currentPosition;
-        if (hasPremium && galleySpace > 0) {
-            galleyEnd = currentPosition + (galleySpace / maxSeats * 100);
-            currentPosition = galleyEnd;
-        }
+		let galleyEnd = currentPosition;
+		if (hasPremium && galleySpace > 0) {
+			galleyEnd = currentPosition + adjustedGalleyPercent;
+			currentPosition = galleyEnd;
+		}
 
         const businessEnd = currentPosition + (effectiveBusinessSpace / maxSeats * 100);
         currentPosition = businessEnd;

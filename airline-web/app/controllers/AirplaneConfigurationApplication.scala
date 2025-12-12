@@ -131,13 +131,23 @@ class AirplaneConfigurationApplication @Inject()(cc: ControllerComponents) exten
             case Some(configuration) =>
               if (configuration.airline.id != airlineId || configuration.model.id != airplane.model.id) {
                 BadRequest(s"Cannot update Configuration on airplane $airplane as configuration $configurationId is not valid")
-              } else if (!configuration.isValid) {
-                BadRequest(s"Cannot assign invalid configuration for ${configuration.model.airplaneType}: Check allowed classes, minimum seats, or capacity (including galleys if applicable).")
               } else {
-                airplane.configuration = configuration
-                AirplaneSource.updateAirplanes(List(airplane))
-                LinkUtil.adjustLinksAfterAirplaneConfigurationChange(airplaneId)
-                Ok(Json.toJson(airplane))
+                // Load the full model to ensure correct computed properties like airplaneType
+                ModelSource.loadModelById(configuration.model.id) match {
+                  case Some(fullModel) =>
+                    // Create a new configuration with the full model for validation
+                    val validatedConfig = configuration.copy(model = fullModel)
+                    if (!validatedConfig.isValid) {
+                      BadRequest(s"Cannot assign invalid configuration for ${validatedConfig.model.airplaneType}: Check allowed classes, minimum seats, or capacity (including galleys if applicable).")
+                    } else {
+                      airplane.configuration = configuration
+                      AirplaneSource.updateAirplanes(List(airplane))
+                      LinkUtil.adjustLinksAfterAirplaneConfigurationChange(airplaneId)
+                      Ok(Json.toJson(airplane))
+                    }
+                  case None =>
+                    BadRequest(s"Full model for configuration $configurationId not found")
+                }
               }
             case None =>
               BadRequest(s"Cannot update Configuration on airplane $airplaneId as configuration $configurationId is not found")
