@@ -91,6 +91,13 @@ function getGalleySpace(airplaneType) {
 
 // unmodifiable seat configuration bar
 function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMultipliers, hideValues, height) {
+
+	// REMOVE THIS IN PRODUCTION!
+	// Adding Debug Logs to fix problems when opening link edit window:
+	console.log("plotSeatConfigurationBar called with configuration:", configuration); // Outputs the full object
+    // Additional targeted logs for key properties
+    console.log("Configuration model:", configuration.model); // Specifically checks the model property
+
     container.children(':FusionCharts').each((function(i) {
         $(this)[0].dispose();
     }));
@@ -120,8 +127,8 @@ function plotSeatConfigurationBar(container, configuration, maxSeats, spaceMulti
         }
     };
 
-    // Calculate galley space based on whether premium classes are present
-    const airplaneType = configuration.model.airplaneType;
+// Calculate galley space based on whether premium classes are present
+    const airplaneType = configuration.model?.airplaneType; // Use optional chaining to handle undefined model
     const hasPremium = configuration.business > 0 || configuration.first > 0;
     const galleySpace = hasPremium ? getGalleySpace(airplaneType) : 0;
 
