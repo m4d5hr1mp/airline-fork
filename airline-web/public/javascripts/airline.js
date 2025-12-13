@@ -3142,9 +3142,7 @@ function negotiationAnimation(savedLink, callback, callbackParam) {
     }
     $('#negotiationAnimation .clip').attr('src', animationUrl)
 
-
 	var gaugeValue = 0
-
 	var index = 0
 	$('#negotiationAnimation .successRate').text(Math.floor(negotiationResult.odds * 100))
 
@@ -3210,12 +3208,13 @@ function negotiationAnimation(savedLink, callback, callbackParam) {
                            }
                        };
         }
-        animateProgressBar($('#negotiationAnimation .negotiationBar'), percentage, 500, callback)
+        // This governs the speed at which negotiation progress bar fills up. Vanilla AC uses 500, Fork uses 250
+        animateProgressBar($('#negotiationAnimation .negotiationBar'), percentage, 375, callback)
 
         if (index == negotiationResult.sessions.length) {
             clearInterval(animationInterval);
         }
-	}, 750)
+	}, 500)
 
 
 	if (callback) {
