@@ -51,8 +51,7 @@ function updateAirlineInfo(airlineId) {
 function updateAirlineLogo() {
 	$('.airlineLogo').attr('src', '/airlines/' + activeAirline.id + "/logo?dummy=" + Math.random())
 }
-	
-	
+		
 function refreshTopBar(airline) {
     changeColoredElementValue($(".balance"), airline.balance)
 	//changeColoredElementValue($(".reputation"), airline.reputation)
@@ -299,156 +298,93 @@ function refreshLinks(forceRedraw) {
 
 
 
-// ==========================
-// MUST LOAD GREAT CIRCLE HELPER IN LAZY MODE OTHERWISE SHIT BREAKS!
-// ==========================
-let interpolateGreatCircle = null;
 
-function ensureGreatCircleHelper() {
-  if (!interpolateGreatCircle) {
-    console.log("Initializing great-circle math helper…");
-
-    interpolateGreatCircle = function (fromLat, fromLon, toLat, toLon) {
-      const coords = [];
-
-      const lat1 = fromLat * Math.PI / 180;
-      const lon1 = fromLon * Math.PI / 180;
-      const lat2 = toLat * Math.PI / 180;
-      const lon2 = toLon * Math.PI / 180;
-
-      const d = 2 * Math.asin(
-        Math.sqrt(
-          Math.sin((lat2 - lat1) / 2) ** 2 +
-          Math.cos(lat1) * Math.cos(lat2) *
-          Math.sin((lon2 - lon1) / 2) ** 2
-        )
-      );
-
-      if (d === 0) {
-        return [[fromLat, fromLon], [toLat, toLon]];
-      }
-
-      // Dynamic segment count based on distance
-      const distanceKm = d * 6371;
-      let steps;
-      if (distanceKm < 500) steps = 3;
-      else if (distanceKm < 1000) steps = 5;
-      else if (distanceKm < 2000) steps = 8;
-      else if (distanceKm < 3000) steps = 10;
-      else if (distanceKm < 4000) steps = 12;
-      else if (distanceKm < 6000) steps = 16;
-      else if (distanceKm < 8000) steps = 24;
-      else if (distanceKm < 12000) steps = 30;
-      else if (distanceKm < 16000) steps = 36;
-      else steps = 48;
-
-      for (let i = 0; i <= steps; i++) {
-        const f = i / steps;
-        const A = Math.sin((1 - f) * d) / Math.sin(d);
-        const B = Math.sin(f * d) / Math.sin(d);
-
-        const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
-        const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
-        const z = A * Math.sin(lat1) + B * Math.sin(lat2);
-
-        const lat = Math.atan2(z, Math.sqrt(x * x + y * y)) * 180 / Math.PI;
-        const lon = Math.atan2(y, x) * 180 / Math.PI;
-
-        coords.push([lat, lon]);
-      }
-
-      // Fix wraparound across 180° meridian
-      for (let i = 1; i < coords.length; i++) {
-        const prevLon = coords[i - 1][1];
-        let lon = coords[i][1];
-        const diff = lon - prevLon;
-        if (diff > 180) lon -= 360;
-        else if (diff < -180) lon += 360;
-        coords[i][1] = lon;
-      }
-
-      return coords;
-    };
-  }
-
-  return interpolateGreatCircle;
-}
-
-// Draw Flight Paths Using Leaflet, with Lazy-Loaded Helper function from above:
+// Updated drawFlightPath using L.Geodesic:
 function drawFlightPath(link, linkColor) {
-  if (!linkColor) {
-    linkColor = getLinkColor(link.profit, link.revenue);
-  }
+    if (!linkColor) {
+        linkColor = getLinkColor(link.profit, link.revenue);
+    }
+    const from = [link.fromLatitude, link.fromLongitude];
+    const to = [link.toLatitude, link.toLongitude];
 
-  // 🌀 Get (and lazily initialize) the helper
-  const greatCircle = ensureGreatCircleHelper();
+    // Main visible geodesic path
+    const flightPath = new L.Geodesic([[from, to]], {
+        color: linkColor,
+        opacity: pathOpacityByStyle[currentStyles].normal,
+        weight: 2,
+        steps: 10,  // Adjust for smoothness (higher values for longer routes; 5-20 recommended)
+        wrap: false,  // Ensures continuous curve across antimeridian
+        zIndex: 90
+    }).addTo(map);
 
-  // Generate curved path
-  const pathCoords = greatCircle(
-    link.fromLatitude,
-    link.fromLongitude,
-    link.toLatitude,
-    link.toLongitude
-  );
+    // Shadow geodesic path for click detection
+    const shadowPath = new L.Geodesic([[from, to]], {
+        color: linkColor,
+        opacity: 0.001,
+        weight: 15,
+        steps: 10,
+        wrap: false,
+        zIndex: 100
+    }).addTo(map);
 
-  // Main visible path
-  const flightPath = L.polyline(pathCoords, {
-    color: linkColor,
-    opacity: pathOpacityByStyle[currentStyles].normal,
-    weight: 2,
-    zIndex: 90
-  });
+    polylines.push(flightPath);
+    polylines.push(shadowPath);
 
-  // Shadow path (used for click hitbox)
-  const shadowPath = L.polyline(pathCoords, {
-    color: linkColor,
-    opacity: 0.001,
-    weight: 15,
-    zIndex: 100
-  });
-
-  flightPath.addTo(map);
-  shadowPath.addTo(map);
-
-  polylines.push(flightPath);
-
-  const resultPath = { path: flightPath, shadow: shadowPath };
-
-  if (link.id) {
-    shadowPath.on("click", function () {
-      selectLinkFromMap(link.id, false);
-    });
-
-    drawFlightMarker(flightPath, link);
-    flightPaths[link.id] = resultPath;
-  }
-
-  return resultPath;
+    const resultPath = { path: flightPath, shadow: shadowPath };
+    if (link.id) {
+        shadowPath.on("click", function () {
+            selectLinkFromMap(link.id, false);
+        });
+        drawFlightMarker(flightPath, link);  // Pass flightPath for animation along geodesic
+        flightPaths[link.id] = resultPath;
+    }
+    return resultPath;
 }
-
 
 function refreshFlightPath(link, forceRedraw) {
-  const entry = flightPaths[link.id];
-  if (entry && entry.path) {
-    const path = entry.path;
-
-    if (forceRedraw || path.frequency !== link.frequency || path.modelId !== link.modelId) {
-      path.frequency = link.frequency;
-      path.modelId = link.modelId;
-
-      drawFlightMarker(path, link);
+    const entry = flightPaths[link.id];
+    if (entry && entry.path) {
+        const path = entry.path;
+        if (forceRedraw || path.frequency !== link.frequency || path.modelId !== link.modelId) {
+            path.frequency = link.frequency;
+            path.modelId = link.modelId;
+            drawFlightMarker(path, link);  // Re-draw markers if needed
+        }
+        const newColor = getLinkColor(link.profit, link.revenue);
+        path.setOptions({  // Use setOptions for geodesic updates
+            color: newColor,
+            opacity: pathOpacityByStyle[currentStyles].normal
+        });
+        if (entry.shadow) {
+            entry.shadow.setOptions({ color: newColor });
+        }
     }
+}
 
-    const newColor = getLinkColor(link.profit, link.revenue);
-    path.setStyle({
-      color: newColor,
-      opacity: pathOpacityByStyle[currentStyles].normal
+// Updated interpolate function for animation (interpolates along geodesic points):
+function interpolateAlongPath(latlngs, t) {
+    if (!latlngs || latlngs.length === 0) return null;
+
+    // Flatten nested latlngs from L.Geodesic (multi-polyline structure)
+    let flatLatLngs = [];
+    latlngs.forEach(segment => {
+        flatLatLngs = flatLatLngs.concat(segment);
     });
 
-    if (entry.shadow) {
-      entry.shadow.setStyle({ color: newColor });
-    }
-  }
+    if (flatLatLngs.length < 2) return flatLatLngs[0];
+
+    // Calculate total "length" (simplified as segment count for uniform steps)
+    const totalSegments = flatLatLngs.length - 1;
+    const targetSegment = Math.min(Math.floor(t * totalSegments), totalSegments - 1);
+    const segmentT = (t * totalSegments) - targetSegment;
+
+    const from = flatLatLngs[targetSegment];
+    const to = flatLatLngs[targetSegment + 1];
+
+    return L.latLng(
+        from.lat + (to.lat - from.lat) * segmentT,
+        from.lng + (to.lng - from.lng) * segmentT
+    );
 }
 
 function getLinkColor(profit, revenue) {
@@ -598,42 +534,27 @@ function toggleMapAnimation() {
 	refreshLinks(true)	
 }
 
-// --- Helper: interpolate between two points (approximate) ---
-function interpolateLatLng(from, to, t) {
-    return L.latLng(
-        from.lat + (to.lat - from.lat) * t,
-        from.lng + (to.lng - from.lng) * t
-    );
-}
-
-//Use the DOM setInterval() function to change the offset of the symbol
-//at fixed intervals.
 function drawFlightMarker(line, link) {
     const linkId = link.id;
-
     // Clear any old markers for this link
     const oldMarkerEntry = flightMarkers[linkId];
     if (oldMarkerEntry) {
         clearMarkerEntry(oldMarkerEntry);
     }
-
     // Only animate if enabled and airplanes assigned
     if (currentAnimationStatus && link.assignedAirplanes && link.assignedAirplanes.length > 0) {
-        const latlngs = line.getLatLngs();
-        if (!latlngs || latlngs.length < 2) {
+        const latlngs = line.getLatLngs();  // Get geodesic points
+        if (!latlngs || latlngs.length === 0) {
             console.warn("⚠️ drawFlightMarker: invalid latlngs for link", link);
             return;
         }
-
-        const from = latlngs[0];
-        const to = latlngs[latlngs.length - 1];
-
+        const from = latlngs[0][0];  // Nested structure: [[seg1], [seg2], ...]
+        const to = latlngs[latlngs.length - 1][latlngs[latlngs.length - 1].length - 1];
         const icon = L.icon({
             iconUrl: "/assets/images/markers/dot.png",
             iconSize: [12, 12],
             iconAnchor: [6, 6]
         });
-
         const frequency = link.frequency;
         const animationInterval = 100; // ms
         const minsPerInterval = 1;
@@ -641,24 +562,18 @@ function drawFlightMarker(line, link) {
         const maxTripsPerMarker = (60 * 24 * 7) / (link.duration * 2);
         const markersRequired = Math.ceil(frequency / maxTripsPerMarker);
         const totalIntervalsPerWeek = minutesPerWeek / minsPerInterval;
-
         const markersOfThisLink = [];
-
         for (let i = 0; i < markersRequired; i++) {
             const marker = L.marker([from.lat, from.lng], { icon, interactive: false });
-
             marker.totalDuration = link.duration * 2; // round trip
             marker.elapsedDuration = 0;
             marker.nextDepartureFrame = Math.floor((i + 0.1) * totalIntervalsPerWeek / frequency) % totalIntervalsPerWeek;
             marker.departureInterval = Math.floor(totalIntervalsPerWeek / markersRequired);
             marker.status = "forward";
             marker.isActive = false;
-
             markersOfThisLink.push(marker);
         }
-
         flightMarkers[linkId] = { markers: markersOfThisLink };
-
         let count = 0;
         const animation = window.setInterval(() => {
             markersOfThisLink.forEach(marker => {
@@ -670,44 +585,37 @@ function drawFlightMarker(line, link) {
                     marker.addTo(map);
                 } else if (marker.isActive) {
                     marker.elapsedDuration += minsPerInterval;
-
                     if (marker.elapsedDuration >= marker.totalDuration) {
                         map.removeLayer(marker);
                         marker.isActive = false;
                         marker.nextDepartureFrame = (marker.nextDepartureFrame + marker.departureInterval) % totalIntervalsPerWeek;
                     } else {
                         const t = marker.elapsedDuration / marker.totalDuration;
-
                         let newPos;
                         if (marker.status === "forward") {
                             if (t >= 0.45) {
                                 marker.status = "turnaround";
                             } else {
-                                newPos = interpolateLatLng(from, to, t / 0.45);
+                                newPos = interpolateAlongPath(latlngs, t / 0.45);
                             }
                         } else if (marker.status === "turnaround") {
                             if (t >= 0.55) {
                                 marker.status = "backward";
                             }
                         } else if (marker.status === "backward") {
-                            newPos = interpolateLatLng(to, from, (t - 0.55) / 0.45);
+                            newPos = interpolateAlongPath(latlngs, 1 - ((t - 0.55) / 0.45));  // Reverse along path
                         }
-
                         if (newPos) {
                             marker.setLatLng(newPos);
                         }
                     }
                 }
             });
-
             count = (count + 1) % totalIntervalsPerWeek;
         }, animationInterval);
-
         flightMarkers[linkId].animation = animation;
     }
 }
-
-
 
 /**
  * deselect a currently selected link, perform both UI and underlying data changes

@@ -308,7 +308,6 @@ function loadAllianceDetails(allianceId) {
 	$('#allianceDetails').fadeIn(200)
 }
 
-
 function updateAllianceBasicsDetails(allianceId) {
 	var alliance = loadedAlliancesById[allianceId]
 	selectedAlliance = alliance
@@ -471,6 +470,7 @@ function updateAllianceChampions(allianceId) {
     updateAllianceAirportChampions(allianceId)
     updateAllianceCountryChampions(allianceId)
 }
+
 function updateAllianceAirportChampions(allianceId) {
 	$('#allianceChampionAirportList').children('div.table-row').remove()
 	
@@ -609,7 +609,6 @@ function updateAllianceTagColor(allianceId) {
         $('#allianceDetails .tagColor').hide()
     }
 }
-
 
 function toggleFormAlliance() {
 	$('#currentAirlineMemberDetails .allianceName').hide()
@@ -819,7 +818,6 @@ function showAllianceMap() {
     });
 }
 
-
 function addExitButton() {
     // Remove existing button control if already present
     if (map.exitButtonControl) {
@@ -860,13 +858,10 @@ function addExitButton() {
 
 function drawAllianceLink(link) {
     if (!link) return null;
-
     const from = [link.fromLatitude, link.fromLongitude];
     const to = [link.toLatitude, link.toLongitude];
-
     // Determine stroke color
     let strokeColor = airlineColors[link.airlineId] || "#DC83FC";
-
     // Compute opacity based on capacity
     const maxOpacity = 0.7;
     const minOpacity = 0.1;
@@ -877,28 +872,30 @@ function drawAllianceLink(link) {
     } else {
         strokeOpacity = maxOpacity;
     }
-
-    // --- Primary visible path ---
-    const linkPath = L.polyline([from, to], {
+    
+    // --- Primary visible geodesic path (replaces L.polyline) ---
+    const linkPath = new L.Geodesic([], {  // Initialize with empty array
         color: strokeColor,
         opacity: strokeOpacity,
         weight: 2,
-        className: "alliance-link-path"
+        className: "alliance-link-path",
+        wrap: false
     }).addTo(map);
-
+    linkPath.setLatLngs([from, to]);  // Set the coordinates for the geodesic line
     linkPath.link = link; // for hover logic elsewhere
-
-    // --- “Shadow” path for capturing mouse events (wide, invisible) ---
-    const shadowPath = L.polyline([from, to], {
+    
+    // --- “Shadow” geodesic path for capturing mouse events (wide, near-invisible; also geodesic for accuracy) ---
+    const shadowPath = new L.Geodesic([], {  // Initialize with empty array
         color: strokeColor,
         opacity: 0.0001,
         weight: 25,
         className: "alliance-link-shadow"
     }).addTo(map);
-
+    shadowPath.setLatLngs([from, to]);  // Set the coordinates
+    
     // Attach reference to linkPath for easy access
     linkPath.shadowPath = shadowPath;
-
+    
     // Store link data directly on shadowPath (to emulate your Google Maps fields)
     shadowPath.fromAirport = getAirportText(link.fromAirportCity, link.fromAirportCode);
     shadowPath.toAirport = getAirportText(link.toAirportCity, link.toAirportCode);
@@ -907,15 +904,14 @@ function drawAllianceLink(link) {
     shadowPath.capacity = link.capacity.total;
     shadowPath.airlineName = link.airlineName;
     shadowPath.airlineId = link.airlineId;
-
-    // --- Hover interaction ---
+    
+    // --- Hover interaction (unchanged) ---
     shadowPath.on("mouseover", function (e) {
         if (!map.allianceBasePopup) {
             $("#linkPopupFrom").html(getCountryFlagImg(this.fromCountry) + "&nbsp;" + this.fromAirport);
             $("#linkPopupTo").html(getCountryFlagImg(this.toCountry) + "&nbsp;" + this.toAirport);
             $("#linkPopupCapacity").html(this.capacity);
             $("#linkPopupAirline").html(getAirlineLogoImg(this.airlineId) + "&nbsp;" + this.airlineName);
-
             // Create Leaflet popup
             const popupContent = $("#linkPopup").clone().show()[0];
             const popup = L.popup({
@@ -927,23 +923,20 @@ function drawAllianceLink(link) {
                 .setLatLng(e.latlng)
                 .setContent(popupContent)
                 .openOn(map);
-
             map.allianceLinkPopup = popup;
         }
     });
-
     shadowPath.on("mouseout", function () {
         closeAllianceLinkPopup();
     });
-
+    
     // --- Track these in your polyline arrays for cleanup consistency ---
     polylines.push(linkPath);
     polylines.push(shadowPath);
-
+    
     // Return structure consistent with old code
     return { path: linkPath, shadow: shadowPath };
 }
-
 
 function showAllianceMemberDetails(allianceMember) {
     $("#allianceMemberModal").data("airlineId", allianceMember.airlineId)
@@ -1181,7 +1174,6 @@ function hideAllianceMap() {
     // 🔙 return to alliance canvas UI
     setActiveDiv($("#allianceCanvas"));
 }
-
 
 function checkResetAllianceLabelColor(targetAllianceId) {
     checkAllianceLabelColorAction(targetAllianceId, function(airlineOverride) {

@@ -1326,96 +1326,93 @@ function toggleAirportLinks(airport) {
 	});
 }
 
-
 function drawAirportLinkPath(localAirport, details) {
-    var remoteAirport = details.remoteAirport
-    var from = new google.maps.LatLng({lat: localAirport.latitude, lng: localAirport.longitude})
-	var to = new google.maps.LatLng({lat: remoteAirport.latitude, lng: remoteAirport.longitude})
-	var pathKey = remoteAirport.id
-
-    var totalCapacity = details.capacity.total
-
-    var opacity
+    var remoteAirport = details.remoteAirport;
+    const from = [localAirport.latitude, localAirport.longitude];
+    const to = [remoteAirport.latitude, remoteAirport.longitude];
+    var pathKey = remoteAirport.id;
+    var totalCapacity = details.capacity.total;
+    var opacity;
     if (totalCapacity < 2000) {
-        opacity = 0.2 + totalCapacity / 2000 * (0.6)
+        opacity = 0.2 + totalCapacity / 2000 * 0.6;
     } else {
-        opacity = 0.8
+        opacity = 0.8;
     }
-	var airportLinkPath = new google.maps.Polyline({
-			 geodesic: true,
-		     strokeColor: "#DC83FC",
-		     strokeOpacity: opacity,
-		     strokeWeight: 2,
-		     path: [from, to],
-		     zIndex : 1100,
-		     map: map,
-		});
-		
-	var fromAirport = getAirportText(localAirport.city, localAirport.iata)
-	var toAirport = getAirportText(remoteAirport.city, remoteAirport.iata)
-	
-	
-	shadowPath = new google.maps.Polyline({
-		 geodesic: true,
-	     strokeColor: "#DC83FC",
-	     strokeOpacity: 0.0001,
-	     strokeWeight: 25,
-	     path: [from, to],
-	     zIndex : 401,
-	     fromAirport : fromAirport,
-	     fromCountry : localAirport.countryCode, 
-	     toAirport : toAirport,
-	     toCountry : remoteAirport.countryCode,
-	     details: details,
-	     map: map,
-	});
-	polylines.push(airportLinkPath)
-    polylines.push(shadowPath)
-	
-	airportLinkPath.shadowPath = shadowPath
-	
-	var infowindow;
-	shadowPath.addListener('mouseover', function(event) {
-	    highlightPath(airportLinkPath, false)
-		$("#airportLinkPopupFrom").html(getCountryFlagImg(this.fromCountry) + this.fromAirport)
-		$("#airportLinkPopupTo").html(getCountryFlagImg(this.toCountry) + this.toAirport)
-		$("#airportLinkPopupCapacity").text(toLinkClassValueString(this.details.capacity) + "(" + this.details.frequency + ")")
-		$("#airportLinkOperators").empty()
-		$.each(this.details.operators, function(index, operator){
-		    var $operatorDiv = $('<div></div>')
-		    $operatorDiv.append(getAirlineLogoSpan(operator.airlineId, operator.airlineName))
-            $operatorDiv.append('<span>' + operator.frequency + '&nbsp;flight(s) weekly&nbsp;' + toLinkClassValueString(operator.capacity) + '</span>')
-		    $("#airportLinkOperators").append($operatorDiv)
-		})
 
+    // --- Primary visible geodesic path ---
+    const airportLinkPath = new L.Geodesic([[from, to]], {
+        color: "#DC83FC",
+        opacity: opacity,
+        weight: 2,
+        wrap: false  // Disable wrapping for continuous antimeridian crossing
+    }).addTo(map);  // Use global 'map' instead of 'airportMap'
 
-		infowindow = new google.maps.InfoWindow({
-             maxWidth : 400
-             });
-        var popup = $("#airportLinkPopup").clone()
-        popup.show()
-        infowindow.setContent(popup[0])
-		
-		infowindow.setPosition(event.latLng);
-		infowindow.open(map);
-	})		
-	shadowPath.addListener('mouseout', function(event) {
-	    unhighlightPath(airportLinkPath)
-		infowindow.close()
-	})
-	
-	airportLinkPaths[pathKey] = airportLinkPath
+    // --- Shadow geodesic path for hover detection ---
+    const shadowPath = new L.Geodesic([[from, to]], {
+        color: "#DC83FC",
+        opacity: 0.0001,
+        weight: 25,
+        wrap: false  // Consistent with visible path
+    }).addTo(map);  // Use global 'map'
+
+    // Store details on shadowPath for popup
+    var fromAirport = getAirportText(localAirport.city, localAirport.iata);
+    var toAirport = getAirportText(remoteAirport.city, remoteAirport.iata);
+    shadowPath.fromAirport = fromAirport;
+    shadowPath.fromCountry = localAirport.countryCode;
+    shadowPath.toAirport = toAirport;
+    shadowPath.toCountry = remoteAirport.countryCode;
+    shadowPath.details = details;
+
+    // Hover events
+    shadowPath.on('mouseover', function (e) {
+        airportLinkPath.setStyle({ opacity: 1 });  // Highlight
+        $("#airportLinkPopupFrom").html(getCountryFlagImg(this.fromCountry) + this.fromAirport);
+        $("#airportLinkPopupTo").html(getCountryFlagImg(this.toCountry) + this.toAirport);
+        $("#airportLinkPopupCapacity").text(toLinkClassValueString(this.details.capacity) + "(" + this.details.frequency + ")");
+        $("#airportLinkOperators").empty();
+        $.each(this.details.operators, function(index, operator) {
+            var $operatorDiv = $('<div></div>');
+            $operatorDiv.append(getAirlineLogoSpan(operator.airlineId, operator.airlineName));
+            $operatorDiv.append('<span>' + operator.frequency + '&nbsp;flight(s) weekly&nbsp;' + toLinkClassValueString(operator.capacity) + '</span>');
+            $("#airportLinkOperators").append($operatorDiv);
+        });
+        const popupContent = $("#airportLinkPopup").clone().show()[0];
+        const infowindow = L.popup({
+            maxWidth: 400
+        })
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);  // Use global 'map'
+        airportLinkPath.infowindow = infowindow;  // For cleanup if needed
+    });
+
+    shadowPath.on('mouseout', function () {
+        airportLinkPath.setStyle({ opacity: opacity });  // Unhighlight
+        if (airportLinkPath.infowindow) {
+            map.closePopup(airportLinkPath.infowindow);  // Use global 'map'
+            airportLinkPath.infowindow = undefined;
+        }
+    });
+
+    // Track for global cleanup
+    polylines.push(airportLinkPath);
+    polylines.push(shadowPath);
+    airportLinkPath.shadowPath = shadowPath;
+
+    airportLinkPaths[pathKey] = airportLinkPath;
 }
 
 function clearAirportLinkPaths() {
-	$.each(airportLinkPaths, function(key, airportLinkPath) {
-		airportLinkPath.setMap(null)
-		airportLinkPath.shadowPath.setMap(null)
-	})
-	
-	airportLinkPaths = {}
+    $.each(airportLinkPaths, function(key, airportLinkPath) {
+        map.removeLayer(airportLinkPath);  // Use global 'map'
+        map.removeLayer(airportLinkPath.shadowPath);  // Use global 'map'
+        if (airportLinkPath.infowindow) {
+            map.closePopup(airportLinkPath.infowindow);  // Use global 'map'
+        }
+    });
+    airportLinkPaths = {};
 }
-
 
 function hideAirportLinksView() {
 	//printConsole('')
@@ -1447,8 +1444,6 @@ function getAirportIcon(airportInfo) {
   const iconUrl = iconObj?.options?.iconUrl || "/assets/images/markers/airport.png";
   return iconUrl;
 }
-
-
 
 function showAppealBreakdown($parent, bonusDetails) {
     var rows = []
