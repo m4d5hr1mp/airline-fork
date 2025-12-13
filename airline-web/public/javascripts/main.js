@@ -405,7 +405,6 @@ function initMap() {
   addCustomMapControls(map);
 }
 
-
 function addCustomMapControls(map) {
   // Create a custom Leaflet control class
   const CustomControl = L.Control.extend({
@@ -442,7 +441,6 @@ function addCustomMapControls(map) {
   // Add control to map
   map.addControl(new CustomControl());
 }
-
 
 function addAirlineSpecificMapControls(map) {
   const HeatmapControl = L.Control.extend({

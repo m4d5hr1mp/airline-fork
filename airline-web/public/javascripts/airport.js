@@ -1153,7 +1153,6 @@ function addContestedMarker(airportMarker) {
   contestedMarkers.push(contestedMarker);
 }
 
-
 function updateAirportBaseMarkers(newBaseAirports, relatedFlightPaths) {
   // Reset existing base markers
   $.each(baseMarkers, function (index, marker) {
@@ -1242,8 +1241,6 @@ const hqIconUrl = $("#map").data("headquarterMarker")?.options?.iconUrl || "/ass
   return baseMarkers;
 }
 
-
-
 function updateAirportMarkers(airline) {
   if (!markers) {
     setTimeout(function() { updateAirportMarkers(airline); }, 100);
@@ -1255,7 +1252,6 @@ function updateAirportMarkers(airline) {
     }
   }
 }
-
 
 //airport links view
 

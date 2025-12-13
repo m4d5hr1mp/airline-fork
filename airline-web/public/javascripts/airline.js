@@ -295,10 +295,6 @@ function refreshLinks(forceRedraw) {
 	});
 }
 
-
-
-
-
 // Updated drawFlightPath using L.Geodesic:
 function drawFlightPath(link, linkColor) {
     if (!linkColor) {
@@ -437,74 +433,66 @@ function getLinkColor(profit, revenue) {
 
 function highlightPath(path, refocus) {
     refocus = refocus || false;
-
     // Leaflet stores coordinates in an array — no .getPath()
     if (refocus) {
         const latlngs = path.getLatLngs();
-        if (latlngs && latlngs.length > 0) {
-            map.panTo(latlngs[0]); // equivalent to setCenter()
+        if (latlngs && latlngs.length > 0 && latlngs[0].length > 0) {  // Handle nested structure from L.Geodesic
+            map.panTo(latlngs[0][0]);  // Pan to first point
         }
     }
+    if (!path || path.highlighted) return;  // Guard against undefined or already highlighted paths
 
-    if (!path.highlighted) {
-        // Save original style so we can revert later
-        const currentStyle = path.options;
-        path.originalStyle = {
-            color: currentStyle.color,
-            weight: currentStyle.weight,
-            opacity: currentStyle.opacity
-        };
+    // Save original style so we can revert later
+    const currentOptions = path.options;
+    path.originalOptions = {
+        color: currentOptions.color,
+        weight: currentOptions.weight,
+        opacity: currentOptions.opacity
+    };
 
-        const originalColorString = currentStyle.color;
-        const totalFrames = 20;
-
-        // Parse hex color
-        const rgbHexValue = parseInt(originalColorString.substring(1), 16);
-        let currentRgb = {
-            r: (rgbHexValue >> 16) & 0xff,
-            g: (rgbHexValue >> 8) & 0xff,
-            b: rgbHexValue & 0xff
-        };
-        const highlightColor = { r: 255, g: 255, b: 255 };
-        const colorStep = {
-            r: (highlightColor.r - currentRgb.r) / totalFrames,
-            g: (highlightColor.g - currentRgb.g) / totalFrames,
-            b: (highlightColor.b - currentRgb.b) / totalFrames
-        };
-        let currentFrame = 0;
-
-        // Animation loop
-        const animation = window.setInterval(function () {
-            if (currentFrame < totalFrames) {
-                currentRgb = {
-                    r: currentRgb.r + colorStep.r,
-                    g: currentRgb.g + colorStep.g,
-                    b: currentRgb.b + colorStep.b
-                };
-            } else {
-                currentRgb = {
-                    r: currentRgb.r - colorStep.r,
-                    g: currentRgb.g - colorStep.g,
-                    b: currentRgb.b - colorStep.b
-                };
-            }
-
-            // Convert back to hex
-            const toHex = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
-            const colorHexString = "#" + toHex(currentRgb.r) + toHex(currentRgb.g) + toHex(currentRgb.b);
-
-            path.setStyle({
-                color: colorHexString,
-                weight: 4,
-                opacity: pathOpacityByStyle[currentStyles].highlight
-            });
-
-            currentFrame = (currentFrame + 1) % (totalFrames * 2);
-        }, 50);
-
-        path.animation = animation;
-        path.highlighted = true;
-    }
+    const originalColorString = currentOptions.color;
+    const totalFrames = 20;
+    // Parse hex color
+    const rgbHexValue = parseInt(originalColorString.substring(1), 16);
+    let currentRgb = {
+        r: (rgbHexValue >> 16) & 0xff,
+        g: (rgbHexValue >> 8) & 0xff,
+        b: rgbHexValue & 0xff
+    };
+    const highlightColor = { r: 255, g: 255, b: 255 };
+    const colorStep = {
+        r: (highlightColor.r - currentRgb.r) / totalFrames,
+        g: (highlightColor.g - currentRgb.g) / totalFrames,
+        b: (highlightColor.b - currentRgb.b) / totalFrames
+    };
+    let currentFrame = 0;
+    // Animation loop
+    const animation = window.setInterval(function () {
+        if (currentFrame < totalFrames) {
+            currentRgb = {
+                r: currentRgb.r + colorStep.r,
+                g: currentRgb.g + colorStep.g,
+                b: currentRgb.b + colorStep.b
+            };
+        } else {
+            currentRgb = {
+                r: currentRgb.r - colorStep.r,
+                g: currentRgb.g - colorStep.g,
+                b: currentRgb.b - colorStep.b
+            };
+        }
+        // Convert back to hex
+        const toHex = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+        const colorHexString = "#" + toHex(currentRgb.r) + toHex(currentRgb.g) + toHex(currentRgb.b);
+        path.setStyle({  // Use setStyle for geodesic/polyline compatibility
+            color: colorHexString,
+            weight: 4,
+            opacity: pathOpacityByStyle[currentStyles].highlight
+        });
+        currentFrame = (currentFrame + 1) % (totalFrames * 2);
+    }, 50);
+    path.animation = animation;
+    path.highlighted = true;
 }
 
 function unhighlightPath(path) {
@@ -513,15 +501,14 @@ function unhighlightPath(path) {
         window.clearInterval(path.animation);
         path.animation = undefined;
     }
-
-    if (path.originalStyle) {
-        path.setStyle({
-            color: path.originalStyle.color,
-            weight: path.originalStyle.weight,
-            opacity: path.originalStyle.opacity
+    if (path.originalOptions) {
+        path.setStyle({  // Use setStyle for geodesic/polyline compatibility
+            color: path.originalOptions.color,
+            weight: path.originalOptions.weight,
+            opacity: path.originalOptions.opacity
         });
+        delete path.originalOptions;  // Clean up to avoid memory leaks
     }
-
     delete path.highlighted;
 }
 
