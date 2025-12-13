@@ -1,34 +1,48 @@
+var campaignMap;
+var campaignMapElements;
+
 function showCampaignModal() {
-//    if (airlineId) {
-//        updateHeatmap(airlineId)
-//    }
-    updateCampaignTable()
-    var $locationSearchInput = $('#campaignModal .searchInput input')
-
+    updateCampaignTable();
+    var $locationSearchInput = $('#campaignModal .searchInput input');
     $locationSearchInput.on('confirmSelection', function(e) {
-        draftCampaign($('#campaignModal .searchInput input').data("selectedId"))
-    })
-
+        draftCampaign($('#campaignModal .searchInput input').data("selectedId"));
+    });
     if (!campaignMap) {
-     campaignMap = new google.maps.Map($('#campaignModal .campaignMap')[0], {
-                                              //gestureHandling: 'none',
-                                              disableDefaultUI: true,
-                                              scrollwheel: false,
-                                              draggable: true,
-                                              panControl: true,
-                                              styles: getMapStyles()
-                                          })
-    }
+        campaignMap = L.map($('#campaignModal .campaignMap')[0], {
+            scrollWheelZoom: false,
+            dragging: false,
+            attributionControl: false,
+            zoomControl: false,
+            worldCopyJump: true,
+            maxBoundsViscosity: 1.0,
+            zoomSnap: 0 //Enables smooth fitting of zoom level to campaign radius 
+        });
 
+        L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+            minZoom: 2,
+            maxZoom: 7
+        }).addTo(campaignMap);
+
+        campaignMapElements = L.layerGroup().addTo(campaignMap);
+    }
     updateAirlineDelegateStatus($('#campaignModal div.delegateStatus'), function(delegateInfo) {
-            $('#campaignModal div.delegateSection').data("availableDelegates", delegateInfo.permanentAvailableCount)
-        })
-    $('#campaignModal div.delegateSection').data("delegatesRequired", 0)
-    $('#campaignModal .campaignDetails').hide()
-    $('#campaignModal .draftCampaign').hide()
-    $('#campaignModal').data('closeCallback', updateCampaignSummary)
-    $('#campaignModal').fadeIn(500)
+        $('#campaignModal div.delegateSection').data("availableDelegates", delegateInfo.permanentAvailableCount);
+    });
+    $('#campaignModal div.delegateSection').data("delegatesRequired", 0);
+    $('#campaignModal .campaignDetails').hide();
+    $('#campaignModal .draftCampaign').hide();
+    $('#campaignModal').data('closeCallback', updateCampaignSummary);
+    $('#campaignModal').fadeIn(500);
+    // Invalidate size after fadeIn to ensure proper rendering in the modal
+    setTimeout(function() {
+        campaignMap.invalidateSize();
+    }, 500); // Timed to match fadeIn duration
 }
+
+/* =========================
+   CAMPAIGN MGMT FUNCTIONS
+   =========================*/
 
 function toggleDraftCampaign() {
     $('#campaignModal .campaignDetails').hide()
@@ -49,10 +63,7 @@ function changeCampaignDelegateCount(delta) {
     })
 }
 
-
 var loadedCampaigns = []
-
-
 
 function updateCampaignTable() {
     $.ajax({
@@ -108,6 +119,7 @@ function refreshCampaignTable(sortProperty, sortOrder) {
 	    $('#campaignModal .addCampaign').removeClass('glow')
 	}
 }
+
 function selectCampaign(row) {
     //update table
 	row.siblings().removeClass("selected")
@@ -200,8 +212,6 @@ function updateCampaign() {
     });
 }
 
-
-
 function deleteCampaign() {
     var airport = $('#campaignModal').data('selectedCampaign').principalAirport
     promptConfirm("Do you want to delete this campaign at " + getAirportText(airport.city, airport.iata), function() {
@@ -224,81 +234,88 @@ function deleteCampaign() {
     )
 }
 
-
-
-var campaignMap
-var campaignMapElements = []
-
+/* =========================
+    MAP RELATED FUNCTIONS
+   =========================*/
 function populateCampaignMap(principalAirport, campaignArea, candidateArea, radius) {
-    $.each(campaignMapElements, function() { this.setMap(null)})
-    campaignMapElements = []
-
-    //+ 200 to include candidate area * 1000 to convert to meters, * 2 to convert to diameter, * 1.2 to make in a slight bigger than what needs to be
-    var zoom = getGoogleZoomLevel((radius + 200) * 1000 * 2 * 1.2, $('#campaignModal .campaignMap'), principalAirport.latitude)
-    campaignMap.setZoom(zoom)
-
-    campaignMap.setCenter({lat: principalAirport.latitude, lng: principalAirport.longitude}); //this would eventually trigger an idle
-
-    var airportMapCircle = new google.maps.Circle({
-                center: {lat: principalAirport.latitude, lng: principalAirport.longitude},
-                radius: radius * 1000, //in meter
-                strokeColor: "#32CF47",
-                strokeOpacity: 0.2,
-                strokeWeight: 2,
-                fillColor: "#32CF47",
-                fillOpacity: 0.3,
-                map: campaignMap
-            });
-    campaignMapElements.push(airportMapCircle)
-    populateCampaignAirportMarkers(campaignMap, campaignArea, true)
-    populateCampaignAirportMarkers(campaignMap, candidateArea, false)
-    google.maps.event.addListenerOnce(campaignMap, 'idle', function() {
-        setTimeout(function() { //set a timeout here, otherwise it might not render part of the map...
-            campaignMap.setCenter({lat: principalAirport.latitude, lng: principalAirport.longitude}); //this would eventually trigger an idle
-            google.maps.event.trigger(campaignMap, 'resize'); //this refreshes the map
-            console.log('resize')
-        }, 2000);
+    // Diagnostic log to inspect type (remove after resolution)
+    console.log('campaignMapElements type:', typeof campaignMapElements, campaignMapElements);
+    // Safeguard: Clear only if properly initialized as LayerGroup
+    if (campaignMapElements && typeof campaignMapElements.clearLayers === 'function') {
+        campaignMapElements.clearLayers();
+    } else {
+        console.warn('campaignMapElements not initialized as LayerGroup; skipping clear.');
+        // Reinitialize if necessary (fallback; ideally not reached)
+        if (campaignMap) {
+            campaignMapElements = L.layerGroup().addTo(campaignMap);
+        }
+    }
+    // Set initial view centered on the principal airport (will be adjusted by fitBounds)
+    campaignMap.setView([principalAirport.latitude, principalAirport.longitude], 5);
+    var airportMapCircle = L.circle([principalAirport.latitude, principalAirport.longitude], {
+        radius: radius * 1000, // Convert km to meters
+        color: "#32CF47",
+        opacity: 0.2,
+        weight: 2,
+        fillColor: "#32CF47",
+        fillOpacity: 0.3
     });
+    campaignMapElements.addLayer(airportMapCircle);
+    // Automatically fit the map to the circle bounds with a buffer, leveraging fractional zoom for smoothness
+    campaignMap.fitBounds(airportMapCircle.getBounds(), { padding: [50, 50] }); // Padding approximates +200 km buffer and 1.2 factor
+    populateCampaignAirportMarkers(campaignMap, campaignArea, true);
+    populateCampaignAirportMarkers(campaignMap, candidateArea, false);
+    setTimeout(function() {
+        campaignMap.invalidateSize();
+        console.log('resize');
+    }, 2000);
 }
 
 function populateCampaignAirportMarkers(campaignMap, airports, hasCoverage) {
     $.each(airports, function(index, airport) {
-        var icon
+        var icon;
         if (hasCoverage) {
-            icon = getAirportIcon(airport)
+            // Determine icon based on original logic (replaces getAirportIcon)
+            if (airport.isGateway) {
+                icon = $("#map").data("gatewayAirportMarker");
+            } else if (airport.size <= 3) {
+                icon = $("#map").data("smallAirportMarker");
+            } else if (airport.size <= 6) {
+                icon = $("#map").data("mediumAirportMarker");
+            } else {
+                icon = $("#map").data("largeAirportMarker");
+            }
         } else {
-            icon = $("#map").data("disabledAirportMarker")
+            icon = $("#map").data("disabledAirportMarker");
         }
-        var position = {lat: airport.latitude, lng: airport.longitude};
-          var marker = new google.maps.Marker({
-                position: position,
-                map: campaignMap,
-                airport: airport,
-                icon : icon
-              });
-
-            var infowindow
-           	marker.addListener('mouseover', function(event) {
-           		$("#campaignAirportPopup .airportName").text(getAirportText(airport.city, airport.iata))
-           		$("#campaignAirportPopup .airportPopulation").text(airport.population)
-           		infowindow = new google.maps.InfoWindow({
-           		       disableAutoPan : true
-                 });
-
-                 var popup = $("#campaignAirportPopup").clone()
-                 popup.show()
-                 infowindow.setContent(popup[0])
-
-
-           		infowindow.open(campaignMap, marker);
-           	})
-           	marker.addListener('mouseout', function(event) {
-           		infowindow.close()
-           		infowindow.setMap(null)
-           	})
-           	campaignMapElements.push(marker)
-
-     })
+        // Safeguard: Skip if icon is invalid (prevents marker creation errors)
+        if (!icon || typeof icon.createIcon !== 'function') {
+            console.warn('Invalid icon for airport:', airport);
+            return;
+        }
+        var marker = L.marker([airport.latitude, airport.longitude], {
+            icon: icon
+        });
+        var infowindow;
+        marker.on('mouseover', function(event) {
+            $("#campaignAirportPopup .airportName").text(getAirportText(airport.city, airport.iata));
+            $("#campaignAirportPopup .airportPopulation").text(airport.population);
+            var popupContent = $("#campaignAirportPopup").clone().show()[0].outerHTML;
+            infowindow = L.popup({
+                autoPan: false,
+                closeButton: false,
+                closeOnClick: false
+            }).setContent(popupContent)
+              .setLatLng([airport.latitude, airport.longitude])
+              .openOn(campaignMap);
+        });
+        marker.on('mouseout', function(event) {
+            if (infowindow) {
+                infowindow.close();
+            }
+        });
+        campaignMapElements.addLayer(marker);
+    });
 }
 
 var MIN_CAMPAIGN_RADIUS = 100
@@ -326,8 +343,6 @@ function updateCampaignRadiusControl(radius) {
         disableButton($("#campaignModal .radiusControl .increase"), "Max campaign radius at " + MAX_CAMPAIGN_RADIUS + " km" )
     }
 }
-
-
 
 function refreshCampaign() {
     var radius = $('#campaignModal .campaignMap').data('radius')

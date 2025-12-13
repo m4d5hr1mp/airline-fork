@@ -356,6 +356,12 @@ function initMap() {
     iconAnchor: [8, 8],
   });
 
+  const disabledAirportMarkerIcon = L.icon({
+    iconUrl: "/assets/images/markers/airport-transparent.png",
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+
   const gatewayAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-gateway.png",
     iconSize: [28, 28],
@@ -378,6 +384,7 @@ function initMap() {
   $("#map").data("largeAirportMarker", largeAirportMarkerIcon);
   $("#map").data("mediumAirportMarker", mediumAirportMarkerIcon);
   $("#map").data("smallAirportMarker", smallAirportMarkerIcon);
+  $("#map").data("disabledAirportMarker", disabledAirportMarkerIcon);
   $("#map").data("gatewayAirportMarker", gatewayAirportMarkerIcon);
   $("#map").data("baseMarker", baseMarkerIcon);
   $("#map").data("headquarterMarker", headquarterMarkerIcon);
