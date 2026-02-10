@@ -53,7 +53,7 @@ object ProfileConfigs {
       id = 0,
       name = "Cash Start",
       description = "Start with only cash in the bank, no aircraft or debt. Build your airline from scratch. Recomended for new players.",
-      cashBase = 500000000L,
+      cashBase = 40_000_000L,
       planeConfigs = List.empty,
       reputation = 0,
       loanConfigs = List.empty,
@@ -64,7 +64,7 @@ object ProfileConfigs {
       isAvailable = _ => true
     ),
 
-
+    /*
     // Profile 1: Flag Carrier
     Config(
       id = 1,
@@ -85,8 +85,9 @@ object ProfileConfigs {
       currentServiceQuality = 60.0,
       isAvailable = airport => specificIatas.contains(airport.iata)
     ),
+    */
 
-
+    /*
     // Profile 2: Bargain Deal
     Config(
       id = 2,
@@ -106,8 +107,9 @@ object ProfileConfigs {
       currentServiceQuality = 30.0,
       isAvailable = airport => airport.size >= 4 && airport.size <= 7
     ),
+    */
 
-
+    /*
     // Profile 3: Revival of Past Glory
     Config(
       id = 3,
@@ -132,8 +134,9 @@ object ProfileConfigs {
       currentServiceQuality = 50.0,
       isAvailable = airport => airport.size >= 6
     ),
+    */
 
-
+    /*
     // Profile 4: Regional Airline
     Config(
       id = 4,
@@ -153,8 +156,9 @@ object ProfileConfigs {
       currentServiceQuality = 40.0,
       isAvailable = airport => airport.size >= 4 && airport.size <= 5
     ),
+    */
 
-
+    /*
     // Profile 5: Bush Airline
     Config(
       id = 5,
@@ -177,6 +181,7 @@ object ProfileConfigs {
         airport.size >= 1 && airport.size <= maxScale
       }
     )
+    */
   )
 }
 
@@ -198,7 +203,7 @@ class ProfileApplication @Inject()(cc: ControllerComponents) extends AbstractCon
     }
   }
 
-  val BONUS_PER_DIFFICULTY_POINT = 5000000L
+  val BONUS_PER_DIFFICULTY_POINT = 1_000_000L
 
   def generateAirplanes(budget: Long, homeAirport: Airport, condition: Double, airline: Airline, random: Random, allowedFamilies: List[String] = List.empty, maxLifespan: Option[Int] = None, maxSpeed: Option[Int] = None): List[Airplane] = {
     val eligibleModels = allAirplaneModels

@@ -207,9 +207,11 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
 
      Ok(airlineJson)
   }
+
   def getBases(airlineId : Int) = Authenticated { implicit request =>
     Ok(Json.toJson(AirlineSource.loadAirlineBasesByAirline(airlineId)))
   }
+
   def getBase(airlineId : Int, airportId : Int) = AuthenticatedAirline(airlineId) { request =>
     var result = Json.obj().asInstanceOf[JsObject]
     AirportCache.getAirport(airportId, true) match {
@@ -301,26 +303,16 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
       }
     }
 
-//
-//        val existingBaseCount = airline.getBases().length
-//        val allowedBaseCount = airline.airlineGrade.getBaseLimit
-//        if (existingBaseCount >= allowedBaseCount) {
-//          return Some("Only allow up to " + allowedBaseCount + " bases for your current airline grade " + airline.airlineGrade.description)
-//        }
-    //check delegates requirement
+  // check delegates requirement
     val delegatesAssignedToThisCountry = airline.getDelegateInfo().busyDelegates.filter { delegate =>
       val targetCountryCode = targetBase.countryCode
       delegate.assignedTask.getTaskType == DelegateTaskType.COUNTRY && delegate.assignedTask.asInstanceOf[CountryDelegateTask].country.countryCode == targetCountryCode
     }
-
-    val upgradeDelegatesRequired = if (targetBase.scale == 1) targetBase.delegatesRequired else targetBase.delegatesRequired - targetBase.copy(scale = targetBase.scale - 1).delegatesRequired
-
+    val upgradeDelegatesRequired = if (targetBase.scale == 1) math.max(1, targetBase.delegatesRequired) else targetBase.delegatesRequired - targetBase.copy(scale = targetBase.scale - 1).delegatesRequired
     val requiredDelegates = airline.getBases().filter(_.countryCode == targetBase.countryCode).map(_.delegatesRequired).sum + upgradeDelegatesRequired
     if (delegatesAssignedToThisCountry.length < requiredDelegates) {
       return Some(s"Cannot build/upgrade this base. Require $requiredDelegates delegate(s) assigned to ${CountryCache.getCountry(targetBase.countryCode).get.name} but only ${delegatesAssignedToThisCountry.length} assigned")
     }
-
-
     return None
   }
 

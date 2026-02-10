@@ -3,7 +3,7 @@ package com.patson.model.airplane
 import com.patson.util.{AirplaneOwnershipCache, AirplaneOwnershipInfo}
 
 object AirplaneMaintenanceUtil {
-  val BASE_MAINTENANCE_FACTOR = 0.4
+  val BASE_MAINTENANCE_FACTOR = 0.8
   val PER_FAMILY_MAINTENANCE_FACTOR = 0.1
   val PER_MODEL_MAINTENANCE_FACTOR = 0.02
 

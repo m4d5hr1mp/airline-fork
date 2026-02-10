@@ -36,16 +36,7 @@ object ModelDiscount {
 
   val getFavoriteDiscounts: Model => List[ModelDiscount] = (model : Model) => {
     val constructionTimeDiscount = ModelDiscount(model.id, 0.25, DiscountType.CONSTRUCTION_TIME, DiscountReason.FAVORITE, None)
-    val priceDiscount = model.airplaneType match {
-      case LIGHT => 0.05
-      case REGIONAL => 0.15
-      case SMALL => 0.10
-      case MEDIUM => 0.175
-      case LARGE => 0.07
-      case X_LARGE => 0.05
-      case JUMBO => 0.025
-      case SUPERSONIC => 0.05
-    }
+    val priceDiscount = 0.0
     List(ModelDiscount(model.id, priceDiscount, DiscountType.PRICE, DiscountReason.FAVORITE, None), constructionTimeDiscount)
   }
 
@@ -90,7 +81,7 @@ object ModelDiscount {
     AirplaneModelDiscountCache.getModelDiscount(modelId)
   }
 
-
+  // Prefered Supplier Discount is now 0% on price!
   def getPreferredSupplierDiscounts(airlineId: Int) : Map[Model.Category.Value, PreferredSupplierDiscountInfo] = {
     val currentSuppliersByCategory : MapView[Model.Category.Value, List[Manufacturer]] = AirplaneOwnershipCache.getOwnership(airlineId).groupBy(_.model.category).view.mapValues(_.map(_.model.manufacturer).distinct)
     Category.values.toList.map { category =>
@@ -98,18 +89,8 @@ object ModelDiscount {
         case None => PreferredSupplierDiscountInfo(None, category, None, "No preferred Supplier")
         case Some(currentSuppliers) =>
           if (currentSuppliers.length == 1) {
-            val discount = category match {
-              case Category.LIGHT => 0.1
-              case Category.REGIONAL => 0.07
-              case Category.MEDIUM => 0.05
-              case Category.LARGE => 0.02
-              case Category.SUPERSONIC => 0
-            }
-            if (discount > 0) {
-              PreferredSupplierDiscountInfo(Some(discount), category, Some(currentSuppliers(0)), s"${(discount * 100).toInt}% off price for being preferred supplier")
-            } else {
-              PreferredSupplierDiscountInfo(None, category, Some(currentSuppliers(0)), s"${category.toString} offers no discount")
-            }
+            val discount = 0.0 // Set to 0% as per objective 3 (and aligning with objective 1)
+            PreferredSupplierDiscountInfo(Some(discount), category, Some(currentSuppliers(0)), s"${(discount * 100).toInt}% off price for being preferred supplier") // Description retained for compatibility
           } else {
             PreferredSupplierDiscountInfo(None, category, None, "No discount as there are more than one supplier")
           }
@@ -117,32 +98,10 @@ object ModelDiscount {
       (category, info)
     }.toMap
   }
+
   case class PreferredSupplierDiscountInfo(discount : Option[Double], category: Model.Category.Value, soleSupplier : Option[Manufacturer], description : String)
 
-
-
   def getPreferredSupplierDiscountByModelId(airlineId : Int, modelId : Int) : Option[ModelDiscount] = {
-//    val model = AirplaneModelCache.getModel(modelId).get
-//    val currentSuppliersByCategory : MapView[Model.Category.Value, List[Manufacturer]] = AirplaneOwnershipCache.getOwnership(airlineId).groupBy(_.model.category).view.mapValues(_.map(_.model.manufacturer).distinct)
-//    currentSuppliersByCategory.get(model.category) match {
-//      case None => None
-//      case Some(currentSuppliers) =>
-//        if (currentSuppliers.length == 1 && currentSuppliers(0) == model.manufacturer) {
-//          val discount = model.category match {
-//            case Category.LIGHT => 0.1
-//            case Category.MEDIUM => 0.05
-//            case Category.LARGE => 0.02
-//            case Category.SUPERSONIC => 0
-//          }
-//          if (discount > 0) {
-//            Some(ModelDiscount(model.id, discount, DiscountType.PRICE, DiscountReason.PREFERRED_SUPPLIER, None))
-//          } else {
-//            None
-//          }
-//        } else {
-//          None
-//        }
-//    }
     getPreferredSupplierDiscountByModelId(getPreferredSupplierDiscounts(airlineId), modelId)
   }
 
@@ -164,8 +123,6 @@ object ModelDiscount {
     }
   }
 }
-
-
 
 object DiscountReason extends Enumeration {
   type Type = Value

@@ -10,8 +10,6 @@ import scala.collection.mutable.ListBuffer
 
 object AirplaneModelSimulation {
 
-
-
   def simulate(cycle: Int) = {
     println("starting airplane model simulation (discounts)")
     println("loading all airplanes")
@@ -19,7 +17,6 @@ object AirplaneModelSimulation {
     simulateModelDiscounts(allAirplanes)
     println("Finished airplane model simulation")
   }
-
 
   def simulateModelDiscounts(allAirplanes: List[Airplane]) = {
     //simulate low demand
@@ -32,20 +29,20 @@ object AirplaneModelSimulation {
         case None => 0
       }))
     }
-
-
     ModelSource.updateModelDiscounts(allModelDiscounts.toList)
   }
 
-  def getModelDiscountsByLowDemand(model : Model, airplaneCount : Int) = {
+  def getModelDiscountsByLowDemand(model: Model, airplaneCount: Int) = {
     val threshold = getModelLowDemandDiscountThreshold(model)
     val thresholdDelta = threshold - airplaneCount
     val discounts = ListBuffer[ModelDiscount]()
-    if (thresholdDelta > 0) { //then some discounts
-      val priceDiscountPercentage = thresholdDelta * MAX_PRICE_DISCOUNT_PERCENTAGE / threshold
+    if (thresholdDelta > 0) { // Retain condition for low demand eligibility
+      // Set price discount to 0% as per directive
+      val priceDiscountPercentage = 0.0
       if (priceDiscountPercentage > 0) {
         discounts.append(ModelDiscount(model.id, priceDiscountPercentage * 0.01, DiscountType.PRICE, DiscountReason.LOW_DEMAND, None))
       }
+      // Retain construction time discount unchanged
       discounts.append(ModelDiscount(model.id, CONSTRUCTION_TIME_DISCOUNT, DiscountType.CONSTRUCTION_TIME, DiscountReason.LOW_DEMAND, None))
     }
     discounts.toList

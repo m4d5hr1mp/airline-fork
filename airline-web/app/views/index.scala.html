@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Airline Club</title>
+    <title>Open Airline Sim | V0.1</title>
 <!--   	<meta name="google-signin-client_id" content="526466847284-mmk6qg2bc4su9ihgqippccaha28edn81.apps.googleusercontent.com"> -->
     <meta name="description" content="A free and open source Airline Management Simulation Game. Realistic simulation of air travel demand between 4k+ airports with virtual passengers making unique travel choices. ">
     <meta name="keywords" content="Airline Simulation Game,Airline Strategy Game,Airline Management Game,Free Online Game,Open Source">
@@ -351,10 +351,12 @@
 				</div>
 			</div>
 			<!-- end live-chat -->
-            <div style="position: fixed; top: 0px; width: 15px; height: 100%; z-index: 2; background-color: transparent;" id="tabGroupCue">
+
+			<!-- Left Sidebar with menu icons. When used /w Leaflet must have z-index of 600 or above-->
+            <div style="position: fixed; top: 0px; width: 15px; height: 100%; z-index: 600; background-color: transparent;" id="tabGroupCue">
             </div>
 
-			<div style="position: fixed; z-index: 1; top: 40px; display: none; height: calc(100% - 40px); overflow-y: scroll;" id="tabGroup">
+			<div style="position: fixed; z-index: 600; top: 40px; display: none; height: calc(100% - 40px); overflow-y: scroll;" id="tabGroup">
 	<!-- 	  		<ul class="tabs" id="main-tabs" style="display: none;"> -->
 				<ul class="tabs" id="main-tabs" style="padding: 10px 0 60px 0;">
 
@@ -3782,7 +3784,7 @@
 	  </div>
     
     <!-- The Annoucement Modal -->
-	<div id="announcementModal" class="modal">
+	<div id="announcementModal" class="modal" style="z-index: 1000; position: fixed;">
 	  <div class="modal-content" style="width: 500px;">
 	    <span class="close" onclick="closeModal($('#announcementModal'))">&times;</span>
 	    <div style="margin-bottom: 10px;">

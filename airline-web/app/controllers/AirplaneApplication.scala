@@ -3,7 +3,7 @@ package controllers
 import scala.math.BigDecimal.int2bigDecimal
 import com.patson.data.{AirlineSource, AirplaneSource, CashFlowSource, CountrySource, CycleSource, LinkSource}
 import com.patson.data.airplane.ModelSource
-import com.patson.model.airplane.{Model, _}
+import com.patson.model.airplane.{Model, ModelAvailability, _} // Add "ModelAvailability" to enable progression
 import com.patson.model._
 import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json, Writes}
 import play.api.mvc._
@@ -12,7 +12,6 @@ import scala.collection.mutable.ListBuffer
 import controllers.AuthenticationObject.AuthenticatedAirline
 import com.patson.model.AirlineTransaction
 import com.patson.model.AirlineCashFlow
-import com.patson.model.CashFlowType
 import com.patson.model.CashFlowType
 import com.patson.model.AirlineCashFlowItem
 import com.patson.model.airplane.Model.Category
@@ -207,35 +206,41 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
   
   def getRejections(models : List[Model], airline : Airline) : Map[Model, Option[String]] = {
     val allManufacturingCountries = models.map(_.countryCode).toSet
-
     val countryRelations : Map[String, AirlineCountryRelationship] = allManufacturingCountries.map { countryCode =>
       (countryCode, AirlineCountryRelationship.getAirlineCountryRelationship(countryCode, airline))
     }.toMap
-
     val ownedModels = AirplaneOwnershipCache.getOwnership(airline.id).map(_.model).toSet
-
+    // Added to enable model unlock progression!
+    val currentCycle = CycleSource.loadCycle()
 
     models.map { model =>
-      (model, getRejection(model, 1, countryRelations(model.countryCode), ownedModels, airline))
+      (model, getRejection(model, 1, countryRelations(model.countryCode), ownedModels, airline, currentCycle))
     }.toMap
-    
   }
   
   def getRejection(model: Model, quantity : Int, airline : Airline) : Option[String] = {
     val relationship = AirlineCountryRelationship.getAirlineCountryRelationship(model.countryCode, airline)
-
     val ownedModels = AirplaneOwnershipCache.getOwnership(airline.id).map(_.model).toSet
-    getRejection(model, quantity, relationship, ownedModels, airline)
+    val currentCycle = CycleSource.loadCycle()
+    getRejection(model, quantity, relationship, ownedModels, airline, currentCycle)
   }
   
-  def getRejection(model: Model, quantity : Int, relationship : AirlineCountryRelationship, ownedModels : Set[Model], airline : Airline) : Option[String]= {
-    if (airline.getHeadQuarter().isEmpty) { //no HQ
+  // Modified: Added currentCycle parameter and release cycle check
+  def getRejection(model: Model, quantity : Int, relationship : AirlineCountryRelationship, ownedModels : Set[Model], airline : Airline, currentCycle: Int) : Option[String]= {
+    val releaseCycle = ModelAvailability.getAvailabilityCycle(model.name)
+    if (currentCycle < releaseCycle) {
+      return Some("This aircraft model has not yet been released")
+    }  
+
+    // Airline has not yet built HQ rejection:
+    if (airline.getHeadQuarter().isEmpty) { 
       return Some("Must build HQs before purchasing any airplanes")
     }
+
+    // Bad Relations rejection:
     if (!model.purchasableWithRelationship(relationship.relationship)) {
       return Some(s"The manufacturer refuses to sell " + model.name + s" to your airline until your relationship with ${CountryCache.getCountry(model.countryCode).get.name} is improved to at least ${Model.BUY_RELATIONSHIP_THRESHOLD}")
     }
-
 
     val ownedModelFamilies = ownedModels.map(_.family)
 

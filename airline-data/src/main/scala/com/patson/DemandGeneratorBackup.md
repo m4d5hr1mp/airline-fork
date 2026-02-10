@@ -195,15 +195,15 @@ object DemandGenerator {
       
       //adjustments : these zones do not have good ground transport
       if (fromAirport.zone == toAirport.zone) {
-
         //For Africa adjusted demand is 1 + 2
         if (fromAirport.zone == "AF") {
           adjustedDemand +=  baseDemand * 2
-
         // For LatAm adjusted demand is 1 + 1
         } else if (fromAirport.zone == "SA") {
           adjustedDemand +=  baseDemand * 1
-
+        // For NA adjusted demand is 1 + 0.5
+        } else if (fromAirport.zone == "NA") {
+          adjustedDemand +=  baseDemand * 0.5
         // For Oceania adjusted demand is 1 + 1
         } else if (fromAirport.zone == "OC") {
           adjustedDemand +=  baseDemand * 1

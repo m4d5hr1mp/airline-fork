@@ -30,7 +30,6 @@ function loadAllOlympics() {
 	});
 }
 
-
 function updateOlympicTable(sortProperty, sortOrder) {
 	var olympicsTable = $("#eventCanvas #olympicsTable")
 	
@@ -260,42 +259,42 @@ function populateGoalAndAirlineStats(event) {
     })
 }
 
-function populateCityVoteModal(candidates, votes, votingActive) {
-    var table = $("#olympicsCityVoteTable")
+// Leaflet implementation for maps belong below:
 
-    table.data("weight", votes.weight)
-    table.data("votingActive", votingActive)
+var olympicsVoteMaps = [];  // Global array to hold Leaflet map instances
+var olympicsMapElements = [];  // Array to hold layers (markers, circle) for cleanup
 
-    if (!olympicsVoteMaps) {
-        var mapDivs = initVoteLayout(table, candidates.length)
-        initOlympicsVoteMaps(mapDivs)
+function initOlympicsVoteMaps(mapDivs) {
+    olympicsVoteMaps = [];
+    olympicsMapElements = [];
+
+    for (var i = 0; i < mapDivs.length; i++) {
+        var mapDiv = mapDivs[i][0];
+
+        // Set fixed height (original uses padding-top: 100% for aspect ratio)
+        mapDiv.style.height = mapDiv.clientWidth + 'px';  // Square map
+
+        var map = L.map(mapDiv, {
+            center: [0, 0],
+            zoom: 6,
+            zoomControl: false,
+            dragging: false,
+            touchZoom: false,
+            doubleClickZoom: false,
+            scrollWheelZoom: false,
+            boxZoom: false,
+            keyboard: false
+        });
+
+        // CARTO Positron basemap (light style; replace with 'voyager' or other if preferred)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        olympicsVoteMaps.push(map);
     }
-
-    var airport = candidates[0]
-
-    table.find(".cityName").each(function(index) {
-        $(this).html(getCountryFlagImg(candidates[index].countryCode) + candidates[index].city)
-    })
-
-    $.each(olympicsMapElements, function() { this.setMap(null)})
-    olympicsMapElements = []
-
-    table.find(".number-button").each(function(index) {
-        var airportId = candidates[index].id
-        $(this).data("airportId", airportId)
-        $(this).empty()
-        if (votes.precedence) {
-            $(this).data("precedence", votes.precedence[airportId])
-            $(this).append("<span>" + votes.precedence[airportId] + "</span>")
-        } else {
-            $(this).removeData("precedence")
-        }
-    })
-
-    $.each(olympicsVoteMaps, function(index, map) {
-        var candidateInfo = candidates[index]
-        populateOlympicsCityMap(map, candidateInfo)
-    })
 }
 
 function refreshCityVoteModalButtons() {
@@ -325,66 +324,63 @@ var olympicsMapElements = []
 var candidateCount
 
 function populateOlympicsCityMap(map, candidateInfo) {
-    var principalAirport = candidateInfo
-    if (principalAirport.latitude > 45 || principalAirport.latitude < -45) {
-        map.setZoom(6)
-    } else {
-        map.setZoom(7)
-    }
-    map.setCenter({lat: principalAirport.latitude, lng: principalAirport.longitude}); //this would eventually trigger an idle
+    var principalAirport = candidateInfo;
 
-    var airportMapCircle = new google.maps.Circle({
-                center: {lat: principalAirport.latitude, lng: principalAirport.longitude},
-                radius: 80000, //in meter
-                strokeColor: "#32CF47",
-                strokeOpacity: 0.2,
-                strokeWeight: 2,
-                fillColor: "#32CF47",
-                fillOpacity: 0.3,
-                map: map
-            });
-    olympicsMapElements.push(airportMapCircle)
+    // Adjust zoom based on latitude (matching original logic)
+    var zoomLevel = (principalAirport.latitude > 45 || principalAirport.latitude < -45) ? 6 : 7;
+    map.setZoom(zoomLevel);
 
+    var center = L.latLng(principalAirport.latitude, principalAirport.longitude);
+    map.setView(center, zoomLevel);
+
+    // Add 80 km radius circle
+    var airportMapCircle = L.circle(center, {
+        radius: 80000,  // meters
+        strokeColor: "#32CF47",
+        strokeOpacity: 0.2,
+        strokeWeight: 2,
+        fillColor: "#32CF47",
+        fillOpacity: 0.3
+    }).addTo(map);
+    olympicsMapElements.push(airportMapCircle);
+
+    // Add markers for affected airports
     $.each(candidateInfo.affectedAirports, function(index, airport) {
-        var icon = getAirportIcon(airport)
-        var position = {lat: airport.latitude, lng: airport.longitude};
-          var marker = new google.maps.Marker({
-                position: position,
-                map: map,
-                airport: airport,
-                icon : icon
-              });
+        var icon = getAirportIcon(airport);  // Assume this returns a Leaflet-compatible icon (e.g., L.icon)
+        var position = L.latLng(airport.latitude, airport.longitude);
 
-            var infowindow
-           	marker.addListener('mouseover', function(event) {
-           		$("#olympicAirportPopup .airportName").text(airport.name + "(" + airport.iata + ")")
-           		infowindow = new google.maps.InfoWindow({
-           		       maxWidth : 800,
-                       disableAutoPan : true
-                 });
-                 var popup = $("#olympicAirportPopup").clone()
-                 popup.show()
-                 infowindow.setContent(popup[0])
+        var marker = L.marker(position, { icon: icon });
+        marker.airport = airport;  // Store for popup
 
+        marker.bindPopup(function() {
+            // Clone and populate popup content (matching original)
+            var popupContent = $("#olympicAirportPopup").clone();
+            popupContent.find(".airportName").text(airport.name + " (" + airport.iata + ")");
+            popupContent.show();
+            return popupContent[0];
+        }, {
+            maxWidth: 800,
+            autoPan: false,
+            keepInView: false
+        });
 
-           		infowindow.open(map, marker);
-           	})
-           	marker.addListener('mouseout', function(event) {
-           		infowindow.close()
-           		infowindow.setMap(null)
-           	})
-           	olympicsMapElements.push(marker)
+        // Hover events (mouseover/mouseout)
+        marker.on('mouseover', function() {
+            this.openPopup();
+        });
+        marker.on('mouseout', function() {
+            this.closePopup();
+        });
 
-     })
-
-
-
-    google.maps.event.addListenerOnce(map, 'idle', function() {
-        setTimeout(function() { //set a timeout here, otherwise it might not render part of the map...
-            map.setCenter({lat: principalAirport.latitude, lng: principalAirport.longitude}); //this would eventually trigger an idle
-            google.maps.event.trigger(map, 'resize'); //this refreshes the map
-        }, 2000);
+        marker.addTo(map);
+        olympicsMapElements.push(marker);
     });
+
+    // Invalidate size to ensure proper rendering (replaces Google resize trigger)
+    setTimeout(function() {
+        map.invalidateSize();
+        map.setView(center, zoomLevel);  // Re-center if needed
+    }, 2000);
 }
 
 function voteOlympicsCity(numberButton) {
@@ -433,17 +429,153 @@ function initVoteLayout(table, candidateCount) {
 }
 
 var olympicsVoteMaps
-function initOlympicsVoteMaps(mapDivs) { //only called once, see https://stackoverflow.com/questions/10485582/what-is-the-proper-way-to-destroy-a-map-instance
-    olympicsVoteMaps = []
-    for (i = 0 ; i < mapDivs.length; i ++) {
-        olympicsVoteMaps.push(new google.maps.Map(mapDivs[i][0], {
-                        gestureHandling: 'none',
-                        disableDefaultUI: true,
-                        styles: getMapStyles()
-                    }))
+// === Initialize maps (called only once per modal opening) ===
+function initOlympicsVoteMaps(mapDivs) {
+    olympicsVoteMaps = [];
+    // No need to reset olympicsMapElements here; cleanup happens in populateCityVoteModal
+
+    for (var i = 0; i < mapDivs.length; i++) {
+        var mapDiv = mapDivs[i][0];
+
+        // Ensure square aspect ratio
+        mapDiv.style.height = mapDiv.clientWidth + 'px';
+
+        var map = L.map(mapDiv, {
+            center: [0, 0],
+            zoom: 6,
+            zoomControl: false,
+            dragging: false,
+            touchZoom: false,
+            doubleClickZoom: false,
+            scrollWheelZoom: false,
+            boxZoom: false,
+            keyboard: false
+        });
+
+        // CARTO Positron light basemap
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        olympicsVoteMaps.push(map);
+    }
+}
+
+// === Populate each candidate's map ===
+function populateOlympicsCityMap(map, candidateInfo) {
+    var principalAirport = candidateInfo;
+
+    var zoomLevel = (principalAirport.latitude > 45 || principalAirport.latitude < -45) ? 6 : 7;
+    var center = L.latLng(principalAirport.latitude, principalAirport.longitude);
+    map.setView(center, zoomLevel);
+
+    // 80 km radius circle
+    var airportMapCircle = L.circle(center, {
+        radius: 80000,
+        color: "#32CF47",
+        opacity: 0.2,
+        weight: 2,
+        fillColor: "#32CF47",
+        fillOpacity: 0.3
+    }).addTo(map);
+    olympicsMapElements.push(airportMapCircle);
+
+    // Add markers for affected airports
+    $.each(candidateInfo.affectedAirports, function(index, airport) {
+        var iconUrl = getAirportIcon(airport);  // This now correctly receives the string URL
+
+        // Create a Leaflet icon from the string URL, matching main map sizing logic
+        var iconSize, iconAnchor;
+        if (airport.isGateway) {
+            iconSize = [28, 28];
+            iconAnchor = [14, 14];
+        } else if (airport.size <= 3) {
+            iconSize = [16, 16];
+            iconAnchor = [8, 8];
+        } else if (airport.size <= 6) {
+            iconSize = [20, 20];
+            iconAnchor = [10, 10];
+        } else {
+            iconSize = [24, 24];
+            iconAnchor = [12, 12];
+        }
+
+        var icon = L.icon({
+            iconUrl: iconUrl,
+            iconSize: iconSize,
+            iconAnchor: iconAnchor,
+            popupAnchor: [0, -iconAnchor[1]]
+        });
+
+        var position = L.latLng(airport.latitude, airport.longitude);
+
+        var marker = L.marker(position, { icon: icon });
+        marker.airport = airport;
+
+        marker.bindPopup(function() {
+            var popupContent = $("#olympicAirportPopup").clone();
+            popupContent.find(".airportName").text(airport.name + " (" + airport.iata + ")");
+            popupContent.show();
+            return popupContent[0];
+        }, {
+            maxWidth: 800,
+            autoPan: false
+        });
+
+        marker.on('mouseover', function() { this.openPopup(); });
+        marker.on('mouseout',  function() { this.closePopup(); });
+
+        marker.addTo(map);
+        olympicsMapElements.push(marker);
+    });
+
+    // Ensure proper rendering
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 100);  // Reduced delay; usually sufficient after DOM insertion
+}
+
+// === Add this cleanup at the start of populateCityVoteModal ===
+function populateCityVoteModal(candidates, votes, votingActive) {
+    var table = $("#olympicsCityVoteTable");
+    table.data("weight", votes.weight);
+    table.data("votingActive", votingActive);
+
+    if (!olympicsVoteMaps || olympicsVoteMaps.length === 0) {
+        var mapDivs = initVoteLayout(table, candidates.length);
+        initOlympicsVoteMaps(mapDivs);
     }
 
+    // === CRITICAL: Clean up previous layers ===
+    olympicsMapElements.forEach(function(layer) {
+        if (layer && typeof layer.remove === 'function') {
+            layer.remove();
+        }
+    });
+    olympicsMapElements = [];
 
+    // === Continue with original population logic ===
+    table.find(".cityName").each(function(index) {
+        $(this).html(getCountryFlagImg(candidates[index].countryCode) + candidates[index].city);
+    });
+
+    table.find(".number-button").each(function(index) {
+        var airportId = candidates[index].id;
+        $(this).data("airportId", airportId);
+        $(this).empty();
+        if (votes.precedence && votes.precedence[airportId] !== undefined) {
+            $(this).data("precedence", votes.precedence[airportId]);
+            $(this).append("<span>" + votes.precedence[airportId] + "</span>");
+        } else {
+            $(this).removeData("precedence");
+        }
+    });
+
+    $.each(olympicsVoteMaps, function(index, map) {
+        populateOlympicsCityMap(map, candidates[index]);
+    });
 }
 
 

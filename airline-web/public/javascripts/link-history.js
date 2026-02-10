@@ -166,8 +166,6 @@ function loadLinkHistory(linkId) {
     });
 }
 
-
-
 function toggleLinkHistoryDirection(showForward, routeDiv) {
     routeDiv.siblings().removeClass("selected")
     routeDiv.addClass("selected")
@@ -175,7 +173,6 @@ function toggleLinkHistoryDirection(showForward, routeDiv) {
     $("#linkHistoryControlPanel").data("showForward", showForward)
     showLinkHistory()
 }
-
 
 function hideLinkHistoryView() {
     // Remove all history paths from the map (Leaflet version)
@@ -222,64 +219,63 @@ function hideLinkHistoryView() {
     }
 }
 
-
 function drawLinkHistoryPath(link, inverted, watchedLinkId, step) {
-  const from = L.latLng(link.fromLatitude, link.fromLongitude);
-  const to = L.latLng(link.toLatitude, link.toLongitude);
-  const pathKey = link.fromAirportId + "|" + link.toAirportId + "|" + inverted;
-  const isWatchedLink = link.linkId === watchedLinkId;
-
-  let relatedPath;
-
-  // create new path if not already stored
-  if (!historyPaths[pathKey]) {
-    relatedPath = L.polyline([from, to], {
-      color: "#DC83FC",
-      weight: 2,
-      opacity: 0.8,
-      smoothFactor: 1,
-      interactive: true,
-    });
-
-    // transparent shadow layer for mouse events
-    const shadowPath = L.polyline([from, to], {
-      color: "#000000",
-      opacity: 0.0001,
-      weight: 25,
-      interactive: true,
-    });
-
-    // attach metadata
-    shadowPath.link = link;
-    relatedPath.shadowPath = shadowPath;
-    relatedPath.inverted = inverted;
-    relatedPath.watched = isWatchedLink;
-    relatedPath.step = step;
-
-    shadowPath.link = link;
-    shadowPath.inverted = inverted;
-    shadowPath.thisAirlinePassengers = 0;
-    shadowPath.thisAlliancePassengers = 0;
-    shadowPath.otherAirlinePassengers = 0;
-
-    historyPaths[pathKey] = relatedPath;
-  } else {
-    relatedPath = historyPaths[pathKey];
-  }
-
-  // passenger counting
-  if (link.airlineId === activeAirline.id) {
-    relatedPath.shadowPath.thisAirlinePassengers += link.passenger;
-  } else if (
-    currentAirlineAllianceMembers.length > 0 &&
-    $.inArray(link.airlineId, currentAirlineAllianceMembers) !== -1
-  ) {
-    relatedPath.shadowPath.thisAlliancePassengers += link.passenger;
-  } else {
-    relatedPath.shadowPath.otherAirlinePassengers += link.passenger;
-  }
+    const from = L.latLng(link.fromLatitude, link.fromLongitude);
+    const to = L.latLng(link.toLatitude, link.toLongitude);
+    const pathKey = link.fromAirportId + "|" + link.toAirportId + "|" + inverted;
+    const isWatchedLink = link.linkId === watchedLinkId;
+    let relatedPath;
+    
+    // Create new path
+    if (!historyPaths[pathKey]) {
+        relatedPath = L.geodesic([from, to], {
+            color: "#DC83FC",
+            weight: 2,
+            opacity: 0.8,
+            smoothFactor: 1,
+            interactive: true,
+            steps: 32,
+            wrap: false  
+        });
+        
+        // Transparent shadow layer for mouse events
+        const shadowPath = L.geodesic([from, to], {
+            color: "#000000",
+            opacity: 0.0001,
+            weight: 25,
+            interactive: true,
+            steps: 32,
+            wrap: false  
+        });
+        
+        // Attach metadata (unchanged)
+        shadowPath.link = link;
+        relatedPath.shadowPath = shadowPath;
+        relatedPath.inverted = inverted;
+        relatedPath.watched = isWatchedLink;
+        relatedPath.step = step;
+        shadowPath.link = link;
+        shadowPath.inverted = inverted;
+        shadowPath.thisAirlinePassengers = 0;
+        shadowPath.thisAlliancePassengers = 0;
+        shadowPath.otherAirlinePassengers = 0;
+        historyPaths[pathKey] = relatedPath;
+    } else {
+        relatedPath = historyPaths[pathKey];
+    }
+    
+    // Passenger counting (unchanged)
+    if (link.airlineId === activeAirline.id) {
+        relatedPath.shadowPath.thisAirlinePassengers += link.passenger;
+    } else if (
+        currentAirlineAllianceMembers.length > 0 &&
+        $.inArray(link.airlineId, currentAirlineAllianceMembers) !== -1
+    ) {
+        relatedPath.shadowPath.thisAlliancePassengers += link.passenger;
+    } else {
+        relatedPath.shadowPath.otherAirlinePassengers += link.passenger;
+    }
 }
-
 
 function clearHistoryFlightMarkers() {
   $.each(historyFlightMarkers, function (index, markersOnAStep) {
@@ -294,46 +290,64 @@ function clearHistoryFlightMarkers() {
     historyFlightMarkerAnimation = null;
   }
 }
+
 var historyFlightMarkerAnimation
 
-
 function animateHistoryFlightMarkers(framesPerAnimation) {
-  let currentStep = 0;
-  let currentFrame = 0;
-  const animationInterval = 50;
-
-  historyFlightMarkerAnimation = window.setInterval(function () {
-    $.each(historyFlightMarkers[currentStep], function (index, marker) {
-      if (!marker.isActive) {
-        marker.isActive = true;
-        marker.elapsedDuration = 0;
-        marker.setLatLng(marker.from);
-        marker.addTo(map);
-      } else {
-        marker.elapsedDuration += 1;
-        if (marker.elapsedDuration >= marker.totalDuration) {
-          marker.isActive = false;
+    let currentStep = 0;
+    let currentFrame = 0;
+    const animationInterval = 50;
+    
+    historyFlightMarkerAnimation = window.setInterval(function () {
+        $.each(historyFlightMarkers[currentStep], function (index, marker) {
+            if (!marker.isActive) {
+                marker.isActive = true;
+                marker.elapsedDuration = 0;
+                marker.setLatLng(marker.points[0]);
+                marker.addTo(map);
+            } else {
+                marker.elapsedDuration += 1;
+                if (marker.elapsedDuration >= marker.totalDuration) {
+                    marker.isActive = false;
+                } else {
+                    const t = marker.elapsedDuration / marker.totalDuration;
+                    const targetDistance = t * marker.totalDistance;
+                    
+                    let i = 1;
+                    for (; i < marker.cumulativeDistances.length; i++) {
+                        if (marker.cumulativeDistances[i] >= targetDistance) {
+                            break;
+                        }
+                    }
+                    if (i === marker.cumulativeDistances.length) {
+                        i--;
+                    }
+                    
+                    const segStartDist = marker.cumulativeDistances[i - 1];
+                    const segDist = marker.cumulativeDistances[i] - segStartDist;
+                    const localT = (targetDistance - segStartDist) / segDist;
+                    
+                    const segStart = marker.points[i - 1];
+                    const segEnd = marker.points[i];
+                    
+                    const newPos = L.latLng(
+                        segStart.lat + localT * (segEnd.lat - segStart.lat),
+                        segStart.lng + localT * (segEnd.lng - segStart.lng)
+                    );
+                    marker.setLatLng(newPos);
+                }
+            }
+        });
+        
+        if (currentFrame === framesPerAnimation) {
+            fadeOutMarkers(historyFlightMarkers[currentStep], animationInterval);
+            currentStep = (currentStep + 1) % historyFlightMarkers.length;
+            currentFrame = 0;
         } else {
-          const t = marker.elapsedDuration / marker.totalDuration;
-          const newPos = L.latLng(
-            marker.from.lat + (marker.to.lat - marker.from.lat) * t,
-            marker.from.lng + (marker.to.lng - marker.from.lng) * t
-          );
-          marker.setLatLng(newPos);
+            currentFrame++;
         }
-      }
-    });
-
-    if (currentFrame === framesPerAnimation) {
-      fadeOutMarkers(historyFlightMarkers[currentStep], animationInterval);
-      currentStep = (currentStep + 1) % historyFlightMarkers.length;
-      currentFrame = 0;
-    } else {
-      currentFrame++;
-    }
-  }, animationInterval);
+    }, animationInterval);
 }
-
 
 function fadeOutMarkers(markers, animationInterval) {
   let opacity = 1.0;
@@ -359,40 +373,48 @@ function fadeOutMarkers(markers, animationInterval) {
   }, animationInterval);
 }
 
-
 function drawHistoryFlightMarker(line, framesPerAnimation, totalPassengers) {
-  if (currentAnimationStatus) {
-    const from = line.getLatLngs()[0];
-    const to = line.getLatLngs()[1];
+    if (!currentAnimationStatus) return;
+    
+    const latlngs = line.getLatLngs();
+    if (latlngs.length < 2) return;  // Skip if insufficient points for animation
+    
+    let totalDistance = 0;
+    const cumulativeDistances = [0];
+    for (let i = 1; i < latlngs.length; i++) {
+        totalDistance += latlngs[i - 1].distanceTo(latlngs[i]);
+        cumulativeDistances.push(totalDistance);
+    }
+    
+    if (totalDistance === 0) return;  // Skip if no effective distance (degenerate path)
+    
     let iconName;
-
     if (totalPassengers > 200) iconName = "dot-5.png";
     else if (totalPassengers > 100) iconName = "dot-4.png";
     else if (totalPassengers > 50) iconName = "dot-3.png";
     else if (totalPassengers > 25) iconName = "dot-2.png";
     else iconName = "dot-1.png";
-
-    const marker = L.marker(from, {
-      icon: L.icon({
-        iconUrl: "assets/images/markers/" + iconName,
-        iconSize: [12, 12],
-        iconAnchor: [6, 6],
-      }),
-      interactive: false,
+    
+    const marker = L.marker(latlngs[0], {
+        icon: L.icon({
+            iconUrl: "assets/images/markers/" + iconName,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+        }),
+        interactive: false,
     });
-
-    marker.from = from;
-    marker.to = to;
+    
+    marker.points = latlngs;
+    marker.cumulativeDistances = cumulativeDistances;
+    marker.totalDistance = totalDistance;
     marker.elapsedDuration = 0;
     marker.totalDuration = framesPerAnimation;
     marker.isActive = false;
-
+    
     const step = line.step;
     if (!historyFlightMarkers[step]) historyFlightMarkers[step] = [];
     historyFlightMarkers[step].push(marker);
-  }
 }
-
 
 function showLinkHistory() {
   const controlPanel = $("#linkHistoryControlPanel");
