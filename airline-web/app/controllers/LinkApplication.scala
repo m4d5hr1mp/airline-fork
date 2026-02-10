@@ -879,7 +879,7 @@ class LinkApplication @Inject()(cc: ControllerComponents) extends AbstractContro
 
   object RejectionType extends Enumeration {
     type RejectionType = Value
-    val NO_BASE, TITLE_REQUIREMENT, AIRLINE_GRADE, DISTANCE, NO_CASH, NEGOTIATION_COOL_DOWN, DUPLICATED_LINK = Value
+    val NO_BASE, TITLE_REQUIREMENT, AIRLINE_GRADE, DISTANCE, NO_CASH, NEGOTIATION_COOL_DOWN, DUPLICATED_LINK, REGULATORY_RESTRICTIONS = Value
   }
 
   def getRejectionReason(airline : Airline, fromAirport: Airport, toAirport : Airport, existingLink : Option[Link]) : Option[(String, RejectionType.Value)]= {
@@ -902,18 +902,7 @@ class LinkApplication @Inject()(cc: ControllerComponents) extends AbstractContro
           case Some(base) => base
         }
 
-
         val flightCategory = FlightType.getCategory(Computation.getFlightType(fromAirport, toAirport))
-        //check title status
-//        if (flightCategory == FlightCategory.INTERCONTINENTAL) {
-//          val requiredTitle = if (toAirport.isGateway()) Title.APPROVED_AIRLINE else Title.PRIVILEGED_AIRLINE
-//          val currentTitle = CountryAirlineTitle.getTitle(toCountryCode, airline)
-//          val ok = currentTitle.title.id <= requiredTitle.id //smaller value means higher title
-//
-//          if (!ok) {
-//            return Some((s"Cannot fly Intercontinental to this ${if (toAirport.isGateway()) "Gateway" else "Non-gateway"} airport until your airline attain title ${Title.description(requiredTitle)} with ${CountryCache.getCountry(toCountryCode).get.name}", TITLE_REQUIREMENT))
-//          }
-//        }
         if (fromAirport == toAirport) {
           return Some("Departure and Destination airports cannot be the same. Click and select a different destination airport.", DISTANCE)
         }
@@ -929,11 +918,34 @@ class LinkApplication @Inject()(cc: ControllerComponents) extends AbstractContro
         if (airline.getBalance() < cost) {
           return Some("Not enough cash to establish this route", NO_CASH)
         }
+
+        // V0.2 Addition: Openness-driven restrictions on international flights:
+        if (fromAirport.countryCode != toAirport.countryCode) { // Apply only to international flights
+          val fromCountry = CountryCache.getCountry(fromAirport.countryCode).get
+          val toCountry = CountryCache.getCountry(toAirport.countryCode).get
+          val mutualRelations = CountrySource.getCountryMutualRelationship(fromAirport.countryCode, toAirport.countryCode)
+          val openness = toCountry.openness
+          val effectiveOpenness = Math.max(1, Math.min(10, openness + mutualRelations)) // Clamped to 1-10; fallback to 1 if 0 or below
+
+          effectiveOpenness match {
+            case 10 => // Unrestricted access: no rejection
+            case 9 if toAirport.size < 4 && !toAirport.isGateway() =>
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 4", REGULATORY_RESTRICTIONS))
+            case 8 if toAirport.size < 5 && !toAirport.isGateway() =>
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 5", REGULATORY_RESTRICTIONS))
+            case 7 if toAirport.size < 6 && !toAirport.isGateway() =>
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 6", REGULATORY_RESTRICTIONS))
+            case 6 if toAirport.size < 5 && !toAirport.isGateway() =>
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 5", REGULATORY_RESTRICTIONS))
+            case 5 if toAirport.size < 4 && !toAirport.isGateway() =>
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 4", REGULATORY_RESTRICTIONS))
+            case _ if effectiveOpenness <= 4 && !toAirport.isGateway() => // 4-0 (including fallback 0)
+              return Some((s"${toCountry.name} only allows foreign operations into Gateway airports!", REGULATORY_RESTRICTIONS))
+            case _ => // No rejection for passing cases
+          }
+        }
       case Some(existingLink) => //nothing
-
     }
-
-
     return None
   }
 
