@@ -485,8 +485,8 @@ object GeoDataGenerator extends App {
       (tokens(2), tokens(1))
     }.toMap
 
-    val opennessMap : Map[String, Int] = scala.io.Source.fromFile("openness.csv").getLines().map(_.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1)).map { tokens =>
-      val trimmedTokens = tokens.map { token : String =>
+    val opennessMap: Map[String, Int] = scala.io.Source.fromFile("openness.csv").getLines().drop(1).map(_.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1)).map { tokens =>
+      val trimmedTokens = tokens.map { token: String =>
         if (token.startsWith("\"") && token.endsWith("\"")) {
           token.substring(1, token.length() - 1)
         } else {
@@ -494,30 +494,36 @@ object GeoDataGenerator extends App {
         }
       }
 
-      val countryCode3 = trimmedTokens(1)
-      val opennessRanking : Option[Int] =
-        trimmedTokens.drop(4).reverse.find { token => !token.isEmpty() } match {
-          case Some(rankingString) =>
+      val countryCode3 = trimmedTokens.lift(1).getOrElse("")  // ISO3 at index 1
+      if (countryCode3.isEmpty) {
+        None
+      } else {
+        val targetValue: Int = trimmedTokens.lift(3).flatMap { valueStr =>  // Target Value at index 3
+          try {
+            Some(valueStr.toInt)
+          } catch {
+            case _: NumberFormatException => None
+          }
+        }.getOrElse(0)
+
+        val overrideValue: Option[Int] = trimmedTokens.lift(4).flatMap { valueStr =>  // Override Value at index 4
+          if (valueStr.trim.nonEmpty) {
             try {
-              Some(rankingString.toInt)
+              Some(valueStr.toInt)
             } catch {
-              case _ : NumberFormatException => None //ok just ignore
+              case _: NumberFormatException => None
             }
+          } else {
+            None
+          }
+        }
+
+        val opennessValue = overrideValue.getOrElse(targetValue).max(0).min(10)  // Prefer override if present; clamp to 0-10
+
+        codeMap.get(countryCode3) match {
+          case Some(countryCode2) => Some((countryCode2, opennessValue))
           case None => None
         }
-      codeMap.get(countryCode3) match {
-        case Some(countryCode2) =>
-          val opennessValue = opennessRanking.fold(0) { opennessRankingValue =>
-            if (opennessRankingValue > 200) {
-              0
-            } else {
-              (200 - opennessRankingValue) / 20 + 1
-            }
-          }
-          Some((countryCode2, opennessValue))
-        case None =>
-          //println("cannot find matching country code for " + countryCode3)
-          None
       }
     }.flatten.toMap
 
