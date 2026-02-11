@@ -53,7 +53,7 @@ object ProfileConfigs {
       id = 0,
       name = "Cash Start",
       description = "Start with only cash in the bank, no aircraft or debt. Build your airline from scratch. Recomended for new players.",
-      cashBase = 40_000_000L,
+      cashBase = 75_000_000L,
       planeConfigs = List.empty,
       reputation = 0,
       loanConfigs = List.empty,
@@ -70,10 +70,10 @@ object ProfileConfigs {
       id = 1,
       name = "Flag Carrier",
       description = "Establish a prestigious national airline with a modern fleet supported by government subsidies. Moderate difficulty.",
-      cashBase = 500000000L,
+      cashBase = 500_000_000L,
       planeConfigs = List(
-        PlaneConfig(2000000000L, 100.0, List("Boeing 787","Boeing 777","Airbus A350","Airbus A330","Airbus A380","Boeing 747")),
-        PlaneConfig(1000000000L, 100.0, List("Airbus A320","Boeing 737"))
+        PlaneConfig(2_000_000_000L, 100.0, List("Boeing 787","Boeing 777","Airbus A350","Airbus A330","Airbus A380","Boeing 747")),
+        PlaneConfig(1_000_000_000L, 100.0, List("Airbus A320","Boeing 737"))
       ),
       reputation = 50,
       loanConfigs = List(
