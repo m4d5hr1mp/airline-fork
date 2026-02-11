@@ -101,46 +101,124 @@ function loadAirplaneModelOwnerInfo() {
 	});
 }
 
-
+// Update airplane table based on applied filters:
 function updateAirplaneModelTable(sortProperty, sortOrder) {
     if (!sortProperty && !sortOrder) {
         var selectedSortHeader = $('#airplaneModelSortHeader .cell.selected')
         sortProperty = selectedSortHeader.data('sort-property')
         sortOrder = selectedSortHeader.data('sort-order')
     }
-	//sort the list
-	loadedModelsOwnerInfo.sort(sortByProperty(sortProperty, sortOrder == "ascending"))
-	
-	var airplaneModelTable = $("#airplaneModelTable")
-	airplaneModelTable.children("div.table-row").remove()
-	
-	
-	$.each(loadedModelsOwnerInfo, function(index, modelOwnerInfo) {
-		var row = $("<div class='table-row clickable' data-model-id='" + modelOwnerInfo.id + "' onclick='selectAirplaneModel(loadedModelsById[" + modelOwnerInfo.id + "])'></div>")
-		if (modelOwnerInfo.isFavorite) {
-		    row.append("<div class='cell'>" + modelOwnerInfo.name + "<img src='assets/images/icons/heart.png' height='10px'></div>")
+    
+    // Get filter values
+    var flightRange = parseInt($('#flightRange').val()) || 0;
+    var minRunway = parseInt($('#runway').val()) || 0;
+    var minCapacity = parseInt($('#min_capacity').val()) || 0;
+    var minCirculation = parseInt($('#min_circulation').val()) || 0;
+    var releasedAfter = parseInt($('#released_after').val()) || 1955;
+    var releasedBefore = parseInt($('#released_before').val()) || 2030;
+    var ownedOnly = $('#owned_only').is(':checked');
+    
+    // Filter the models
+    var filteredModels = loadedModelsOwnerInfo.filter(function(modelOwnerInfo) {
+        var model = loadedModelsById[modelOwnerInfo.id];
+        
+        // Flight range filter
+        if (flightRange > 0 && model.range < flightRange) return false;
+        
+        // Runway filter
+        if (minRunway > 0 && model.runwayRequirement > minRunway) return false;
+        
+        // Min capacity filter
+        if (minCapacity > 0 && model.capacity < minCapacity) return false;
+        
+        // Min circulation filter (assuming model.inUse exists)
+        if (minCirculation > 0 && (!model.inUse || model.inUse < minCirculation)) return false;
+        
+        // Year filters
+        if (releasedAfter > 0 && model.introYear < releasedAfter) return false;
+        if (releasedBefore < 9999 && model.introYear > releasedBefore) return false;
+        
+        // Owned only filter
+        if (ownedOnly && modelOwnerInfo.assignedAirplanes.length === 0 && 
+            modelOwnerInfo.availableAirplanes.length === 0 && 
+            modelOwnerInfo.constructingAirplanes.length === 0) return false;
+        
+        return true;
+    });
+    
+    // Sort the filtered list
+    filteredModels.sort(sortByProperty(sortProperty, sortOrder == "ascending"));
+    
+    var airplaneModelTable = $("#airplaneModelTable");
+    airplaneModelTable.children("div.table-row").remove();
+    
+    $.each(filteredModels, function(index, modelOwnerInfo) {
+        var model = loadedModelsById[modelOwnerInfo.id];
+        var row = $("<div class='table-row clickable' data-model-id='" + modelOwnerInfo.id + "' onclick='selectAirplaneModel(loadedModelsById[" + modelOwnerInfo.id + "])'></div>");
+        
+        if (modelOwnerInfo.isFavorite) {
+            row.append("<div class='cell'>" + modelOwnerInfo.name + "<img src='assets/images/icons/heart.png' height='10px'></div>");
         } else {
-            row.append("<div class='cell'>" + modelOwnerInfo.name + "</div>")
-		}
-		row.append("<div class='cell'>" + modelOwnerInfo.family + "</div>")
-		row.append("<div class='cell' align='right'>" + commaSeparateNumber(modelOwnerInfo.price) + "</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.capacity + "</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.range + " km</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.fuelBurn + "</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.lifespan / 52 + " yrs</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.speed + " km/h</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.runwayRequirement + " m</div>")
-		row.append("<div class='cell' align='right'>" + modelOwnerInfo.assignedAirplanes.length + "/" + modelOwnerInfo.availableAirplanes.length + "/" + modelOwnerInfo.constructingAirplanes.length + "</div>")
+            row.append("<div class='cell'>" + modelOwnerInfo.name + "</div>");
+        }
+        
+        row.append("<div class='cell'>" + modelOwnerInfo.family + "</div>");
+        row.append("<div class='cell' align='right'>" + commaSeparateNumber(modelOwnerInfo.price) + "</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.capacity + "</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.range + " km</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.fuelBurn + "</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.lifespan / 52 + " yrs</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.speed + " km/h</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.runwayRequirement + " m</div>");
+        row.append("<div class='cell' align='right'>" + modelOwnerInfo.assignedAirplanes.length + "/" + modelOwnerInfo.availableAirplanes.length + "/" + modelOwnerInfo.constructingAirplanes.length + "</div>");
+        
+        // NEW COLUMNS
+        // Max Rotation
+        var maxRotation = 0;
+        if (flightRange > 0 && model.range >= flightRange) {
+            var flightTime = calcFlightTime(model, flightRange);
+            var maxFlightMinutes = 4 * 24 * 60;
+            maxRotation = Math.floor(maxFlightMinutes / ((flightTime + model.turnaroundTime) * 2));
+        }
+        row.append("<div class='cell' align='right'>" + (maxRotation > 0 ? maxRotation : "-") + "</div>");
+        
+        // Cost per PAX (placeholder)
+        row.append("<div class='cell' align='right'>-</div>");
 
-		
-		if (selectedModelId == modelOwnerInfo.id) {
-			row.addClass("selected")
-			selectAirplaneModel(modelOwnerInfo)
-		}
-		airplaneModelTable.append(row)
-	});
-	
+        // Discount % (placeholder) - This was the missing line
+        row.append("<div class='cell' align='right'>-</div>");
+        
+        // Planes in circulation
+        var inUse = model.inUse || 0;
+        row.append("<div class='cell' align='right'>" + inUse + "</div>");
+        
+        if (selectedModelId == modelOwnerInfo.id) {
+            row.addClass("selected");
+            selectAirplaneModel(modelOwnerInfo);
+        }
+        
+        airplaneModelTable.append(row);
+    });
 }
+
+// Helper function for calculating flight time
+function calcFlightTime(plane, distance) {
+    var MAX_ASCEND_DISTANCE_3 = 1000;
+    var speed = plane.speed;
+    
+    var ascendDistance = Math.min(distance / 2, MAX_ASCEND_DISTANCE_3);
+    var descendDistance = ascendDistance;
+    var cruiseDistance = distance - ascendDistance - descendDistance;
+    
+    var ascendTime = ascendDistance / speed * 60;
+    var descendTime = descendDistance / speed * 60;
+    var cruiseTime = cruiseDistance / speed * 60;
+    
+    return Math.floor(ascendTime + cruiseTime + descendTime);
+}
+
+// Constants needed
+const MAX_ASCEND_DISTANCE_3 = 1000;
 
 function updateUsedAirplaneTable(sortProperty, sortOrder) {
 	var usedAirplaneTable = $("#airplaneCanvas #usedAirplaneTable")

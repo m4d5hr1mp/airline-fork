@@ -1546,45 +1546,104 @@
 					</div>
 				</div>
 	<!--   			end country canvas -->
-				<div id="airplaneCanvas"  class="canvas" style="height: 100%; display: none; min-width: 600px;">
+				<div id="airplaneCanvas" class="canvas" style="height: 100%; display: none; min-width: 600px;">
 					<div style="float: left;" class="mainPanel airplaneCanvasLeftGroup">
-						<div style="height: 95% ; width : 98%; float: left;"  class="section">
-							<div class="table" style="width: 30%; margin-bottom: 10px;">
-								<div class="table-header">
-									<div class="cell detailsSelection clickable selected" data-type="market" onclick="selectAirplaneTab($(this))" style="border-radius: 5px 0 0 5px">Market</div>
-									<div class="cell detailsSelection clickable" data-type="hangar" onclick="selectAirplaneTab($(this));" style="border-radius: 0 5px 5px 0">Hangar</div>
+						<div style="height: 95%; width: 98%; float: left;" class="section">
+							<div id="AirplaneTableTop" style="display: flex; flex-direction: row;">
+								<!-- Hangar / Market Panel Switch: -->
+								<div class="table" style="width: 15%; margin-bottom: 10px;">
+									<div class="table-header">
+										<div class="cell detailsSelection clickable selected" data-type="market" onclick="selectAirplaneTab($(this))" style="border-radius: 5px 0 0 5px">Market</div>
+										<div class="cell detailsSelection clickable" data-type="hangar" onclick="selectAirplaneTab($(this));" style="border-radius: 0 5px 5px 0">Hangar</div>
+									</div>
+								</div>
+
+								<!-- Airplane Table Filter Fields: -->
+								<div id="AirplaneTableFilters" style="display: flex; flex-direction: row; width: 100%; margin-left: 10px; margin-bottom: 10px;">
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">Distance:</div>
+										</div>
+										<input type="text" id="flightRange" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
+									</div>
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">Runway Length:</div>
+										</div>
+										<input type="text" id="runway" value="3600" onchange="updateAirplaneModelTable()" style="width: 100%;">
+									</div>
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">Min. Capacity:</div>
+										</div>
+										<input type="text" id="min_capacity" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
+									</div>
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">Min. Circulation:</div>
+										</div>
+										<input type="text" id="min_circulation" onchange="updateAirplaneModelTable()" style="width: 100%;" value="-1">
+									</div>
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">In Service After:</div>
+										</div>
+										<input type="text" id="released_after" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="1955">
+									</div>
+									<div class="table" style="width: 15%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">In Service Before:</div>
+										</div>
+										<input type="text" id="released_before" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="2030">
+									</div>
+									<div class="table" style="width: 12%;">
+										<div class="table-header">
+											<div class="cell detailsSelection">Filters</div>
+										</div>
+										<label style="padding: 5px;"><input type="checkbox" id="owned_only" onchange="updateAirplaneModelTable()"> Owned Only</label>
+									</div>
 								</div>
 							</div>
 
 							<div class="detailsGroup" style="height: 100%;">
 								<div class="market details" style="width: 100%; height: 100%;">
 									<div class="table data" style="height: 20px; width: 100%; min-width: 500px">
+										<!-- Sort Header Row -->
 										<div class="table-header" id="airplaneModelSortHeader">
-											<div class="cell clickable" style="width: 20%" data-sort-property="name" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Name</div>
-											<div class="cell clickable" style="width: 15%" data-sort-property="family" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Family</div>
-											<div class="cell clickable selected" style="width: 10%" align="right" data-sort-property="price" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Price</div>
+											<div class="cell clickable" style="width: 17%" data-sort-property="name" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Name</div>
+											<div class="cell clickable" style="width: 9%" data-sort-property="family" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Family</div>
+											<div class="cell clickable selected" style="width: 8%" align="right" data-sort-property="price" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Price</div>
 											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="capacity" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Capacity</div>
-											<div class="cell clickable" style="width: 9%" align="right" data-sort-property="range" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Max Range</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="range" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Max Range</div>
 											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="fuelBurn" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Fuel Burn</div>
 											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="lifespan" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Lifespan</div>
 											<div class="cell clickable" style="width: 9%" align="right" data-sort-property="speed" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Speed</div>
 											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="runwayRequirement" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Runway Req.</div>
-											<div class="cell clickable" style="width: 9%" align="right" data-sort-property="totalOwned" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))">Inventory</div>
+											<div class="cell clickable" style="width: 6%" align="right" data-sort-property="totalOwned" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))">Inventory</div>
+											<div class="cell clickable" style="width: 3%" align="right" data-sort-property="max_rotation" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Max flight rotations (uses distance filter)">⏲</div>
+											<div class="cell clickable" style="width: 5%" align="right" data-sort-property="cpp" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Cost Per Pax">$/🧍</div>
+											<div class="cell clickable" style="width: 4%" align="right" data-sort-property="discountPercent" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Discount Percent">%🔽</div>
+											<div class="cell clickable" style="width: 4%" align="right" data-sort-property="in_use" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Total number in circulation">#✈</div>
 										</div>
 									</div>
-									<div style="height: calc(100% - 60px); width: 100%; overflow-y: auto; min-width: 500px">
-										<div class="table data" id="airplaneModelTable" style="max-height: 100%; width: 100%; ">
+									
+									<div style="height: calc(100% - 80px); width: 100%; overflow-y: auto; min-width: 500px">
+										<div class="table data" id="airplaneModelTable" style="max-height: 100%; width: 100%;">
 											<div class="table-header">
-												<div class="cell" style="width: 20%; border-bottom: none;"></div>
-												<div class="cell" style="width: 15%; border-bottom: none;"></div>
-												<div class="cell" style="width: 10%; border-bottom: none;"></div>
+												<div class="cell" style="width: 17%; border-bottom: none;"></div>
+												<div class="cell" style="width: 9%; border-bottom: none;"></div>
+												<div class="cell" style="width: 8%; border-bottom: none;"></div>
+												<div class="cell" style="width: 7%; border-bottom: none;"></div>
+												<div class="cell" style="width: 7%; border-bottom: none;"></div>
+												<div class="cell" style="width: 7%; border-bottom: none;"></div>
 												<div class="cell" style="width: 7%; border-bottom: none;"></div>
 												<div class="cell" style="width: 9%; border-bottom: none;"></div>
 												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 9%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 9%; border-bottom: none;"></div>
+												<div class="cell" style="width: 6%; border-bottom: none;"></div>
+												<div class="cell" style="width: 3%; border-bottom: none;"></div>
+												<div class="cell" style="width: 5%; border-bottom: none;"></div>
+												<div class="cell" style="width: 4%; border-bottom: none;"></div>
+												<div class="cell" style="width: 4%; border-bottom: none;"></div>
 											</div>
 										</div>
 									</div>
