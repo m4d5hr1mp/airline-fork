@@ -400,20 +400,24 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
   def landingFee(airplaneModel: Model): Int = {
     // Base landing fee based on airport size
     val baseLandingFee = size match {
-      case 1 => 100  // Small regional
-      case 2 => 200  // Medium regional
-      case 3 => 300  // Large regional
-      case 4 => 500  // International
-      case 5 => 800  // Major hub
-      case 6 => 1200 // Large hub
-      case _ => 2000 // Mega airports
+      case 1 => 15  
+      case 2 => 25  
+      case 3 => 40  
+      case 4 => 65  
+      case 5 => 100  
+      case 6 => 125 
+      case 7 => 150
+      case 8 => 175
+      case 9 => 200
+      case 10 => 225
+      case _ => 250
     }
 
     // Category multiplier for runway usage
     val categoryMultiplier = airplaneModel.airplaneType match {
       case Model.Type.LIGHT => 0.5
       case Model.Type.SMALL => 1.5
-      case Model.Type.REGIONAL => 2.5
+      case Model.Type.REGIONAL => 2.0
       case Model.Type.MEDIUM => 4.0
       case Model.Type.LARGE => 8.0
       case Model.Type.X_LARGE => 12.0
