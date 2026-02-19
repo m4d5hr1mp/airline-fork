@@ -364,10 +364,10 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     // ATC fee: flat for LIGHT, SMALL, REGIONAL, SUPERSONIC; per-seat for MEDIUM, LARGE, X_LARGE, JUMBO to reflect MTOW difference within those categories.
     val atcFee = airplaneModel.airplaneType match {
       case Model.Type.LIGHT => 50                                      // Light Aircraft pay 50$
-      case Model.Type.SMALL => 100                                     // Small Aircraft pay 100$
-      case Model.Type.REGIONAL => 250                                  // Regional Aircraft pay 250$
+      case Model.Type.SMALL | Model.Type.SMALL_PROP | Model.Type.SHORT_RANGE_PROP => 100                                     // Small Aircraft pay 100$
+      case Model.Type.REGIONAL | Model.Type.LONG_RANGE_PROP | Model.Type.REGIONAL_PROP => 250                                  // Regional Aircraft pay 250$
       case Model.Type.SUPERSONIC => 2000                               // Supersonics pay 1000$
-      case Model.Type.MEDIUM => (3.75 * airplaneModel.capacity).toInt  // Mediums pay from 115x3.75=431.25 to 249*3.75=933.75 (This includes all mainline narrow-bodies)
+      case Model.Type.MEDIUM | Model.Type.EARLY_JET => (3.75 * airplaneModel.capacity).toInt  // Mediums pay from 115x3.75=431.25 to 249*3.75=933.75 (This includes all mainline narrow-bodies)
       case Model.Type.LARGE => (5.0 * airplaneModel.capacity).toInt    // Large pay from 250x5=1250 to 360x5=1800 (this includes all smaller wide-bodies)
       case Model.Type.X_LARGE => (7.0 * airplaneModel.capacity).toInt  // Extra Large pay from 361x7=2527 to 475x7=3325 (this includes all bigger wide-bodies, excluding B777-300)
       case Model.Type.JUMBO => (10.0 * airplaneModel.capacity).toInt   // Jumbos pay from 550x10=5500 to 10x865=8650 (B777-300, B747 Family, A380-800)
@@ -376,9 +376,9 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     // Ground handling fee: category-based, flat-rate since there's not as much difference from slight size change of an airplane within category.
     val groundHandlingFee = airplaneModel.airplaneType match {
       case Model.Type.LIGHT => 50
-      case Model.Type.SMALL => 150
-      case Model.Type.REGIONAL => 250
-      case Model.Type.MEDIUM => 750
+      case Model.Type.SMALL | Model.Type.SMALL_PROP | Model.Type.SHORT_RANGE_PROP => 150
+      case Model.Type.REGIONAL | Model.Type.LONG_RANGE_PROP | Model.Type.REGIONAL_PROP => 250
+      case Model.Type.MEDIUM | Model.Type.EARLY_JET => 750
       case Model.Type.LARGE => 1750
       case Model.Type.X_LARGE => 2500
       case Model.Type.JUMBO => 4000
@@ -416,9 +416,9 @@ case class Airport(iata : String, icao : String, name : String, latitude : Doubl
     // Category multiplier for runway usage
     val categoryMultiplier = airplaneModel.airplaneType match {
       case Model.Type.LIGHT => 0.5
-      case Model.Type.SMALL => 1.5
-      case Model.Type.REGIONAL => 2.0
-      case Model.Type.MEDIUM => 4.0
+      case Model.Type.SMALL | Model.Type.SMALL_PROP | Model.Type.SHORT_RANGE_PROP => 1.5
+      case Model.Type.REGIONAL | Model.Type.LONG_RANGE_PROP | Model.Type.REGIONAL_PROP => 2.0
+      case Model.Type.MEDIUM | Model.Type.EARLY_JET => 4.0
       case Model.Type.LARGE => 8.0
       case Model.Type.X_LARGE => 12.0
       case Model.Type.JUMBO => 16.0
