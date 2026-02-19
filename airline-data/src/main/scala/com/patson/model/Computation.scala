@@ -88,7 +88,10 @@ object Computation {
 
   def calculateFlightPhases(airplaneModel: Model, distanceKm: Int): FlightPhases = {
     val speedKph = airplaneModel.speed.toDouble
-    val params = climbParamsByType.getOrElse(airplaneModel.airplaneType, ClimbParams(700, 11000, 9000))
+    val params = climbParamsByType.getOrElse(
+      airplaneModel.airplaneType, 
+      ClimbParams(700, 11000, 9000, 1.5)   // ← add appropriate default here
+    )
 
     // Short-haul altitude cap for all jets (< 500 km)
     val effectiveCruiseAltM = if (distanceKm < 500 && !airplaneModel.airplaneType.toString.contains("PROP")) {
