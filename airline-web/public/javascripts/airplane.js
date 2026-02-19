@@ -101,6 +101,55 @@ function loadAirplaneModelOwnerInfo() {
 	});
 }
 
+//====================================
+//
+// Aircraft Market Table Functionality:
+//
+//=====================================
+// Helper to compute total fuel consumption at given distance "D"
+function calculateTotalFuelBurn(model, distanceKm) {
+    if (!model || distanceKm <= 0) return model.fuelBurn; // fallback
+    // Port of ClimbParams + phase calculation (exact values from current backend)
+    const climbParams = {
+        "SHORT_RANGE_PROP": {climbMult: 1.45},
+        "LONG_RANGE_PROP":  {climbMult: 1.55},
+        "SMALL_PROP":       {climbMult: 1.40},
+        "REGIONAL_PROP":    {climbMult: 1.48},
+        "LIGHT":            {climbMult: 2.10},
+        "SMALL":            {climbMult: 2.05},
+        "REGIONAL":         {climbMult: 2.15},
+        "MEDIUM":           {climbMult: 2.20},
+        "EARLY_JET":        {climbMult: 2.80},
+        "LARGE":            {climbMult: 2.45},
+        "X_LARGE":          {climbMult: 2.65},
+        "JUMBO":            {climbMult: 2.90},
+        "SUPERSONIC":       {climbMult: 3.20}
+    };
+    const params = climbParams[model.airplaneType] || {climbMult: 2.0};
+    // Simplified but accurate phase times (same logic as backend)
+    const speed = model.speed;
+    const isShortHaul = distanceKm < 500;
+    const cruiseAlt = isShortHaul && !model.airplaneType.includes("PROP") ? 7600 : 11000; // approximate average
+    const climbTime = cruiseAlt / 800; // average climb rate
+    const descentTime = climbTime * 0.85;
+    const climbDescentDist = speed * 0.6 * (climbTime + descentTime) / 60;
+    const cruiseDist = Math.max(0, distanceKm - climbDescentDist);
+    const cruiseTime = cruiseDist / (speed / 60);
+
+    // Total fuel burn (only climb gets the extra multiplier)
+    const fuel = model.fuelBurn * (
+        climbTime * 2.1 * params.climbMult +
+        cruiseTime * 1.0 +
+        descentTime * 0.4 +
+        30 * 0.15   // ground ops
+    );
+
+    return Math.round(fuel);
+}
+
+
+
+
 // Update airplane table based on applied filters:
 function updateAirplaneModelTable(sortProperty, sortOrder) {
     if (!sortProperty && !sortOrder) {
@@ -135,8 +184,12 @@ function updateAirplaneModelTable(sortProperty, sortOrder) {
         if (minCirculation > 0 && (!model.inUse || model.inUse < minCirculation)) return false;
         
         // Year filters
-        if (releasedAfter > 0 && model.introYear < releasedAfter) return false;
-        if (releasedBefore < 9999 && model.introYear > releasedBefore) return false;
+        var minReleaseYear = parseInt($('#released_after').val())  || 1955;
+        var maxReleaseYear = parseInt($('#released_before').val()) || 2030;
+        // Hide any model outside the selected timespan
+        if (model.releaseYear < minReleaseYear || model.releaseYear > maxReleaseYear) {
+            return false;
+        }
         
         // Owned only filter
         if (ownedOnly && modelOwnerInfo.assignedAirplanes.length === 0 && 
@@ -166,7 +219,17 @@ function updateAirplaneModelTable(sortProperty, sortOrder) {
         row.append("<div class='cell' align='right'>" + commaSeparateNumber(modelOwnerInfo.price) + "</div>");
         row.append("<div class='cell' align='right'>" + modelOwnerInfo.capacity + "</div>");
         row.append("<div class='cell' align='right'>" + modelOwnerInfo.range + " km</div>");
-        row.append("<div class='cell' align='right'>" + modelOwnerInfo.fuelBurn + "</div>");
+        // === FUEL BURN COLUMN - roundtrip when toggle is on ===
+        var flightRange = parseInt($('#flightRange').val()) || 0;
+        var showTotalFuel = $('#show_total_fuel').is(':checked');
+        var fuelLabel;
+        if (flightRange > 0 && showTotalFuel) {
+            var oneWayKg = calculateTotalFuelBurn(model, flightRange);
+            fuelLabel = commaSeparateNumber(oneWayKg * 2) + " kg";
+        } else {
+            fuelLabel = model.fuelBurn + " kg/min";
+        }
+        row.append("<div class='cell' align='right'>" + fuelLabel + "</div>");
         row.append("<div class='cell' align='right'>" + modelOwnerInfo.lifespan / 52 + " yrs</div>");
         row.append("<div class='cell' align='right'>" + modelOwnerInfo.speed + " km/h</div>");
         row.append("<div class='cell' align='right'>" + modelOwnerInfo.runwayRequirement + " m</div>");

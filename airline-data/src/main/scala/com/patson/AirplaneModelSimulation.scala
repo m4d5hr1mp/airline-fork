@@ -61,6 +61,7 @@ object AirplaneModelSimulation {
       case X_LARGE => 500
       case JUMBO => 250
       case SUPERSONIC => 100
+      case _ => 500
     }
   }
 

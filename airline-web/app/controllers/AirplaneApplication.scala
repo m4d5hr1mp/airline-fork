@@ -5,6 +5,7 @@ import com.patson.data.{AirlineSource, AirplaneSource, CashFlowSource, CountrySo
 import com.patson.data.airplane.ModelSource
 import com.patson.model.airplane.{Model, ModelAvailability, _} // Add "ModelAvailability" to enable progression
 import com.patson.model._
+import com.patson.ChronologyConverter // Added to enable display of upcoming and most recent model releases!
 import play.api.libs.json.{JsArray, JsBoolean, JsNumber, JsObject, JsString, JsValue, Json, Writes}
 import play.api.mvc._
 
@@ -198,6 +199,12 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
         if (favoriteOption.isDefined && favoriteOption.get._1 == originalModel.id) {
           modelJson = modelJson + ("isFavorite" -> JsBoolean(true))
         }
+
+        // Accurate release information for the new filters
+        modelJson = modelJson + ("releaseCycle" -> JsNumber(ModelAvailability.getAvailabilityCycle(originalModel.name)))
+        modelJson = modelJson + ("releaseYear"  -> JsNumber(ModelAvailability.getReleaseYear(originalModel.name)))
+        modelJson = modelJson + ("releaseDate"  -> JsString(ModelAvailability.getReleaseGameDate(originalModel.name)))
+        
         result = result.append(modelJson)
     }
 
@@ -288,6 +295,50 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
       }
     }
     return rejections.toMap
+  }
+
+  // Returns data to populate "Announcement" modal with upcoming model releases!
+  def getRecentAndUpcomingReleases() = Action {
+    val currentCycle = CycleSource.loadCycle()
+    val allModels = ModelSource.loadAllModels()
+
+    // Attach release cycle
+    val modelsWithCycle = allModels.map { model =>
+      val rc = ModelAvailability.getAvailabilityCycle(model.name)
+      (model, rc)
+    }.sortBy(_._2)   // ascending by release cycle
+
+    val TWO_YEARS_IN_CYCLES = 2 * ChronologyConverter.cyclesPerYear   // 896 cycles
+
+    // 5 most recent (already released) – newest first
+    val recent = modelsWithCycle
+      .filter(_._2 <= currentCycle)
+      .sortBy(-_._2)                     // descending (most recent first)
+      .take(5)
+      .map { case (model, _) =>
+        Json.obj(
+          "name"        -> model.name,
+          "releaseDate" -> ModelAvailability.getReleaseGameDate(model.name)
+        )
+      }
+
+    // Upcoming within next 2 in-game years only
+    val upcoming = modelsWithCycle
+      .filter { case (_, rc) => rc > currentCycle && rc <= currentCycle + TWO_YEARS_IN_CYCLES }
+      .take(8)
+      .map { case (model, _) =>
+        Json.obj(
+          "name"        -> model.name,
+          "releaseDate" -> ModelAvailability.getReleaseGameDate(model.name)
+        )
+      }
+
+    Ok(Json.obj(
+      "recentReleases"   -> recent,
+      "upcomingReleases" -> upcoming,
+      "currentCycle"     -> currentCycle
+    ))
+
   }
 
   def validateMakeFavorite(airlineId : Int, modelId : Int) : Either[String, Unit] = {

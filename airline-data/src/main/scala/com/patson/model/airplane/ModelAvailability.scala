@@ -227,17 +227,40 @@ object ModelAvailability {
     "Airbus A321neoXLR" -> 780
   )
 
-  // Helper method to compute availability in game cycles
+// Helper method to compute availability in game cycles
   def getAvailabilityCycle(name: String): Int = {
     val weeks = modelAvailabilityCycles.getOrElse(name, 0)
-    val deltaYears = PROGRESSION_REFERENCE_YEAR - WORLD_START_YEAR  // Formula for offset (e.g., 3 years = 36 months)
-    val baseCycles = deltaYears * cyclesPerYear
-    val additionalCycles = ((weeks.toLong * cyclesPerYear) / 52L).toInt
     
     if (weeks <= 0) {
-      0  // Pre-1958 models available at cycle 0 (1955 start)
+      0  // Pre-reference models available at game start (1955)
     } else {
-      baseCycles + additionalCycles  // Post-1958 models with 36-month offset from 1955 start
+      // Scale weeks across the FULL game timeline (1958–2030) while preserving relative spacing
+      val maxGameYears = WORLD_END_YEAR - PROGRESSION_REFERENCE_YEAR  // 72 years
+      val fractionOfTimeline = weeks.toDouble / modelAvailabilityCycles.values.max
+      val targetGameYearsFromReference = fractionOfTimeline * maxGameYears
+      (targetGameYearsFromReference * cyclesPerYear).toInt
     }
+  }
+
+  private val MONTH_NAMES = Vector(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  )
+
+  /** Accurate in-game release year (used by filter and table) */
+  def getReleaseYear(modelName: String): Int = {
+    val releaseCycle = getAvailabilityCycle(modelName)
+    val yearsPassed = releaseCycle / cyclesPerYear
+    PROGRESSION_REFERENCE_YEAR + yearsPassed
+  }
+
+  /** Nice display string exactly like the top bar (e.g. "March 1965") */
+  def getReleaseGameDate(modelName: String): String = {
+    val releaseCycle = getAvailabilityCycle(modelName)
+    val yearsPassed = releaseCycle / cyclesPerYear
+    val year = PROGRESSION_REFERENCE_YEAR + yearsPassed
+    val cyclesInYear = releaseCycle % cyclesPerYear
+    val monthIndex = cyclesInYear / cyclesPerChronologicalMonth
+    s"${MONTH_NAMES(monthIndex)} $year"
   }
 }

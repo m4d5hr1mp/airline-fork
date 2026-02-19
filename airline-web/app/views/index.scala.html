@@ -213,30 +213,37 @@
 
 	<div style="width: 100%; display: none;" class="extendedTopBarDetails">
 		<div>
-			<span class="currentTime" class="label" style="margin: 0px 10px"></span>
-			<span style="margin: 0px 10px" title="An estimation of how long until next cycle/week"><img src='@routes.Assets.versioned("images/icons/clock-moon-phase.png")' style="vertical-align: middle;"><span class="nextTickEstimation label" style="font-weight: bold;">-</span></span>
+			<span class="currentCycle label" style="margin: 0px 10px; font-weight: bold;"></span>
+			<span class="currentGameDate label" style="margin: 0px 10px; font-weight: bold;"></span>
+			<span style="margin: 0px 10px" title="An estimation of how long until next cycle/week">
+				<img src='@routes.Assets.versioned("images/icons/clock-moon-phase.png")' style="vertical-align: middle;">
+				<span class="nextTickEstimation label" style="font-weight: bold;">-</span>
+			</span>
 		</div>
 		<div>
 			<span style="margin: 0px 10px">Reputation: <span class="reputation label"></span> <span class="reputationLevel label"></span></span>
 		</div>
 	</div>
   	<div id="topBar" data-scroll="false" class="menubar">
-  		<div class="desktopOnly hide-empty">
-  			<span class="topBarDetails" style="display: none;">
-				<span style="display: flex; flex-align: center;">
-					<span class="currentTime label" style="margin: 0px 10px"></span>
-					<span style="margin: 0px 10px" title="An estimation of how long until next cycle/week"><img src='@routes.Assets.versioned("images/icons/clock-moon-phase.png")' style="vertical-align: middle;"><span class="nextTickEstimation label" style="font-weight: bold;">-</span></span>
-					<span style="margin: 0px 10px" title="Airline Balance">$<span class="balance label"></span></span>
-					<span class="currentAirline label" style="margin: 0; font-weight: bold"></span>
-					<span style="display: inline-block; margin-left: 5px;">
-						<span style="display: flex; flex-align: center;"><span class="reputationStars"></span></span>
-					</span>
-					<span style="display: inline-block; margin-left: 5px;" class="delegatesShortcut clickable" onclick="toggleDelegateStatusModal()">
-
+		<div class="desktopOnly hide-empty">
+				<span class="topBarDetails" style="display: none;">
+					<span style="display: flex; align-items: center;">
+						<span class="currentCycle label" style="margin: 0px 10px; font-weight: bold;"></span>
+						<span class="currentGameDate label" style="margin: 0px 10px; font-weight: bold;"></span>
+						<span style="margin: 0px 10px" title="An estimation of how long until next cycle/week">
+							<img src='@routes.Assets.versioned("images/icons/clock-moon-phase.png")' style="vertical-align: middle;">
+							<span class="nextTickEstimation label" style="font-weight: bold;">-</span>
+						</span>
+						<span style="margin: 0px 10px" title="Airline Balance">$<span class="balance label"></span></span>
+						<span class="currentAirline label" style="margin: 0; font-weight: bold"></span>
+						<span style="display: inline-block; margin-left: 5px;">
+							<span style="display: flex; align-items: center;"><span class="reputationStars"></span></span>
+						</span>
+						<span style="display: inline-block; margin-left: 5px;" class="delegatesShortcut clickable" onclick="toggleDelegateStatusModal()">
+						</span>
 					</span>
 				</span>
-  			</span>
-  		</div>
+			</div>
 		<div style="max-width: 35%;" class="mobileOnly">
 			<div class="topBarDetails">
 				<span class="currentAirline label" style="margin-left: 0px 5px; font-weight: bold"></span>
@@ -1560,47 +1567,66 @@
 
 								<!-- Airplane Table Filter Fields: -->
 								<div id="AirplaneTableFilters" style="display: flex; flex-direction: row; width: 100%; margin-left: 10px; margin-bottom: 10px;">
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">Distance:</div>
 										</div>
 										<input type="text" id="flightRange" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
 									</div>
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">Runway Length:</div>
 										</div>
 										<input type="text" id="runway" value="3600" onchange="updateAirplaneModelTable()" style="width: 100%;">
 									</div>
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">Min. Capacity:</div>
 										</div>
 										<input type="text" id="min_capacity" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
 									</div>
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">Min. Circulation:</div>
 										</div>
 										<input type="text" id="min_circulation" onchange="updateAirplaneModelTable()" style="width: 100%;" value="-1">
 									</div>
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">In Service After:</div>
 										</div>
 										<input type="text" id="released_after" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="1955">
 									</div>
+									
 									<div class="table" style="width: 15%;">
 										<div class="table-header">
 											<div class="cell detailsSelection">In Service Before:</div>
 										</div>
 										<input type="text" id="released_before" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="2030">
 									</div>
-									<div class="table" style="width: 12%;">
+									
+									<!-- Filter Mode Checkboxes: -->
+									<div style="display: flex; flex-direction: column; width: 15%; padding-top: 4px;">
+										
+										<!-- Unified header -->
 										<div class="table-header">
-											<div class="cell detailsSelection">Filters</div>
+											<div class="cell detailsSelection">Filter Options</div>
 										</div>
-										<label style="padding: 5px;"><input type="checkbox" id="owned_only" onchange="updateAirplaneModelTable()"> Owned Only</label>
+										
+										<!-- Checkboxes stacked vertically below the header -->
+										<div style="display: flex; flex-direction: column; padding: 8px 6px; gap: 8px;">
+											<label style="white-space: nowrap; cursor: pointer;">
+												<input type="checkbox" id="owned_only" onchange="updateAirplaneModelTable()"> Owned Only
+											</label>
+											<label style="white-space: nowrap; cursor: pointer;">
+												<input type="checkbox" id="show_total_fuel" onchange="updateAirplaneModelTable()"> Total at Distance
+											</label>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -3844,11 +3870,8 @@
     
     <!-- The Annoucement Modal -->
 	<div id="announcementModal" class="modal" style="z-index: 1000; position: fixed;">
-	  <div class="modal-content" style="width: 500px;">
+	  <div class="modal-content" style="width: 92%; max-width: 1250px; height: 88%;">
 	    <span class="close" onclick="closeModal($('#announcementModal'))">&times;</span>
-	    <div style="margin-bottom: 10px;">
-	    	<img src='@routes.Assets.versioned("images/icons/32px/balloon.png")'><span style="font-size: 20px;">Announcements</span>
-	    </div>
 	    <div id="announcementContainer">
 	    </div>
 	  </div>

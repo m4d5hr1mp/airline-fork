@@ -27,11 +27,39 @@ case class Model(
 
   val countryCode = manufacturer.countryCode
   val SUPERSONIC_SPEED_THRESHOLD = 1236
+  val PROP_SPEED_THRESHOLD = 700
+
+  val EARLY_JET_MODELS: Set[String] = Set(
+    "de Havilland Comet",
+    "Boeing 707",
+    "Douglas DC-8",
+    "Sud Aviation Caravelle",
+    "Tupolev Tu-104"
+    // Extend with additional historical early jets, e.g., "Convair 880", "Vickers VC10"
+  )
 
   val airplaneType: Type = {
     if (speed > SUPERSONIC_SPEED_THRESHOLD) {
       SUPERSONIC
+    } else if (EARLY_JET_MODELS.contains(name)) {
+      EARLY_JET
+    } else if (speed < PROP_SPEED_THRESHOLD) {
+      // === PROPS ===
+      if (introYear < 1960) {
+        // Post-war props → split by size (larger = longer-range family)
+        capacity match {
+          case x if x < 50  => SHORT_RANGE_PROP
+          case _            => LONG_RANGE_PROP
+        }
+      } else {
+        // Modern props → Small Prop vs Regional Prop
+        capacity match {
+          case x if x < 50  => SMALL_PROP
+          case _            => REGIONAL_PROP
+        }
+      }
     } else {
+      // Jets unchanged
       capacity match {
         case x if x <= 19  => LIGHT
         case x if x <= 50  => SMALL
@@ -46,53 +74,69 @@ case class Model(
 
   val category = Category.fromType(airplaneType)
 
-  /* Turnaround Time Logic:
-  For Light aircraft:       from 20+(7/5) = 21.4    to 20+(19/5)=24.75
-  For Small aircraft:       from 25+(20/5)= 29.0    to 20+(50/5)=30.0
-  For Regional aircraft:    from 25+(51/7)= 32.0    to 25+(124/7)=42.8
-  For Medium (Mainline):    from 30+(134/7)=49    to 30+(244/7)=65.0
-  For Large (Small WB):     from 40+(250/3.5)=111.4 to 40+(360/3.5)=142.8
-  For X-Large (B772):       from 50+(361/3)=170     to 50+(440/3)=196.6
-  For Jumbo: 243-280-344    60+(550/3)=243, 60+(600/3)=260, 60+(660/3)=280, 60+(850/3)=343
-  */
   private[this] val BASE_TURNAROUND_TIME = Map(
-    LIGHT -> 20,
-    SMALL -> 25,
-    REGIONAL -> 25,
-    MEDIUM -> 30,
-    LARGE -> 40,
-    X_LARGE -> 50,
-    JUMBO -> 60,
-    SUPERSONIC -> 50
+    SHORT_RANGE_PROP -> 15,
+    LONG_RANGE_PROP  -> 20,
+    SMALL_PROP       -> 20,
+    REGIONAL_PROP    -> 25,
+    EARLY_JET        -> 25,
+    LIGHT            -> 20,
+    SMALL            -> 25,
+    REGIONAL         -> 25,
+    MEDIUM           -> 30,
+    LARGE            -> 40,
+    X_LARGE          -> 50,
+    JUMBO            -> 60,
+    SUPERSONIC       -> 50
   )
 
   val turnaroundTime: Int = (
     BASE_TURNAROUND_TIME(airplaneType) +
       (airplaneType match {
-        case LIGHT      => (capacity / 5).toInt
-        case SMALL      => (capacity / 5).toInt
-        case REGIONAL   => (capacity / 7).toInt
-        case MEDIUM     => (capacity / 7).toInt
-        case LARGE      => (capacity / 3.5).toInt
-        case X_LARGE    => (capacity / 3.5).toInt
-        case JUMBO      => (capacity / 3).toInt
-        case SUPERSONIC => (capacity / 2.5).toInt
+        case SHORT_RANGE_PROP => (capacity / 5).toInt
+        case LONG_RANGE_PROP  => (capacity / 7).toInt 
+        case SMALL_PROP       => (capacity / 5).toInt
+        case REGIONAL_PROP    => (capacity / 7).toInt
+        case EARLY_JET        => (capacity / 7).toInt
+        case LIGHT            => (capacity / 5).toInt
+        case SMALL            => (capacity / 5).toInt
+        case REGIONAL         => (capacity / 7).toInt
+        case MEDIUM           => (capacity / 7).toInt
+        case LARGE            => (capacity / 3.5).toInt
+        case X_LARGE          => (capacity / 3.5).toInt
+        case JUMBO            => (capacity / 3).toInt
+        case SUPERSONIC       => (capacity / 2.5).toInt
       })
   )
+
+  val introYear: Int = {
+    val weeks = ModelAvailability.modelAvailabilityCycles.getOrElse(name, 0)
+    if (weeks <= 0) {
+      WORLD_START_YEAR  // e.g., 1955 for pre-reference models
+    } else {
+      val deltaYears = PROGRESSION_REFERENCE_YEAR - WORLD_START_YEAR  // e.g., 3 years
+      WORLD_START_YEAR + deltaYears + (weeks / 52)  // Integer division for year approximation
+    }
+  }
 
   val airplaneTypeLabel: String = label(airplaneType)
 
   // Weekly fixed cost per aircraft, in USD (computed as per-seat rate multiplied by maximum certified capacity)
   val baseMaintenanceCost: Int = {
     val perSeatRate: Int = airplaneType match {
-      case LIGHT => 100      // Based on light jet benchmarks (e.g., GA turbojet maintenance ~905 USD/hour, scaled for low complexity)
-      case SMALL => 120      // Aligned with small regional data (e.g., FAA RJ ≤60 seats ~479 USD/hour)
-      case REGIONAL => 140   // Reflects regional jet costs (e.g., FAA RJ >60 seats ~431 USD/hour)
-      case MEDIUM => 150     // Matches narrow-body averages (e.g., A320/B737 ~718 USD/hour)
-      case LARGE => 180      // Accounts for wide-body complexity (e.g., two-engine wide ~1,986 USD/hour)
-      case X_LARGE => 200    // Escalated for larger wide-bodies (e.g., B777/A350 equivalents)
-      case JUMBO => 220      // Higher for jumbo types (e.g., four-engine wide ~2,347 USD/hour)
-      case SUPERSONIC => 300 // Premium based on Concorde's elevated maintenance ratios
+      case SHORT_RANGE_PROP => 85
+      case LONG_RANGE_PROP  => 105   // long-range props had more complex systems
+      case SMALL_PROP       => 100
+      case REGIONAL_PROP    => 110
+      case EARLY_JET        => 160
+      case LIGHT            => 100
+      case SMALL            => 120
+      case REGIONAL         => 140
+      case MEDIUM           => 150
+      case LARGE            => 180
+      case X_LARGE          => 200
+      case JUMBO            => 220
+      case SUPERSONIC       => 300
     }
     perSeatRate * capacity
   }
@@ -129,31 +173,37 @@ object Model {
 
   object Type extends Enumeration {
     type Type = Value
-    val LIGHT, SMALL, REGIONAL, MEDIUM, LARGE, X_LARGE, JUMBO, SUPERSONIC = Value
+    val SHORT_RANGE_PROP, LONG_RANGE_PROP, SMALL_PROP, REGIONAL_PROP, EARLY_JET,
+        LIGHT, SMALL, REGIONAL, MEDIUM, LARGE, X_LARGE, JUMBO, SUPERSONIC = Value
 
-    val label = (airplaneType : Type) => { airplaneType match {
-        case LIGHT => "Light"
-        case SMALL => "Small"
-        case REGIONAL => "Regional"
-        case MEDIUM => "Medium"
-        case LARGE => "Large"
-        case X_LARGE => "Extra large"
-        case JUMBO => "Jumbo"
-        case SUPERSONIC => "Supersonic"
-      }
+    val label = (airplaneType: Type) => airplaneType match {
+      case SHORT_RANGE_PROP  => "Short Range Prop"
+      case LONG_RANGE_PROP   => "Long Range Prop"
+      case SMALL_PROP        => "Small Prop"
+      case REGIONAL_PROP     => "Regional Prop"
+      case EARLY_JET         => "Early Jet"
+      case LIGHT             => "Light"
+      case SMALL             => "Small"
+      case REGIONAL          => "Regional"
+      case MEDIUM            => "Medium"
+      case LARGE             => "Large"
+      case X_LARGE           => "Extra large"
+      case JUMBO             => "Jumbo"
+      case SUPERSONIC        => "Supersonic"
     }
   }
 
   object Category extends Enumeration {
     type Category = Value
     val LIGHT, REGIONAL, MEDIUM, LARGE, SUPERSONIC = Value
+
     val grouping = Map(
-      LIGHT -> List(Type.LIGHT, Type.SMALL),
-      REGIONAL -> List(Type.REGIONAL),
-      MEDIUM -> List(Type.MEDIUM),
-      LARGE -> List(Type.LARGE, Type.X_LARGE, Type.JUMBO),
-      SUPERSONIC -> List(Type.SUPERSONIC)
-    )
+        LIGHT      -> List(Type.LIGHT, Type.SMALL, Type.SMALL_PROP),
+        REGIONAL   -> List(Type.SHORT_RANGE_PROP, Type.REGIONAL_PROP, Type.REGIONAL),
+        MEDIUM     -> List(Type.MEDIUM, Type.EARLY_JET, Type.LONG_RANGE_PROP),
+        LARGE      -> List(Type.LARGE, Type.X_LARGE, Type.JUMBO),
+        SUPERSONIC -> List(Type.SUPERSONIC)
+      )
 
     val fromType = (airplaneType : Type.Value) => {
       grouping.find(_._2.contains(airplaneType)).get._1

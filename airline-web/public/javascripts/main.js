@@ -534,65 +534,67 @@ function refreshPanels(airlineId) {
 	});
 }
 
-var totalmillisecPerWeek = 7 * 24 * 60 * 60 * 1000
-var refreshInterval = 5000 //every 5 second
-var hasTickEstimation = false
-var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-var currentTickTimer
-var tickTimerCreator
+var totalmillisecPerWeek = 7 * 24 * 60 * 60 * 1000;
+var refreshInterval = 5000; // every 5 seconds
+var hasTickEstimation = false;
 
 function updateTime(cycle, fraction, cycleDurationEstimation) {
-	$(".currentTime").attr("title", "Current Cycle: " + cycle)
-	gameTimeStart = (cycle + fraction) * totalmillisecPerWeek
+    // ====================== CYCLE + GAME DATE ======================
+    const PROGRESSION_REFERENCE_YEAR = 1958;
+    const CYCLES_PER_YEAR = 448;
+    const CYCLES_PER_MONTH = 37;
 
-    var initialDurationTillNextTick
-	if (cycleDurationEstimation > 0) { //update incrementPerInterval
-	    initialDurationTillNextTick = cycleDurationEstimation * (1 - fraction)
-	    hasTickEstimation = true
-	}
+    const MONTH_NAMES = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
 
-	var wallClockStart = new Date()
+    // Cycle shown as "Cycle: 12345"
+    $(".currentCycle").text("Cycle: " + cycle);
+    $(".currentCycle").attr("title", "Current Cycle: " + cycle);
 
-	//how much wall clock duration should be multiplied as game time duration
-	var timeMultiplier = cycleDurationEstimation > 0 ?
-	    totalmillisecPerWeek / cycleDurationEstimation :
-		totalmillisecPerWeek / (30 * 60 * 1000) //by default 30 minutes per week
+    // In-game month and year (e.g. "March 1965")
+    const yearsPassed = Math.floor(cycle / CYCLES_PER_YEAR);
+    const gameYear = PROGRESSION_REFERENCE_YEAR + yearsPassed;
+    const cyclesInCurrentYear = cycle % CYCLES_PER_YEAR;
+    const monthIndex = Math.floor(cyclesInCurrentYear / CYCLES_PER_MONTH);
+    const gameMonthName = MONTH_NAMES[monthIndex];
 
+    $(".currentGameDate").text(gameMonthName + " " + gameYear);
+    // ===================================================================
 
-	if (currentTickTimer) {
-	    clearInterval(currentTickTimer)
-	}
+    // ====================== ORIGINAL NEXT-TICK LOGIC (unchanged) ======================
+    var initialDurationTillNextTick;
+    if (cycleDurationEstimation > 0) {
+        initialDurationTillNextTick = cycleDurationEstimation * (1 - fraction);
+        hasTickEstimation = true;
+    }
 
+    var wallClockStart = new Date();
+
+    if (currentTickTimer) {
+        clearInterval(currentTickTimer);
+    }
 
     var updateTimerFunction = function() {
-        var currentWallClock = new Date()
-        var wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime()
-
-        var durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart
-
-        var currentGameTime = gameTimeStart + wallClockDurationSinceStart * timeMultiplier
-        var currentGameDate = new Date(currentGameTime)
-        $(".currentTime").text("(" + days[currentGameDate.getDay()] + ") " + padBefore(currentGameDate.getMonth() + 1, "0", 2) + '/' + padBefore(currentGameDate.getDate(), "0", 2) +  " " + padBefore(currentGameDate.getHours(), "0", 2) + ":00")
+        var currentWallClock = new Date();
+        var wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime();
+        var durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart;
 
         if (hasTickEstimation) {
-          var minutesLeft = Math.round(durationTillNextTick / 1000 / 60)
-          if (minutesLeft <= 0) {
-              $(".nextTickEstimation").text("Very soon")
-          } else if (minutesLeft == 1) {
-              $(".nextTickEstimation").text("1 minute")
-          } else {
-              $(".nextTickEstimation").text(minutesLeft + " minutes")
-          }
+            var minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
+            if (minutesLeft <= 0) {
+                $(".nextTickEstimation").text("Very soon");
+            } else if (minutesLeft === 1) {
+                $(".nextTickEstimation").text("1 minute");
+            } else {
+                $(".nextTickEstimation").text(minutesLeft + " minutes");
+            }
         }
-    }
-    tickTimerCreator = function() {
-        updateTimerFunction()
-        var newTimer = setInterval(updateTimerFunction, refreshInterval);
-        return newTimer
-    }
+    };
 
-	currentTickTimer = tickTimerCreator()
+    currentTickTimer = setInterval(updateTimerFunction, refreshInterval);
+    updateTimerFunction(); // immediate first update
 }
 
 
@@ -677,13 +679,38 @@ function switchMap() {
 }
 
 function showAnnoucement() {
-	// Get the modal
-	var modal = $('#announcementModal')
-	// Get the <span> element that closes the modal
-	$('#announcementContainer').empty()
-	$('#announcementContainer').load('assets/html/announcement.html')
+    var modal = $('#announcementModal');
+    $('#announcementContainer').empty();
 
-	modal.fadeIn(1000)
+    $('#announcementContainer').load('assets/html/announcement.html', function() {
+
+        // Load dynamic releases
+        $.getJSON("/airlines/recent-upcoming-releases", function(data) {
+
+            // Recent Releases
+            var recentHtml = '';
+            data.recentReleases.forEach(function(m) {
+                recentHtml += '<div style="padding: 4px 0;">• ' + m.name + ' (' + m.releaseDate + ')</div>';
+            });
+            $('#recentSection').html(recentHtml || '<i style="color:#888;">No recent releases yet</i>');
+
+            // Upcoming Releases
+            var upcomingHtml = '';
+            data.upcomingReleases.forEach(function(m) {
+                upcomingHtml += '<div style="padding: 4px 0;">• ' + m.name + ' (' + m.releaseDate + ')</div>';
+            });
+            $('#upcomingSection').html(upcomingHtml || '<i style="color:#888;">No upcoming releases in the next 28 days</i>');
+
+        }).fail(function() {
+            $('#recentSection').html('<i style="color:#888;">Release information temporarily unavailable</i>');
+            $('#upcomingSection').html('');
+        });
+
+        // Static content (patch notes + rules) stays in announcement.html for now
+        // You can move them to #patchnotesSection and #rulesSection later if you prefer
+    });
+
+    modal.fadeIn(1000);
 }
 
 function populateTooltips() {

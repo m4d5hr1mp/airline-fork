@@ -36,6 +36,10 @@ GET      /airports/:airportId/generic-transits     controllers.GenericTransitApp
 GET		 /cities/:cityId/airportShares	  controllers.Application.getAirportSharesOnCity(cityId: Int)
 
 GET		 /airlines						  controllers.AirlineApplication.getAllAirlines(loginStatus : Boolean ?= false, hideInactive : Boolean ?= false)
+# Recent & upcoming aircraft releases (used in announcement modal)
+# MUST be placed BEFORE any /airlines/:airlineId route
+GET     /airlines/recent-upcoming-releases   controllers.AirplaneApplication.getRecentAndUpcomingReleases
+
 GET		 /airlines/:airlineId	  		  controllers.AirlineApplication.getAirline(airlineId : Int, extendedInfo : Boolean ?= false)
 GET		 /airlines/:airlineId/airplane-models	  controllers.AirplaneApplication.getAirplaneModelsByAirline(airlineId : Int)
 GET		 /airlines/:airlineId/airplanes	  controllers.AirplaneApplication.getOwnedAirplanes(airlineId : Int, simpleResult : Boolean ?= false, groupedResult : Boolean ?= false)
@@ -193,7 +197,7 @@ GET		 /santa-claus/attempt-status/:airportId/:airlineId  controllers.ChristmasAp
 GET		 /santa-claus/award-options/:airlineId  controllers.ChristmasApplication.getAwardOptions(airlineId : Int)
 GET      /santa-claus/pick-award/:airlineId/:optionId   controllers.ChristmasApplication.pickAwardOption(airlineId : Int, optionId : Int)
 
-
+# Routes for Ticket Search & Research utility:
 GET     /search-route/:fromAirportId/:toAirportId controllers.SearchApplication.searchRoute(fromAirportId : Int, toAirportId : Int)
 GET     /search-airport  controllers.SearchApplication.searchAirport(input: String ?= "")
 GET     /search-country  controllers.SearchApplication.searchCountry(input: String ?= "")
@@ -211,6 +215,8 @@ GET     /research-link/:fromAirportId/:toAirportId  controllers.SearchApplicatio
 #GET		 /link-consumptions				  controllers.LinkApplication.getAllLinkConsumptions
 GET		 /airplane-models				  controllers.AirplaneApplication.getAirplaneModels()
 GET		 /airplane-models/:modelId/stats     controllers.AirplaneApplication.getAirplaneModelStats(modelId : Int)
+
+
 GET		 /rankings  		  		      controllers.RankingApplication.getRankings()
 GET		 /rankings/:airlineId  		      controllers.RankingApplication.getRankingsWithAirline(airlineId : Int)
 GET		 /logos/templates 				  controllers.LogoApplication.getTemplates()	

@@ -58,79 +58,79 @@ object Computation {
 
   case class FlightPhases(climbTimeMin: Double, cruiseTimeMin: Double, descentTimeMin: Double, groundOpsMin: Double)
 
-  def calculateFlightPhases(airplaneModel: Model, distance: Int): FlightPhases = {
-    /**
-      * Extracts phase durations from the detailed flight computation.
-      * This is used to support phase-specific calculations (e.g., fuel burn) in other modules.
-      */
-    import com.patson.model.airplane.Model.Type._
-    val speedKph = airplaneModel.speed
-    // Determine if aircraft is a prop or jet
-    val isProp = speedKph <= 670
-    // --- Assign cruise altitude by type ---
-    val cruiseAltMeters = if (isProp) {
-      6500.0
-    } else airplaneModel.airplaneType match {
-      case LIGHT => 13000.0 // Business jets
-      case SMALL => 9750.0 // Small regional jets
-      case REGIONAL => 10000.0 // Larger regionals (e.g. E190)
-      case MEDIUM => 10500.0 // 737/A320 family
-      case LARGE => 11000.0 // A300/A330/767 class
-      case X_LARGE => 12000.0 // 777-200, A350-900
-      case JUMBO => 12000.0 // 747, 777-300, A380
-      case SUPERSONIC => 18000.0 // Concorde-class
-      case _ => 10500.0
-    }
-    // --- Short-haul rule ---
-    // Routes shorter than 500 km are capped at 7600 m max cruise altitude!
-    val effectiveCruiseAlt = if (distance < 500) {
-      math.min(cruiseAltMeters, 7600.0)
+  /** Type-specific climb + fuel parameters */
+  private case class ClimbParams(
+    baseRateMMin: Double,        // m/min at sea level
+    maxCruiseAltM: Double,       // target cruise altitude
+    decayScaleM: Double,         // how fast climb rate falls off
+    climbFuelMultiplier: Double  // extra burn during climb only (1.0 = no penalty)
+  )
+
+  private val climbParamsByType: Map[Model.Type.Type, ClimbParams] = Map(
+    SHORT_RANGE_PROP -> ClimbParams(720,  7600,  6200, 1.45),  // early props
+    LONG_RANGE_PROP  -> ClimbParams(740,  8200,  6500, 1.55),  // DC-6/7, Constellation
+    SMALL_PROP       -> ClimbParams(680,  7600,  6000, 1.40),
+    REGIONAL_PROP    -> ClimbParams(750,  8500,  6800, 1.48),
+
+    LIGHT            -> ClimbParams(450, 13000, 9500, 2.10),   // light jets
+    SMALL            -> ClimbParams(620, 11500, 9200, 2.05),   // CRJ/E-Jet small
+    REGIONAL         -> ClimbParams(680, 11800, 9500, 2.15),   // E170–E195, CRJ700+
+    MEDIUM           -> ClimbParams(850, 12500, 10800, 2.20),   // A320/B737 family
+
+    EARLY_JET        -> ClimbParams(650, 11000, 8500, 2.80),   // Comet, 707, DC-8, Caravelle (very thirsty climb)
+
+    LARGE            -> ClimbParams(920, 13500,  7800, 2.45),   // B767, A300/310
+    X_LARGE          -> ClimbParams(950, 14000,  7200, 2.65),   // A330, B777-200, A350-900
+    JUMBO            -> ClimbParams(960, 14000,  6800, 2.90),   // 747, A380, B777-300ER/9
+
+    SUPERSONIC       -> ClimbParams(1250,18000,  9500, 3.20)
+  )
+
+  def calculateFlightPhases(airplaneModel: Model, distanceKm: Int): FlightPhases = {
+    val speedKph = airplaneModel.speed.toDouble
+    val params = climbParamsByType.getOrElse(airplaneModel.airplaneType, ClimbParams(700, 11000, 9000))
+
+    // Short-haul altitude cap for all jets (< 500 km)
+    val effectiveCruiseAltM = if (distanceKm < 500 && !airplaneModel.airplaneType.toString.contains("PROP")) {
+      math.min(params.maxCruiseAltM, 7600.0)
     } else {
-      cruiseAltMeters
+      params.maxCruiseAltM
     }
-    // --- Base climb/descent rate by category (m/min) ---
-    val baseClimbRate = airplaneModel.airplaneType match {
-      case LIGHT | SMALL => 400.0
-      case REGIONAL => 600.0
-      case MEDIUM => 800.0
-      case LARGE | X_LARGE => 900.0
-      case JUMBO => 900.0
-      case SUPERSONIC => 1200.0
-      case _ => 700.0
-    }
-    // --- Optional: altitude-dependent climb rate decay (disabled for now) ---
-    /*
-    // Option A: exponential decay (smooth)
-    val decayFactor = Math.exp(-effectiveCruiseAlt / 15000.0)
-    val effectiveClimbRate = baseClimbRate * (0.5 + 0.5 * decayFactor)
-    // Option B: simple piecewise decay (clear and adjustable)
-    val effectiveClimbRate = if (effectiveCruiseAlt < 7600) {
-      baseClimbRate
-    } else if (effectiveCruiseAlt < 10000) {
-      baseClimbRate * 0.8
-    } else if (effectiveCruiseAlt < 12000) {
-      baseClimbRate * 0.65
-    } else {
-      baseClimbRate * 0.55
-    }
-    */
-    // For now, climb/descent rate remains constant
-    val effectiveClimbRate = baseClimbRate
-    val effectiveDescentRate = baseClimbRate // symmetrical descent
-    // --- Calculate phase times ---
-    val climbTimeMin = effectiveCruiseAlt / effectiveClimbRate
-    val descentTimeMin = effectiveCruiseAlt / effectiveDescentRate
-    // Average climb/descent ground speed = 60% of cruise speed
-    val climbDescentDistance = (speedKph * 0.6 / 60) * (climbTimeMin + descentTimeMin)
-    val cruiseDistance = math.max(0, distance - climbDescentDistance)
-    val cruiseTimeMin = if (cruiseDistance > 0) {
-      cruiseDistance / (speedKph / 60.0)
+
+    val baseClimbRate = params.baseRateMMin
+    val decayScale = params.decayScaleM
+
+    // Analytical climb time with exponential decay: rate(alt) = base * exp(-alt / scale)
+    val climbTimeMin = (decayScale / baseClimbRate) * (math.exp(effectiveCruiseAltM / decayScale) - 1)
+    val descentTimeMin = climbTimeMin * 0.85   // descent is slightly faster
+
+    // Ground distance covered during climb + descent (average 60% of cruise speed)
+    val avgClimbDescentSpeedKph = speedKph * 0.60
+    val climbDescentDistanceKm = avgClimbDescentSpeedKph * (climbTimeMin + descentTimeMin) / 60.0
+
+    // Cruise phase
+    val cruiseDistanceKm = math.max(0.0, distanceKm - climbDescentDistanceKm)
+    val cruiseTimeMin = if (cruiseDistanceKm > 0) {
+      cruiseDistanceKm / (speedKph / 60.0)
     } else {
       0.0
     }
-    // --- Add taxi/holding buffer (15 min each end) ---
-    val groundOpsBufferMin = 30.0
-    FlightPhases(climbTimeMin, cruiseTimeMin, descentTimeMin, groundOpsBufferMin)
+
+    // Special case: very short route with no meaningful cruise phase
+    val finalClimbTimeMin = if (cruiseTimeMin < 1.0) {
+      // Treat entire flight as 50% climb + 50% descent at average rate
+      val totalTimeMin = distanceKm / (speedKph * 0.75 / 60.0)   // average 75% of cruise speed
+      totalTimeMin * 0.5
+    } else {
+      climbTimeMin
+    }
+
+    val finalDescentTimeMin = if (cruiseTimeMin < 1.0) finalClimbTimeMin else descentTimeMin
+
+    // Ground operations (taxi + holding buffer)
+    val groundOpsMin = 30.0
+
+    FlightPhases(finalClimbTimeMin, cruiseTimeMin, finalDescentTimeMin, groundOpsMin)
   }
 
   def calculateDuration(airplaneModel: Model, distance: Int): Int = {
