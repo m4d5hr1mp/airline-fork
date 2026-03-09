@@ -69,6 +69,9 @@ function refreshTopBar(airline) {
 	$(".reputationStars").append($starBar)
 	addTooltip($(".reputationStars"), reputationText, {'top' : 0, 'width' : '350px', 'white-space' : 'nowrap'})
 
+    $(".oilPrice").text(airline.oilPrice)
+    $(".oilPrice").css("color", getLinkColor(70 - airline.oilPrice, 70))
+
 	//updateTopBarDelegatesStatus
 	refreshTopBarDelegates(airline)
 }

@@ -319,17 +319,28 @@ function initMap() {
     worldCopyJump: true,
   }).setView([0,0], 2);
 
-    // Un-comment this when using CARTO tiles
-    L.tileLayer ('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    const stadia = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+    minZoom: 2,
+    maxZoom: 8
+    });
+
+    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    
-    // Un-comment this when using Stadia Tiles
-    //L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    //attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
     subdomains: 'abcd',
     minZoom: 2,
     maxZoom: 8
-    }).addTo(map);
+    });
+
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    minZoom: 2,
+    maxZoom: 8
+    });
+
+    cartoDark.addTo(map);
+    L.control.layers({ "Stadia (Limited Quota!)": stadia, "Carto Dark": cartoDark, "Carto Light": cartoLight }, null, { position: 'bottomright' }).addTo(map);
 
     // Set maximum bounds to prevent panning beyond poles vertically
     const southWest = L.latLng(-85, -999999);
@@ -341,47 +352,41 @@ function initMap() {
     map.options.maxBoundsViscosity = 1.0;
 
     // ✅ Define Leaflet icons (replacing old Google Maps icon references)
-  const largeAirportMarkerIcon = L.icon({
+    const largeAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-darker.png",
     iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-
-  const mediumAirportMarkerIcon = L.icon({
+    iconAnchor: [12, 24],
+    });
+    const mediumAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport.png",
     iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
-
-  const smallAirportMarkerIcon = L.icon({
+    iconAnchor: [10, 20],
+    });
+    const smallAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-lighter.png",
     iconSize: [16, 16],
-    iconAnchor: [8, 8],
-  });
-
-  const disabledAirportMarkerIcon = L.icon({
+    iconAnchor: [8, 16],
+    });
+    const disabledAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-transparent.png",
     iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
-
-  const gatewayAirportMarkerIcon = L.icon({
+    iconAnchor: [10, 20],
+    });
+    const gatewayAirportMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/airport-gateway.png",
     iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-
-  const baseMarkerIcon = L.icon({
+    iconAnchor: [14, 28],
+    });
+    const baseMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/base.png",
     iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-
+    iconAnchor: [14, 28],
+    });
     const headquarterMarkerIcon = L.icon({
     iconUrl: "/assets/images/markers/headquarter.png",
     iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+    iconAnchor: [16, 32],
+    });
 
   // ✅ Store them in the same way old code expects
   $("#map").data("largeAirportMarker", largeAirportMarkerIcon);
@@ -490,20 +495,11 @@ function LinkHistoryControl(controlDiv, map) {
     controlUI.addEventListener('click', function() {
       map.setCenter(chicago);
     });
-
   }
 
 
 function updateAllPanels(airlineId) {
 	updateAirlineInfo(airlineId)
-	
-//	if (activeAirline) {
-//		if (christmasFlag) {
-//		    printConsole("Breaking news - Santa went missing!!! Whoever finds Santa will be rewarded handsomely! He could be hiding in one of the size 6 or above airports! View the airport page to track him down!", true, true)
-//		}
-//
-//	}
-	
 }
 
 //does not remove or add any components
@@ -540,47 +536,35 @@ var hasTickEstimation = false;
 
 function updateTime(cycle, fraction, cycleDurationEstimation) {
     // ====================== CYCLE + GAME DATE ======================
-    const PROGRESSION_REFERENCE_YEAR = 1958;
-    const CYCLES_PER_YEAR = 448;
-    const CYCLES_PER_MONTH = 37;
+    const WORLD_START_YEAR = 1955;
+    const CYCLES_PER_WEEK  = 3;
+    const WEEKS_PER_YEAR   = 52;
+    const CYCLES_PER_YEAR  = CYCLES_PER_WEEK * WEEKS_PER_YEAR; // 156
 
-    const MONTH_NAMES = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-
-    // Cycle shown as "Cycle: 12345"
     $(".currentCycle").text("Cycle: " + cycle);
     $(".currentCycle").attr("title", "Current Cycle: " + cycle);
 
-    // In-game month and year (e.g. "March 1965")
-    const yearsPassed = Math.floor(cycle / CYCLES_PER_YEAR);
-    const gameYear = PROGRESSION_REFERENCE_YEAR + yearsPassed;
-    const cyclesInCurrentYear = cycle % CYCLES_PER_YEAR;
-    const monthIndex = Math.floor(cyclesInCurrentYear / CYCLES_PER_MONTH);
-    const gameMonthName = MONTH_NAMES[monthIndex];
+    const totalWeeks   = Math.floor(cycle / CYCLES_PER_WEEK);
+    const gameYear     = WORLD_START_YEAR + Math.floor(totalWeeks / WEEKS_PER_YEAR);
+    const weekOfYear   = (totalWeeks % WEEKS_PER_YEAR) + 1;
 
-    $(".currentGameDate").text(gameMonthName + " " + gameYear);
+    $(".currentGameDate").text("Week " + weekOfYear + ", " + gameYear);
     // ===================================================================
 
-    // ====================== ORIGINAL NEXT-TICK LOGIC (unchanged) ======================
+    // ====================== NEXT-TICK LOGIC (unchanged) ======================
     var initialDurationTillNextTick;
     if (cycleDurationEstimation > 0) {
         initialDurationTillNextTick = cycleDurationEstimation * (1 - fraction);
         hasTickEstimation = true;
     }
-
     var wallClockStart = new Date();
-
     if (currentTickTimer) {
         clearInterval(currentTickTimer);
     }
-
     var updateTimerFunction = function() {
         var currentWallClock = new Date();
         var wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime();
         var durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart;
-
         if (hasTickEstimation) {
             var minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
             if (minutesLeft <= 0) {
@@ -592,67 +576,18 @@ function updateTime(cycle, fraction, cycleDurationEstimation) {
             }
         }
     };
-
     currentTickTimer = setInterval(updateTimerFunction, refreshInterval);
-    updateTimerFunction(); // immediate first update
+    updateTimerFunction();
 }
-
 
 // Handle tab visibility change
 document.addEventListener('visibilitychange', function () {
     clearInterval(currentTickTimer);
     if (!document.hidden && tickTimerCreator) {
-        console.log("Recreating tick timer!")
-        currentTickTimer = tickTimerCreator()
+        console.log("Recreating tick timer!");
+        currentTickTimer = tickTimerCreator();
     }
 });
-
-
-//function printConsole(message, messageLevel, activateConsole, persistMessage) {
-//	messageLevel = messageLevel || 1
-//	activateConsole = activateConsole || false
-//	persistMessage = persistMessage || false
-//	var messageClass
-//	if (messageLevel == 1) {
-//		messageClass = 'actionMessage'
-//	} else {
-//		messageClass = 'errorMessage'
-//	}
-//
-//	if (message == '') { //try to clear message, check if there was a persistent message
-//		var previousMessage = $('#console #consoleMessage').data('persistentMessage')
-//		if (previousMessage) {
-//			message = previousMessage
-//		}
-//	}
-//
-//	if (persistMessage) {
-//		$('#console #consoleMessage').data('persistentMessage', message)
-//	}
-//	var consoleVisible = $('#console #consoleMessage').is(':visible')
-//
-//	if (consoleVisible) {
-//		$('#console #consoleMessage').fadeOut('slow', function() { //fade out and reset positions
-//			$('#console #consoleMessage').text(message)
-//			$('#console #consoleMessage').removeClass().addClass(messageClass)
-//			$('#console #consoleMessage').fadeIn('slow')
-//		})
-//	} else {
-//		$('#console #consoleMessage').text(message)
-//		$('#console #consoleMessage').removeClass().addClass(messageClass)
-//		if (activateConsole) {
-//			$('#console #consoleMessage').fadeIn('slow')
-//		}
-//	}
-//}
-//
-//function toggleConsoleMessage() {
-//	if ($('#console #consoleMessage').is(':visible')) {
-//		$('#console #consoleMessage').fadeOut('slow')
-//	} else {
-//		$('#console #consoleMessage').fadeIn('slow')
-//	}
-//}
 
 function showWorldMap() {
 	setActiveDiv($('#worldMapCanvas'));

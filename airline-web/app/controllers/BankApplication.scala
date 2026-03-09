@@ -73,7 +73,10 @@ class BankApplication @Inject()(cc: ControllerComponents) extends AbstractContro
   
   def getMaxLoan(airlineId : Int) = AuthenticatedAirline(airlineId) { request =>
     val loanReply = Bank.getMaxLoan(request.user.id)
-    var result = Json.obj("maxAmount" -> JsNumber(loanReply.maxLoan)).asInstanceOf[JsObject]
+    var result = Json.obj(
+      "maxAmount" -> JsNumber(loanReply.maxLoan),
+      "minAmount" -> JsNumber(Bank.MIN_LOAN_AMOUNT)
+    ).asInstanceOf[JsObject]
     loanReply.rejectionOption.foreach { rejection =>
       result = result + ("rejection" -> JsString(rejection))
     }

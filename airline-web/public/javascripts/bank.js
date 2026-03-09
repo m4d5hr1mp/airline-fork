@@ -1,4 +1,5 @@
 var loadedLoans = {}
+var currentMinLoanAmount = 0 
 
 function showBankCanvas() {
 	setActiveDiv($("#bankCanvas"))
@@ -36,6 +37,8 @@ function loadNewLoanDetails() {
 	    contentType: 'application/json; charset=utf-8',
 	    dataType: 'json',
 	    success: function(result) {
+			currentMinLoanAmount = result.minAmount
+			$('#newLoanAmount').attr('min', result.minAmount)  // optional but good for semantics
 	    	$("#newLoanOptionsTable").children("div.table-row").remove()
 	    	
 	    	if (result.rejection) {
@@ -64,6 +67,11 @@ function loadNewLoanDetails() {
 }
 
 function loadLoanOptions(amount) {
+	amount = parseInt(amount)
+    if (isNaN(amount) || amount < currentMinLoanAmount) {
+        amount = currentMinLoanAmount
+        $('#newLoanAmount').val(amount)
+    }
 	var url = "airlines/" + activeAirline.id + "/loan-options?loanAmount=" + amount
 	$.ajax({
 		type: 'GET',

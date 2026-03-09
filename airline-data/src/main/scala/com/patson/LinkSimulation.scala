@@ -19,7 +19,27 @@ object LinkSimulation {
   private[this] val VIP_COUNT = 5
 
   // Phase-specific fuel multipliers (based on realistic aviation data: higher burn in climb, lower in descent/ground)
-  private val CLIMB_FUEL_MULTIPLIER = 1.7
+  import com.patson.model.airplane.Model.Type._
+  private val CLIMB_FUEL_MULTIPLIER_BY_TYPE: immutable.Map[com.patson.model.airplane.Model.Type.Value, Double] = immutable.Map(
+    SHORT_RANGE_PROP -> 1.65,
+    LONG_RANGE_PROP  -> 1.95,  // DC-6/7, Constellation
+    SMALL_PROP       -> 1.40,
+    REGIONAL_PROP    -> 1.48,
+
+    LIGHT            -> 2.10,  // light jets
+    SMALL            -> 2.05,  // CRJ/E-Jet small
+    REGIONAL         -> 2.15,  // E170–E195, CRJ700+
+    MEDIUM           -> 2.20,  // A320/B737 family
+
+    EARLY_JET        -> 2.80,  // Comet, 707, DC-8, Caravelle (very thirsty climb)
+
+    LARGE            -> 2.45,  // B767, A300/310
+    X_LARGE          -> 2.65,  // A330, B777-200, A350-900
+    JUMBO            -> 2.90,  // 747, A380, B777-300ER/9
+
+    SUPERSONIC       -> 3.20
+  )
+  private val DEFAULT_CLIMB_FUEL_MULTIPLIER = 1.7
   private val CRUISE_FUEL_MULTIPLIER = 1.0
   private val DESCENT_FUEL_MULTIPLIER = 0.4
   private val GROUND_FUEL_MULTIPLIER = 0.15
@@ -191,8 +211,9 @@ object LinkSimulation {
     val fuelCost = flightLink.getAssignedModel() match {
       case Some(model) =>
         val phases = Computation.calculateFlightPhases(model, flightLink.distance)
+        val climbFuelMultiplier = CLIMB_FUEL_MULTIPLIER_BY_TYPE.getOrElse(model.airplaneType, DEFAULT_CLIMB_FUEL_MULTIPLIER)
         val fuelBurn = model.fuelBurn * (
-          phases.climbTimeMin * CLIMB_FUEL_MULTIPLIER +
+          phases.climbTimeMin * climbFuelMultiplier +
           phases.cruiseTimeMin * CRUISE_FUEL_MULTIPLIER +
           phases.descentTimeMin * DESCENT_FUEL_MULTIPLIER +
           phases.groundOpsMin * GROUND_FUEL_MULTIPLIER

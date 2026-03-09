@@ -110,14 +110,9 @@ case class Model(
   )
 
   val introYear: Int = {
-    val weeks = ModelAvailability.modelAvailabilityCycles.getOrElse(name, 0)
-    if (weeks <= 0) {
-      WORLD_START_YEAR  // e.g., 1955 for pre-reference models
-    } else {
-      val deltaYears = PROGRESSION_REFERENCE_YEAR - WORLD_START_YEAR  // e.g., 3 years
-      WORLD_START_YEAR + deltaYears + (weeks / 52)  // Integer division for year approximation
+      val weeks = ModelAvailability.modelAvailabilityWeeks.getOrElse(name, 0)
+      WORLD_START_YEAR + (weeks / WEEKS_PER_YEAR)
     }
-  }
 
   val airplaneTypeLabel: String = label(airplaneType)
 

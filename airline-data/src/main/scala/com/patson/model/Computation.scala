@@ -62,35 +62,34 @@ object Computation {
   private case class ClimbParams(
     baseRateMMin: Double,        // m/min at sea level
     maxCruiseAltM: Double,       // target cruise altitude
-    decayScaleM: Double,         // how fast climb rate falls off
-    climbFuelMultiplier: Double  // extra burn during climb only (1.0 = no penalty)
+    decayScaleM: Double          // how fast climb rate falls off
   )
 
   private val climbParamsByType: Map[Model.Type.Type, ClimbParams] = Map(
-    SHORT_RANGE_PROP -> ClimbParams(720,  7600,  6200, 1.45),  // early props
-    LONG_RANGE_PROP  -> ClimbParams(740,  8200,  6500, 1.55),  // DC-6/7, Constellation
-    SMALL_PROP       -> ClimbParams(680,  7600,  6000, 1.40),
-    REGIONAL_PROP    -> ClimbParams(750,  8500,  6800, 1.48),
+    SHORT_RANGE_PROP -> ClimbParams(720,  7600,  6200),  // early props
+    LONG_RANGE_PROP  -> ClimbParams(740,  8200,  6500),  // DC-6/7, Constellation
+    SMALL_PROP       -> ClimbParams(680,  7600,  6000),
+    REGIONAL_PROP    -> ClimbParams(750,  8500,  6800),
 
-    LIGHT            -> ClimbParams(450, 13000, 9500, 2.10),   // light jets
-    SMALL            -> ClimbParams(620, 11500, 9200, 2.05),   // CRJ/E-Jet small
-    REGIONAL         -> ClimbParams(680, 11800, 9500, 2.15),   // E170–E195, CRJ700+
-    MEDIUM           -> ClimbParams(850, 12500, 10800, 2.20),   // A320/B737 family
+    LIGHT            -> ClimbParams(450, 13000, 9500),   // light jets
+    SMALL            -> ClimbParams(620, 11500, 9200),   // CRJ/E-Jet small
+    REGIONAL         -> ClimbParams(680, 11800, 9500),   // E170–E195, CRJ700+
+    MEDIUM           -> ClimbParams(850, 12500, 10800),  // A320/B737 family
 
-    EARLY_JET        -> ClimbParams(650, 11000, 8500, 2.80),   // Comet, 707, DC-8, Caravelle (very thirsty climb)
+    EARLY_JET        -> ClimbParams(650, 11000, 8500),   // Comet, 707, DC-8, Caravelle
 
-    LARGE            -> ClimbParams(920, 13500,  7800, 2.45),   // B767, A300/310
-    X_LARGE          -> ClimbParams(950, 14000,  7200, 2.65),   // A330, B777-200, A350-900
-    JUMBO            -> ClimbParams(960, 14000,  6800, 2.90),   // 747, A380, B777-300ER/9
+    LARGE            -> ClimbParams(920, 13500,  7800),  // B767, A300/310
+    X_LARGE          -> ClimbParams(950, 14000,  7200),  // A330, B777-200, A350-900
+    JUMBO            -> ClimbParams(960, 14000,  6800),  // 747, A380, B777-300ER/9
 
-    SUPERSONIC       -> ClimbParams(1250,18000,  9500, 3.20)
+    SUPERSONIC       -> ClimbParams(1250,18000,  9500)
   )
 
   def calculateFlightPhases(airplaneModel: Model, distanceKm: Int): FlightPhases = {
     val speedKph = airplaneModel.speed.toDouble
     val params = climbParamsByType.getOrElse(
       airplaneModel.airplaneType, 
-      ClimbParams(700, 11000, 9000, 1.5)   // ← add appropriate default here
+      ClimbParams(700, 11000, 9000)   // fallback default
     )
 
     // Short-haul altitude cap for all jets (< 500 km)

@@ -162,8 +162,8 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
   def getAirplaneModelsByAirline(airlineId : Int) = AuthenticatedAirline(airlineId) { request =>
     val originalModels = ModelSource.loadAllModels()
     val originalModelsById = originalModels.map(model => (model.id, model)).toMap
-//    val airlineDiscountsByModelId = ModelSource.loadAirlineDiscountsByAirlineId(airlineId).groupBy(_.modelId)
-//    val blanketDiscountsByModelId = ModelSource.loadAllModelDiscounts().groupBy(_.modelId)
+    //val airlineDiscountsByModelId = ModelSource.loadAirlineDiscountsByAirlineId(airlineId).groupBy(_.modelId)
+    //val blanketDiscountsByModelId = ModelSource.loadAllModelDiscounts().groupBy(_.modelId)
     val discountsByModelId = ModelDiscount.getAllCombinedDiscountsByAirlineId(airlineId)
 
     val discountedModels = originalModels.map { originalModel =>

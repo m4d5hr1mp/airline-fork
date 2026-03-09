@@ -45,6 +45,8 @@ function loadAllCountries(loadAirline) {
 	    	    }
 	    		loadedCountriesByCode[country.countryCode] = country
 	    		loadedCountries.push(country)
+                // DEBUG PRINT! REMOVE!
+                if (index === 0) console.log(country)
 	    	});
 	    },
 	    error: function(jqXHR, textStatus, errorThrown) {
@@ -75,13 +77,19 @@ function updateCountryTable(sortProperty, sortOrder, selectedCountry) {
 		} else {
 		    row.append("<div class='cell'>" + country.name + "</div>")
         }
-		row.append("<div class='cell' align='right'>" + country.airportPopulation + "</div>")
-		row.append("<div class='cell' align='right'>" + country.incomeLevel + "</div>")
-		row.append("<div class='cell' align='right'>" + country.openness + "</div>")
-//		var baseCount = country.baseCount ? country.baseCount : "-"
-//		row.append("<div class='cell' align='right'>" + baseCount + "</div>")
+		row.append("<div class='cell' align='right'>" + country.airportPopulation.toLocaleString('en-US') + "</div>")
+		row.append("<div class='cell' align='center'>" + country.incomeLevel + "</div>")
+		row.append("<div class='cell' align='center'>" + country.openness + "</div>")
+
+        var airlineRelationship = country.airlineRelationship !== undefined ? getAirlineRelationshipDescriptionSpan(country.airlineRelationship) : $("<span>-</span>")
+        var mutualRelationship = country.mutualRelationship !== undefined ? country.mutualRelationship : "-"
+        row.append($("<div class='cell' align='center'></div>").append(airlineRelationship))
+        row.append("<div class='cell' align='center'>" + (country.mutualRelationship !== undefined ? getCountryRelationshipDescription(country.mutualRelationship) : "-") + "</div>")
+
         var delegatesCount = country.delegatesCount ? country.delegatesCount : "-"
-        row.append("<div class='cell' align='right'>" + delegatesCount + "</div>")
+        row.append("<div class='cell' align='center'>" + delegatesCount + "</div>")
+
+
 		
 		if (selectedCountry == country.countryCode) {
 		    row.addClass("selected")
