@@ -319,17 +319,28 @@ function initMap() {
     worldCopyJump: true,
   }).setView([0,0], 2);
 
-    // Un-comment this when using CARTO tiles
-    L.tileLayer ('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    const stadia = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+    minZoom: 2,
+    maxZoom: 8
+    });
+
+    const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    
-    // Un-comment this when using Stadia Tiles
-    //L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    //attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
     subdomains: 'abcd',
     minZoom: 2,
     maxZoom: 8
-    }).addTo(map);
+    });
+
+    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    minZoom: 2,
+    maxZoom: 8
+    });
+
+    cartoLight.addTo(map);
+    L.control.layers({ "Stadia Dark": stadia, "Carto Dark": cartoDark, "Carto Light": cartoLight }, null, { position: 'bottomright' }).addTo(map);
 
     // Set maximum bounds to prevent panning beyond poles vertically
     const southWest = L.latLng(-85, -999999);
@@ -535,14 +546,15 @@ function refreshPanels(airlineId) {
 }
 
 var totalmillisecPerWeek = 7 * 24 * 60 * 60 * 1000;
+var currentTickTimer = null;
 var refreshInterval = 5000; // every 5 seconds
 var hasTickEstimation = false;
 
 function updateTime(cycle, fraction, cycleDurationEstimation) {
     // ====================== CYCLE + GAME DATE ======================
-    const PROGRESSION_REFERENCE_YEAR = 1958;
-    const CYCLES_PER_YEAR = 448;
-    const CYCLES_PER_MONTH = 37;
+    const GAME_START_YEAR = 1955;
+    const CYCLES_PER_YEAR = 240;  // Production tempo uses 448 Cycles / Year!
+    const CYCLES_PER_MONTH = 20;  // Production tempo uses 37 Cycles / Week!
 
     const MONTH_NAMES = [
         "January", "February", "March", "April", "May", "June",
@@ -555,7 +567,7 @@ function updateTime(cycle, fraction, cycleDurationEstimation) {
 
     // In-game month and year (e.g. "March 1965")
     const yearsPassed = Math.floor(cycle / CYCLES_PER_YEAR);
-    const gameYear = PROGRESSION_REFERENCE_YEAR + yearsPassed;
+    const gameYear = GAME_START_YEAR + yearsPassed;
     const cyclesInCurrentYear = cycle % CYCLES_PER_YEAR;
     const monthIndex = Math.floor(cyclesInCurrentYear / CYCLES_PER_MONTH);
     const gameMonthName = MONTH_NAMES[monthIndex];
@@ -564,25 +576,30 @@ function updateTime(cycle, fraction, cycleDurationEstimation) {
     // ===================================================================
 
     // ====================== ORIGINAL NEXT-TICK LOGIC (unchanged) ======================
-    var initialDurationTillNextTick;
+    let initialDurationTillNextTick = 0;
+    
     if (cycleDurationEstimation > 0) {
         initialDurationTillNextTick = cycleDurationEstimation * (1 - fraction);
         hasTickEstimation = true;
+    } else {
+        hasTickEstimation = false;
     }
 
-    var wallClockStart = new Date();
+    const wallClockStart = new Date();
 
-    if (currentTickTimer) {
+    // Clear any existing timer
+    if (currentTickTimer !== null) {
         clearInterval(currentTickTimer);
+        currentTickTimer = null;
     }
 
-    var updateTimerFunction = function() {
-        var currentWallClock = new Date();
-        var wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime();
-        var durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart;
+    const updateTimerFunction = function() {
+        const currentWallClock = new Date();
+        const wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime();
+        const durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart;
 
         if (hasTickEstimation) {
-            var minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
+            const minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
             if (minutesLeft <= 0) {
                 $(".nextTickEstimation").text("Very soon");
             } else if (minutesLeft === 1) {

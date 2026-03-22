@@ -3,6 +3,11 @@ package com.patson.model.airplane
 import com.patson.ChronologyConverter._
 
 object ModelAvailability {
+
+  // ===================================================================
+  // ORIGINAL MAP – kept with exact original name so Model.scala compiles
+  // Values = chronological weeks after 1 January 1958
+  // ===================================================================
   val modelAvailabilityCycles: Map[String, Int] = Map(
     "Vickers Viscount 700" -> 0,
     "Lisunov Li-2" -> 0,
@@ -227,18 +232,19 @@ object ModelAvailability {
     "Airbus A321neoXLR" -> 780
   )
 
-// Helper method to compute availability in game cycles
+  // ===================================================================
+  // CORRECT RELEASE CYCLE CALCULATION (weeks after 1 Jan 1958)
+  // ===================================================================
+  private val CYCLES_TO_JAN_1958: Int = 3 * cyclesPerYear                    // 720
+  private val CYCLES_PER_WEEK: Double = cyclesPerYear.toDouble / 52
+
   def getAvailabilityCycle(name: String): Int = {
-    val weeks = modelAvailabilityCycles.getOrElse(name, 0)
-    
-    if (weeks <= 0) {
-      0  // Pre-reference models available at game start (1955)
+    val weeksAfter1958 = modelAvailabilityCycles.getOrElse(name, 0)
+
+    if (weeksAfter1958 <= 0) {
+      0                                           // Pre-1958 models available from game start
     } else {
-      // Scale weeks across the FULL game timeline (1958–2030) while preserving relative spacing
-      val maxGameYears = WORLD_END_YEAR - PROGRESSION_REFERENCE_YEAR  // 72 years
-      val fractionOfTimeline = weeks.toDouble / modelAvailabilityCycles.values.max
-      val targetGameYearsFromReference = fractionOfTimeline * maxGameYears
-      (targetGameYearsFromReference * cyclesPerYear).toInt
+      CYCLES_TO_JAN_1958 + math.ceil(weeksAfter1958 * CYCLES_PER_WEEK).toInt
     }
   }
 
@@ -247,18 +253,18 @@ object ModelAvailability {
     "July", "August", "September", "October", "November", "December"
   )
 
-  /** Accurate in-game release year (used by filter and table) */
+  /** Accurate release year (matches top-bar date display) */
   def getReleaseYear(modelName: String): Int = {
     val releaseCycle = getAvailabilityCycle(modelName)
     val yearsPassed = releaseCycle / cyclesPerYear
-    PROGRESSION_REFERENCE_YEAR + yearsPassed
+    WORLD_START_YEAR + yearsPassed
   }
 
-  /** Nice display string exactly like the top bar (e.g. "March 1965") */
+  /** Display string identical to the top bar (e.g. "March 1958") */
   def getReleaseGameDate(modelName: String): String = {
     val releaseCycle = getAvailabilityCycle(modelName)
     val yearsPassed = releaseCycle / cyclesPerYear
-    val year = PROGRESSION_REFERENCE_YEAR + yearsPassed
+    val year = WORLD_START_YEAR + yearsPassed
     val cyclesInYear = releaseCycle % cyclesPerYear
     val monthIndex = cyclesInYear / cyclesPerChronologicalMonth
     s"${MONTH_NAMES(monthIndex)} $year"

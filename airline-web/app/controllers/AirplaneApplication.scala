@@ -235,6 +235,7 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
   // Modified: Added currentCycle parameter and release cycle check
   def getRejection(model: Model, quantity : Int, relationship : AirlineCountryRelationship, ownedModels : Set[Model], airline : Airline, currentCycle: Int) : Option[String]= {
     val releaseCycle = ModelAvailability.getAvailabilityCycle(model.name)
+    println(s"Model ${model.name} releaseCycle = $releaseCycle, current = $currentCycle")  // <--- add this
     if (currentCycle < releaseCycle) {
       return Some("This aircraft model has not yet been released")
     }  

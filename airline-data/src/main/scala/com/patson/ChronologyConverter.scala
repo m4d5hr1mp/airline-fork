@@ -7,19 +7,35 @@ package com.patson
 object ChronologyConverter {
   val WORLD_START_YEAR: Int = 1955
   val WORLD_END_YEAR: Int = 2030
-  val PROGRESSION_REFERENCE_YEAR: Int = 1958 // 1958, not 1955! Need an offset, otherwise all planes release 3 years early!
-  val YEAR_LENGTH_DAYS: Int = 14 // IRL Days!
-  val DAY_LENGTH_MINUTES: Int = 24 * 60 // IRL Day expressed in minutes
+  val PROGRESSION_REFERENCE_YEAR: Int = 1958
+  val YEAR_LENGTH_DAYS: Int = 5
+  val DAY_LENGTH_MINUTES: Int = 24 * 60
 
-  // Imported from MainSimulation!
-  // Only represents minimum possible duration!
-  val CYCLE_DURATION: Int = 45 * 60
+  val CYCLE_DURATION: Int = 30 * 60
 
-  // Calculate cycles per chronological year using integer arithmetic
   private val minutesPerCycle: Int = CYCLE_DURATION / 60
   private val cyclesPerDay: Int = DAY_LENGTH_MINUTES / minutesPerCycle
-  val cyclesPerYear: Int = cyclesPerDay * YEAR_LENGTH_DAYS
+  val cyclesPerYear: Int = cyclesPerDay * YEAR_LENGTH_DAYS   // 240 on test
 
-  // Calculate cycles per chronological month using integer arithmetic
-  val cyclesPerChronologicalMonth: Int = cyclesPerYear / 12
+  val cyclesPerChronologicalMonth: Int = cyclesPerYear / 12   // 20 on test
+
+  // ====================== SIMPLE HELPERS ADDED FOR PROGRESSIVE UNLOCKS ======================
+  /** Convert weeks since 01.01.1958 → exact game cycle (week-precise) */
+  def weeksSince1958ToCycle(weeks: Int): Int = {
+    if (weeks <= 0) 0
+    else {
+      val referenceCycle = (PROGRESSION_REFERENCE_YEAR - WORLD_START_YEAR) * cyclesPerYear  // 720
+      referenceCycle + math.round(weeks.toDouble * cyclesPerYear / 52.0).toInt
+    }
+  }
+
+  def cycleToGameYear(cycle: Int): Int =
+    WORLD_START_YEAR + (cycle / cyclesPerYear)
+
+  def cycleToGameDateString(cycle: Int): String = {
+    val year = cycleToGameYear(cycle)
+    val monthIndex = (cycle % cyclesPerYear) / cyclesPerChronologicalMonth
+    val MONTH_NAMES = Vector("January","February","March","April","May","June","July","August","September","October","November","December")
+    s"${MONTH_NAMES(monthIndex)} $year"
+  }
 }
