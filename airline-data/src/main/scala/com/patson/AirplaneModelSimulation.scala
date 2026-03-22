@@ -1,68 +1,16 @@
 package com.patson
 
-import com.patson.data._
 import com.patson.data.airplane.ModelSource
-import com.patson.model.airplane.Model.Type.{JUMBO, LARGE, LIGHT, MEDIUM, REGIONAL, SMALL, X_LARGE, SUPERSONIC}
-import com.patson.model.airplane._
-
-import scala.collection.mutable.ListBuffer
-
+import com.patson.model.airplane.Airplane
 
 object AirplaneModelSimulation {
 
-  def simulate(cycle: Int) = {
-    println("starting airplane model simulation (discounts)")
-    println("loading all airplanes")
-    val allAirplanes = AirplaneSource.loadAirplanesCriteria(List.empty)
-    simulateModelDiscounts(allAirplanes)
-    println("Finished airplane model simulation")
+  def simulate(cycle: Int): Unit = {
+    println("starting airplane model simulation")
+    // All blanket model discounts (LOW_DEMAND) are removed.
+    // Obsolescence discounts are computed at query time — no DB storage needed.
+    // Purge any stale rows left over from previous system.
+    ModelSource.updateModelDiscounts(List.empty)
+    println("finished airplane model simulation")
   }
-
-  def simulateModelDiscounts(allAirplanes: List[Airplane]) = {
-    //simulate low demand
-    //purge all the existing discounts due to low demand
-    val airplanesByModel = allAirplanes.groupBy(_.model)
-    val allModelDiscounts = ListBuffer[ModelDiscount]()
-    ModelSource.loadAllModels().foreach { model =>
-      allModelDiscounts.appendAll(getModelDiscountsByLowDemand(model, airplanesByModel.get(model) match {
-        case Some(airplanes) => airplanes.length
-        case None => 0
-      }))
-    }
-    ModelSource.updateModelDiscounts(allModelDiscounts.toList)
-  }
-
-  def getModelDiscountsByLowDemand(model: Model, airplaneCount: Int) = {
-    val threshold = getModelLowDemandDiscountThreshold(model)
-    val thresholdDelta = threshold - airplaneCount
-    val discounts = ListBuffer[ModelDiscount]()
-    if (thresholdDelta > 0) { // Retain condition for low demand eligibility
-      // Set price discount to 0% as per directive
-      val priceDiscountPercentage = 0.0
-      if (priceDiscountPercentage > 0) {
-        discounts.append(ModelDiscount(model.id, priceDiscountPercentage * 0.01, DiscountType.PRICE, DiscountReason.LOW_DEMAND, None))
-      }
-      // Retain construction time discount unchanged
-      discounts.append(ModelDiscount(model.id, CONSTRUCTION_TIME_DISCOUNT, DiscountType.CONSTRUCTION_TIME, DiscountReason.LOW_DEMAND, None))
-    }
-    discounts.toList
-  }
-
-  val MAX_PRICE_DISCOUNT_PERCENTAGE = 70
-  val CONSTRUCTION_TIME_DISCOUNT = 0.5 //half the construction time
-
-  val getModelLowDemandDiscountThreshold = (model: Model) => { //smaller model has higher threshold. as the volume is supposed to be higher
-    model.airplaneType match {
-      case LIGHT => 300
-      case SMALL => 300
-      case REGIONAL => 500
-      case MEDIUM => 500
-      case LARGE => 500
-      case X_LARGE => 500
-      case JUMBO => 250
-      case SUPERSONIC => 100
-      case _ => 500
-    }
-  }
-
 }

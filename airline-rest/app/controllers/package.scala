@@ -1,5 +1,3 @@
-
-
 import com.patson.model.airplane.Airplane
 import play.api.libs.json.Writes
 import com.patson.model.airplane.Model
@@ -11,15 +9,28 @@ import com.patson.model.Computation
 package object controllers {
   implicit object AirplaneModelWrites extends Writes[Model] {
     def writes(airplaneModel: Model): JsValue = {
-          JsObject(List(
-      "id" -> JsNumber(airplaneModel.id),
-      "name" -> JsString(airplaneModel.name),
-      "capacity" -> JsNumber(airplaneModel.capacity),
-      "fuelBurn" -> JsNumber(airplaneModel.fuelBurn),
-      "speed" -> JsNumber(airplaneModel.speed),
-      "range" -> JsNumber(airplaneModel.range),
-      "price" -> JsNumber(airplaneModel.price)))
-      
+      JsObject(List(
+        "id"                -> JsNumber(airplaneModel.id),
+        "name"              -> JsString(airplaneModel.name),
+        "family"            -> JsString(airplaneModel.family),
+        "capacity"          -> JsNumber(airplaneModel.capacity),
+        "fuelBurn"          -> JsNumber(airplaneModel.fuelBurn),
+        "fuelBurnClimb"     -> JsNumber(airplaneModel.fuelBurnClimb),
+        "speed"             -> JsNumber(airplaneModel.speed),
+        "range"             -> JsNumber(airplaneModel.range),
+        "price"             -> JsNumber(airplaneModel.price),
+        "lifespan"          -> JsNumber(airplaneModel.lifespan),
+        "constructionTime"  -> JsNumber(airplaneModel.constructionTime),
+        "runwayRequirement" -> JsNumber(airplaneModel.runwayRequirement),
+        "airplaneType"      -> JsString(airplaneModel.airplaneType.toString),
+        "manufacturer"      -> JsString(airplaneModel.manufacturer.name),
+        "countryCode"       -> JsString(airplaneModel.manufacturer.countryCode),
+        "introYear"         -> JsNumber(airplaneModel.introYear),
+        "introWeek"         -> JsNumber(airplaneModel.introWeek),
+        "climbRateMMin"     -> JsNumber(airplaneModel.climbRateMMin),
+        "cruiseAltitudeM"   -> JsNumber(airplaneModel.cruiseAltitudeM),
+        "turnaroundTime"    -> JsNumber(airplaneModel.turnaroundTime)
+      ))
     }
   }
   

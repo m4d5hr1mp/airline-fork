@@ -2,6 +2,7 @@ package com.patson
 
 import java.util.{ArrayList, Collections}
 import com.patson.data.{AirportSource, CountrySource, EventSource}
+import com.patson.util.RelationshipCache
 import com.patson.model.event.{EventType, Olympics}
 import com.patson.model.{PassengerType, _}
 
@@ -77,11 +78,10 @@ object DemandGenerator {
 
     val allDemands = new ArrayList[(Airport, List[(Airport, (PassengerType.Value, LinkClassValues))])]()
 	  
-	  val countryRelationships = CountrySource.getCountryMutualRelationships()
 	  airports.foreach {  fromAirport =>
 	    val demandList = Collections.synchronizedList(new ArrayList[(Airport, (PassengerType.Value, LinkClassValues))]())
 	    airports.par.foreach { toAirport =>
-        val relationship = countryRelationships.getOrElse((fromAirport.countryCode, toAirport.countryCode), 0)
+        val relationship = RelationshipCache.getRelationship(fromAirport.countryCode, toAirport.countryCode)
         val businessDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.BUSINESS)
         val touristDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.TOURIST)
     	          
@@ -166,7 +166,7 @@ object DemandGenerator {
           }
       }) * ADJUST_FACTOR
 
-      if (fromAirport.countryCode != toAirport.countryCode) {
+      if (!RelationshipCache.isSameMarket(fromAirport.countryCode, toAirport.countryCode)) {
         //baseDemand = baseDemand *
         val mutliplier = 
             if (relationship <= -3) 0 
@@ -304,7 +304,6 @@ object DemandGenerator {
   def generateOlympicsDemand(cycle: Int, demandMultiplier : Int, olympicsAirports : List[Airport], allAirports : List[Airport]) : List[(Airport, List[(Airport, (PassengerType.Value, LinkClassValues))])]  = {
     val totalDemand = OLYMPICS_DEMAND_BASE * demandMultiplier
 
-    val countryRelationships = CountrySource.getCountryMutualRelationships()
     //use existing logic, just scale the total back to totalDemand at the end
     val unscaledDemands = ListBuffer[(Airport, List[(Airport, (PassengerType.Value, LinkClassValues))])]()
     val otherAirports = allAirports.filter(airport => !olympicsAirports.map(_.id).contains(airport.id))
@@ -314,7 +313,7 @@ object DemandGenerator {
       val fromAirport = airport
       olympicsAirports.foreach {  olympicsAirport =>
         val toAirport = olympicsAirport
-        val relationship = countryRelationships.getOrElse((fromAirport.countryCode, toAirport.countryCode), 0)
+        val relationship = RelationshipCache.getRelationship(fromAirport.countryCode, toAirport.countryCode)
         val computedDemand = computeDemandBetweenAirports(fromAirport, toAirport, relationship, PassengerType.OLYMPICS)
         if (computedDemand.total > 0) {
           unscaledDemandsOfThisFromAirport.append((toAirport, (PassengerType.OLYMPICS, computedDemand)))

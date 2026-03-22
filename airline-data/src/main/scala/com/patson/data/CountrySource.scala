@@ -186,6 +186,34 @@ object CountrySource {
        connection.close()
      }
   }
+
+    /**
+   * Non-destructive patch: upserts only the supplied pairs into
+   * country_mutual_relationship without touching any other rows.
+   * Used by WorldStateGenerator.runForCycle — init still calls
+   * updateCountryMutualRelationships for the full purge + reinsert.
+   */
+  def patchCountryMutualRelationships(relationships: scala.collection.mutable.Map[(String, String), Int]): Unit = {
+    val connection = Meta.getConnection()
+    try {
+      connection.setAutoCommit(false)
+      val stmt = connection.prepareStatement(
+        "REPLACE INTO " + COUNTRY_MUTUAL_RELATIONSHIP_TABLE + " (country_1, country_2, relationship) VALUES (?, ?, ?)"
+      )
+      relationships.foreach {
+        case ((country1, country2), relationship) =>
+          stmt.setString(1, country1)
+          stmt.setString(2, country2)
+          stmt.setInt(3, relationship)
+          stmt.addBatch()
+      }
+      stmt.executeBatch()
+      connection.commit()
+      stmt.close()
+    } finally {
+      connection.close()
+    }
+  }
   
   def getCountryMutualRelationship(country1 : String, country2 : String) : Int = {
      val connection = Meta.getConnection()

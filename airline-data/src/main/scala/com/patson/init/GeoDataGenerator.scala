@@ -550,7 +550,8 @@ object GeoDataGenerator extends App {
     CountrySource.saveCountries(countries.toList)
     println(s"Saved ${countries.length} countries")
 
-    CountryMutualRelationshipGenerator.mainFlow()
+    // No longer need to call this, since we're using events-based relations generation!
+    //CountryMutualRelationshipGenerator.mainFlow()
   }
 
 

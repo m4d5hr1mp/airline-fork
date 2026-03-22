@@ -57,27 +57,31 @@ package object controllers {
 
   implicit object AirplaneModelWrites extends Writes[Model] {
     def writes(airplaneModel: Model): JsValue = {
-          JsObject(List(
-      "id" -> JsNumber(airplaneModel.id),
-      "name" -> JsString(airplaneModel.name),
-      "family" -> JsString(airplaneModel.family),
-      "capacity" -> JsNumber(airplaneModel.capacity),
-      "fuelBurn" -> JsNumber(airplaneModel.fuelBurn),
-      "speed" -> JsNumber(airplaneModel.speed),
-      "range" -> JsNumber(airplaneModel.range),
-      "price" -> JsNumber(airplaneModel.price),
-      "lifespan" -> JsNumber(airplaneModel.lifespan),
-      "airplaneType" -> JsString(airplaneModel.airplaneTypeLabel),
-      "turnaroundTime" -> JsNumber(airplaneModel.turnaroundTime),
-      "runwayRequirement" -> JsNumber(airplaneModel.runwayRequirement),
-      "badConditionThreshold" -> JsNumber(Airplane.BAD_CONDITION), //same for all models for now
-      "criticalConditionThreshold" -> JsNumber(Airplane.CRITICAL_CONDITION), //same for all models for now
-      "constructionTime" -> JsNumber(airplaneModel.constructionTime),
-      "imageUrl" -> JsString(airplaneModel.imageUrl),
-      "countryCode" -> JsString(airplaneModel.manufacturer.countryCode),
-      "manufacturer" -> JsString(airplaneModel.manufacturer.name)
-          ))
-
+      JsObject(List(
+        "id"                         -> JsNumber(airplaneModel.id),
+        "name"                       -> JsString(airplaneModel.name),
+        "family"                     -> JsString(airplaneModel.family),
+        "capacity"                   -> JsNumber(airplaneModel.capacity),
+        "fuelBurn"                   -> JsNumber(airplaneModel.fuelBurn),
+        "fuelBurnClimb"              -> JsNumber(airplaneModel.fuelBurnClimb),
+        "speed"                      -> JsNumber(airplaneModel.speed),
+        "range"                      -> JsNumber(airplaneModel.range),
+        "price"                      -> JsNumber(airplaneModel.price),
+        "lifespan"                   -> JsNumber(airplaneModel.lifespan),
+        "airplaneType"               -> JsString(airplaneModel.airplaneType.toString),
+        "turnaroundTime"             -> JsNumber(airplaneModel.turnaroundTime),
+        "runwayRequirement"          -> JsNumber(airplaneModel.runwayRequirement),
+        "badConditionThreshold"      -> JsNumber(Airplane.BAD_CONDITION),
+        "criticalConditionThreshold" -> JsNumber(Airplane.CRITICAL_CONDITION),
+        "constructionTime"           -> JsNumber(airplaneModel.constructionTime),
+        "imageUrl"                   -> JsString(airplaneModel.imageUrl),
+        "countryCode"                -> JsString(airplaneModel.manufacturer.countryCode),
+        "manufacturer"               -> JsString(airplaneModel.manufacturer.name),
+        "introYear"                  -> JsNumber(airplaneModel.introYear),
+        "introWeek"                  -> JsNumber(airplaneModel.introWeek),
+        "climbRateMMin"              -> JsNumber(airplaneModel.climbRateMMin),
+        "cruiseAltitudeM"            -> JsNumber(airplaneModel.cruiseAltitudeM)
+      ))
     }
   }
 

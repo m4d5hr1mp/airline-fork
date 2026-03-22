@@ -99,6 +99,8 @@ object Constants {
   val AIRPLANE_TABLE = "airplane"
   val AIRPLANE_INDEX_1 = "airplane_index_1"
   val AIRPLANE_INDEX_2 = "airplane_index_2"
+  val MODEL_ORDER_QUEUE_TABLE = "model_order_queue"
+  val MODEL_ORDER_QUEUE_INDEX_1 = "model_order_queue_index_1"
   val USER_TABLE = "user"
   val USER_SECRET_TABLE = "user_secret"
   val USER_MODIFIER_TABLE = "user_modifier"
@@ -177,7 +179,16 @@ object Constants {
   //Christmas Event
   val SANTA_CLAUS_INFO_TABLE = "santa_claus_info"
   val SANTA_CLAUS_GUESS_TABLE = "santa_claus_guess"
+
+  //Geopolitical Events Tables for better Mutual Relations handling:
+  val COUNTRY_BLOCK_TABLE          = "country_block"
+  val COUNTRY_BLOCK_RELATION_TABLE = "country_block_relation"
+  val GEOPOLITICAL_EVENT_TABLE     = "geopolitical_event"
   
+
+
+
+
 //  val DATABASE_CONNECTION = "jdbc:sqlite:../airline-data/db/default.db"
 //  val DB_DRIVER = "org.sqlite.JDBC"
   val configFactory = ConfigFactory.load()

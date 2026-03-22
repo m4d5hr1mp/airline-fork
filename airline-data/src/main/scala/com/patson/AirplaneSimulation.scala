@@ -14,6 +14,10 @@ import scala.util.Random
 object AirplaneSimulation {
   def airplaneSimulation(cycle: Int) : List[Airplane] = {
     println("starting airplane simulation")
+
+    // ── Order queue deliveries ─────────────────────────────────────────────
+    OrderQueueSimulation.processOrderQueue(cycle)
+
     println("loading all airplanes")
     //do 2nd hand market adjustment
     secondHandAirplaneSimulate(cycle)
@@ -48,14 +52,13 @@ object AirplaneSimulation {
     println("Finished renewing airplanes")
     
     println("Start retiring airplanes")
-    //adjustLinksBasedOnAirplaneStatus(updatingAirplanes, cycle)
     val retiredCount = retireAgingAirplanes(updatedAirplanes)
     println(s"Finished retiring $retiredCount airplanes")
 
     updatedAirplanes.toList
   }
 
-  val SECOND_HAND_MAX_AIRPLANE_PER_MODEL_COUNT = 50 //only 50 max at a time
+  val SECOND_HAND_MAX_AIRPLANE_PER_MODEL_COUNT = 50
   def secondHandAirplaneSimulate(cycle : Int) = {
     var secondHandAirplanes = AirplaneSource.loadAirplanesCriteria(List(("is_sold", true)))
     val secondHandAirplanesByModelId = secondHandAirplanes.map(airplane => airplane.copy(dealerRatio = airplane.dealerRatio - DEALER_RATIO_DROP_RATE)).groupBy(_.model.id)
@@ -86,14 +89,12 @@ object AirplaneSimulation {
 
     AirplaneSource.updateAirplanesDetails(allUpdatingAirplanes.toList)
     allRemovingAirplanes.foreach { airplane =>
-      AirplaneSource.deleteAirplanesByCriteria(List(("a.id", airplane.id), ("is_sold", true))) //need to be careful here, make sure it is still in 2nd hand market
+      AirplaneSource.deleteAirplanesByCriteria(List(("a.id", airplane.id), ("is_sold", true)))
     }
-    
   }
   
   val DEALER_RATIO_DROP_RATE = 0.0025
-  val DEALER_RATIO_LOWER_THERSHOLD = Computation.SELL_RATE //at this ratio, the dealer would just scrap the airplane
-  
+  val DEALER_RATIO_LOWER_THERSHOLD = Computation.SELL_RATE
   
   def renewAirplanes(airplanes : List[Airplane], currentCycle : Int) = {
     val renewalThresholdsByAirline : scala.collection.immutable.Map[Int, Int] = AirlineSource.loadAirplaneRenewals()
@@ -103,21 +104,21 @@ object AirplaneSimulation {
     val secondHandAirplanes  = ListBuffer[Airplane]()
     val fundsExhaustedAirlineIds = mutable.HashSet[Int]()
 
-    val updatingAirplanes = airplanes //this contains airplanes from all airlines
-        .sortBy(_.condition) //lowest conditional airplane gets renewal first
+    val updatingAirplanes = airplanes
+        .sortBy(_.condition)
         .map { airplane =>
       renewalThresholdsByAirline.get(airplane.owner.id) match {
         case Some(threshold) =>
           if (!fundsExhaustedAirlineIds.contains(airplane.owner.id)
             && airplane.condition < threshold
-            && airplane.purchasedCycle <= currentCycle - airplane.model.constructionTime) { //only renew airplane if it has been purchased longer than the construction time required
+            && airplane.purchasedCycle <= currentCycle - airplane.model.constructionTime) {
              val airlineId = airplane.owner.id
              val (existingCost, existingBuyPlane, existingSellPlane, existingCapitalGain) : (Long, Long, Long, Long) = costsByAirline.getOrElse(airlineId, (0, 0, 0, 0))
              val sellValue = Computation.calculateAirplaneSellValue(airplane)
 
              val originalModel = airplane.model
-
-             val adjustedModel = originalModel.applyDiscount(ModelDiscount.getCombinedDiscountsByModelId(airlineId, originalModel.id))
+             // Renewals pay current market rate — obsolescence discount applies, no bulk discount
+             val adjustedModel = originalModel.applyDiscount(ModelDiscount.getCombinedDiscountsByModelId(airlineId, originalModel.id, currentCycle))
              val renewCost = adjustedModel.price - sellValue
              val newCost = existingCost + renewCost
              val newBuyPlane = existingBuyPlane + adjustedModel.price
@@ -129,14 +130,14 @@ object AirplaneSimulation {
                val gainOnDiscount = originalModel.price - adjustedModel.price
                val newCapitalGain = existingCapitalGain + lossOnSelling + gainOnDiscount
                costsByAirline.put(airlineId, (newCost, newBuyPlane, newSellPlane, newCapitalGain))
-               if (airplane.condition >= Airplane.BAD_CONDITION) { //create a clone as the sold airplane
+               if (airplane.condition >= Airplane.BAD_CONDITION) {
                  secondHandAirplanes.append(airplane.copy(isSold = true, dealerRatio = Airplane.DEFAULT_DEALER_RATIO, configuration = AirplaneConfiguration.empty, id = 0))
                }
                val renewedAirplane = airplane.copy(constructedCycle = currentCycle, purchasedCycle = currentCycle, condition = Airplane.MAX_CONDITION, value = airplane.model.price)
                renewedAirplanes.append(renewedAirplane)
                renewedAirplane
-             } else { //not enough fund
-               fundsExhaustedAirlineIds.add(airplane.owner.id) //funds exhausted, do not attempt to renew more airplanes for this airline, otherwise it might never have enough money for the worst condition one
+             } else {
+               fundsExhaustedAirlineIds.add(airplane.owner.id)
                airplane
              }
           } else {
@@ -146,7 +147,6 @@ object AirplaneSimulation {
       }
     }
     
-    //now deduct money
     costsByAirline.foreach {
       case(airlineId, (cost, buyAirplane, sellAirplane, capitalGain)) => {
         println("Deducting " + cost + " from " + airlinesByid(airlineId) + " for renewal")
@@ -155,12 +155,9 @@ object AirplaneSimulation {
         AirlineSource.saveCashFlowItem(AirlineCashFlowItem(airlineId, CashFlowType.SELL_AIRPLANE, sellAirplane))
         AirlineSource.saveCashFlowItem(AirlineCashFlowItem(airlineId, CashFlowType.BUY_AIRPLANE, buyAirplane * -1))
       }
-      
     }
-    //save the 2nd hand airplanes
     AirplaneSource.saveAirplanes(secondHandAirplanes.toList)
-    //save the renewed airplanes
-    AirplaneSource.updateAirplanes(renewedAirplanes.toList) //no version check, since money is deducted already, and renewed airplanes are safe to save
+    AirplaneSource.updateAirplanes(renewedAirplanes.toList)
   }
 
   def retireAgingAirplanes(airplanes : List[Airplane]) : Int = {
@@ -179,21 +176,13 @@ object AirplaneSimulation {
   
   def decayAirplanesByAirline(airplanesWithAssignedLink : Map[Airplane, LinkAssignments], owner : Airline) : List[Airplane] = {
     val updatingAirplanes = ListBuffer[Airplane]()
-    
-    
     airplanesWithAssignedLink.foreach { 
       case(airplane, linkAssignments) =>
-        //val minDecay = Airplane.MAX_CONDITION.toDouble / airplane.model.lifespan //live the whole lifespan
-        //val maxDecay = minDecay * 2
-        //val baseDecayRate = maxDecay - (maxDecay - minDecay) * (owner.getMaintenanceQuality() / Airline.MAX_MAINTENANCE_QUALITY)
-        val baseDecayRate = Airplane.MAX_CONDITION.toDouble / airplane.model.lifespan //live the whole lifespan
-
+        val baseDecayRate = Airplane.MAX_CONDITION.toDouble / airplane.model.lifespan
         val decayRate = baseDecayRate / 3 + baseDecayRate * (2.0 / 3) * airplane.utilizationRate
-
         val newCondition = airplane.condition - decayRate
         val depreciationRate = computeDepreciationRate(airplane.model, decayRate)
         val newValue = airplane.value - depreciationRate
-        
         updatingAirplanes.append(airplane.copy(condition = newCondition, depreciationRate = depreciationRate, value = newValue))
     }
     updatingAirplanes.toList

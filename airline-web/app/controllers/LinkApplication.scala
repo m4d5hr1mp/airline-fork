@@ -936,9 +936,9 @@ class LinkApplication @Inject()(cc: ControllerComponents) extends AbstractContro
             case 7 if toAirport.size < 6 && !toAirport.isGateway() =>
               return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 6", REGULATORY_RESTRICTIONS))
             case 6 if toAirport.size < 7 && !toAirport.isGateway() =>
-              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 5", REGULATORY_RESTRICTIONS))
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 7", REGULATORY_RESTRICTIONS))
             case 5 if toAirport.size < 8 && !toAirport.isGateway() =>
-              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 4", REGULATORY_RESTRICTIONS))
+              return Some((s"${toCountry.name} doesn't allow foreign operations to airports below scale 8", REGULATORY_RESTRICTIONS))
             case _ if effectiveOpenness <= 4 && !toAirport.isGateway() => // 4-0 (including fallback 0)
               return Some((s"${toCountry.name} only allows foreign operations into Gateway airports!", REGULATORY_RESTRICTIONS))
             case _ => // No rejection for passing cases

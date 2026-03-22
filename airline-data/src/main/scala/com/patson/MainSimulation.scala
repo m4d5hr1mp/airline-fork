@@ -1,5 +1,3 @@
-
-
 package com.patson
 
 import java.util.concurrent.TimeUnit
@@ -8,7 +6,8 @@ import org.apache.pekko.actor.Actor
 import com.patson.data._
 import com.patson.model.Airport
 import com.patson.stream.{CycleCompleted, CycleStart, DirectDemandInfo, SimulationEventStream}
-import com.patson.util.{AirlineCache, AirplaneOwnershipCache, AirplaneOwnershipInfo, AirportCache}
+import com.patson.util.{AirlineCache, AirplaneOwnershipCache, AirplaneOwnershipInfo, AirportCache, RelationshipCache}
+import com.patson.init.WorldStateGenerator
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +15,7 @@ import scala.concurrent.duration.Duration
 
 object MainSimulation extends App {
   // Duration is defined in seconds!
-  val CYCLE_DURATION : Int = 10 * 60
+  val CYCLE_DURATION : Int = 5 * 60
   var currentWeek: Int = 0
 
 //  implicit val actorSystem = ActorSystem("rabbit-akka-stream")
@@ -38,6 +37,7 @@ object MainSimulation extends App {
     AirlineCache.invalidateAll()
     AirportCache.invalidateAll()
     AirplaneOwnershipCache.invalidateAll()
+    RelationshipCache.reload()
   }
 
   def startCycle(cycle : Int) = {
@@ -115,6 +115,9 @@ object MainSimulation extends App {
     println("Post cycle link simulation")
     LinkSimulation.simulatePostCycle(currentCycle)
 
+    println("Geopolitical simulation")
+    WorldStateGenerator.runForCycle(currentCycle)
+
     println(s"Post cycle done $currentCycle")
   }
 
@@ -155,4 +158,3 @@ object MainSimulation extends App {
 
   
 }
-

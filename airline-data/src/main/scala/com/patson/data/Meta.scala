@@ -78,6 +78,18 @@ object Meta {
     statement.execute()
     statement.close()
 
+    statement = connection.prepareStatement("DROP TABLE IF EXISTS " + GEOPOLITICAL_EVENT_TABLE)
+    statement.execute()
+    statement.close()
+
+    statement = connection.prepareStatement("DROP TABLE IF EXISTS " + COUNTRY_BLOCK_RELATION_TABLE)
+    statement.execute()
+    statement.close()
+
+    statement = connection.prepareStatement("DROP TABLE IF EXISTS " + COUNTRY_BLOCK_TABLE)
+    statement.execute()
+    statement.close()
+
     statement = connection.prepareStatement("DROP TABLE IF EXISTS " + AIRLINE_TABLE)
     statement.execute()
     statement.close()
@@ -294,6 +306,7 @@ object Meta {
     createAirportAirlineBonus(connection)
     createAirplaneModelFavorite(connection)
     createAirplaneModelDiscount(connection)
+    createModelOrderQueue(connection)
     createLinkChangeHistory(connection)
     createGoogleResource(connection)
     createDelegate(connection)
@@ -551,15 +564,21 @@ object Meta {
       "family VARCHAR(256), " +
       "capacity INTEGER, " +
       "fuel_burn INTEGER, " +
+      "fuel_burn_climb INTEGER NOT NULL DEFAULT 0, " +
       "speed INTEGER, " +
       "fly_range INTEGER, " +
       "price INTEGER, " +
       "lifespan INTEGER, " +
       "construction_time INTEGER, " +
       "country_code CHAR(2), " +
-      "manufacturer VARCHAR(256)," +
-      "image_url VARCHAR(256)," +
-      "runway_requirement BIGINT)")
+      "manufacturer VARCHAR(256), " +
+      "image_url VARCHAR(256), " +
+      "runway_requirement BIGINT, " +
+      "intro_year SMALLINT NOT NULL DEFAULT 1955, " +
+      "intro_week TINYINT NOT NULL DEFAULT 1, " +
+      "airplane_type VARCHAR(32) NOT NULL DEFAULT 'MEDIUM', " +
+      "climb_rate_mmin SMALLINT NOT NULL DEFAULT 700, " +
+      "cruise_altitude_m SMALLINT NOT NULL DEFAULT 11000)")
     statement.execute()
     statement.close()
 
@@ -1381,6 +1400,34 @@ object Meta {
   }
 
 
+  def createModelOrderQueue(connection: Connection): Unit = {
+    var statement = connection.prepareStatement("DROP TABLE IF EXISTS " + MODEL_ORDER_QUEUE_TABLE)
+    statement.execute()
+    statement.close()
+ 
+    statement = connection.prepareStatement(
+      "CREATE TABLE " + MODEL_ORDER_QUEUE_TABLE + "(" +
+      "id INTEGER PRIMARY KEY AUTO_INCREMENT, " +
+      "model_id INTEGER NOT NULL, " +
+      "airline_id INTEGER NOT NULL, " +
+      "order_cycle INTEGER NOT NULL, " +
+      "shuffle_index INTEGER NOT NULL, " +
+      "home_airport_id INTEGER NOT NULL, " +
+      "FOREIGN KEY(model_id) REFERENCES " + AIRPLANE_MODEL_TABLE + "(id) ON DELETE CASCADE ON UPDATE CASCADE, " +
+      "FOREIGN KEY(airline_id) REFERENCES " + AIRLINE_TABLE + "(id) ON DELETE CASCADE ON UPDATE CASCADE, " +
+      "FOREIGN KEY(home_airport_id) REFERENCES " + AIRPORT_TABLE + "(id) ON DELETE CASCADE ON UPDATE CASCADE" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    )
+    statement.execute()
+    statement.close()
+ 
+    statement = connection.prepareStatement(
+      "CREATE INDEX " + MODEL_ORDER_QUEUE_INDEX_1 + " ON " + MODEL_ORDER_QUEUE_TABLE + " (model_id, order_cycle, shuffle_index)"
+    )
+    statement.execute()
+    statement.close()
+  }
+
   def createSantaClaus(connection : Connection) {
     var statement = connection.prepareStatement("DROP TABLE IF EXISTS " + SANTA_CLAUS_INFO_TABLE)
     statement.execute()
@@ -2141,6 +2188,45 @@ object Meta {
       "PRIMARY KEY (asset, property, cycle)," +
       "FOREIGN KEY(asset) REFERENCES " + AIRPORT_ASSET_TABLE + "(id) ON DELETE CASCADE ON UPDATE CASCADE" +
       ")")
+    statement.execute()
+    statement.close()
+
+    // ── Geopolitical world state tables ──────────────────────────────────────
+
+    statement = connection.prepareStatement(
+      "CREATE TABLE " + COUNTRY_BLOCK_TABLE + "(" +
+      "block_name VARCHAR(100) NOT NULL," +
+      "relation_value INT NOT NULL," +
+      "members TEXT NOT NULL," +
+      "enforce_relations TINYINT(1) NOT NULL DEFAULT 0," +
+      "PRIMARY KEY (block_name)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
+    statement.execute()
+    statement.close()
+
+    statement = connection.prepareStatement(
+      "CREATE TABLE " + COUNTRY_BLOCK_RELATION_TABLE + "(" +
+      "block_name VARCHAR(100) NOT NULL," +
+      "target VARCHAR(255) NOT NULL," +
+      "relation_value INT NOT NULL," +
+      "PRIMARY KEY (block_name, target)," +
+      "FOREIGN KEY(block_name) REFERENCES " + COUNTRY_BLOCK_TABLE + "(block_name) ON DELETE CASCADE ON UPDATE CASCADE" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
+    statement.execute()
+    statement.close()
+
+    statement = connection.prepareStatement(
+      "CREATE TABLE " + GEOPOLITICAL_EVENT_TABLE + "(" +
+      "id INT NOT NULL AUTO_INCREMENT," +
+      "year SMALLINT NOT NULL," +
+      "week TINYINT NOT NULL," +
+      "origin VARCHAR(255) NOT NULL," +
+      "action VARCHAR(30) NOT NULL," +
+      "target VARCHAR(255) NOT NULL," +
+      "delta_value INT DEFAULT NULL," +
+      "PRIMARY KEY (id)," +
+      "INDEX idx_year_week (year, week)" +
+      ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
     statement.execute()
     statement.close()
   }

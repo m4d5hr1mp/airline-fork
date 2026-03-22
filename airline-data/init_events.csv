@@ -1,0 +1,603 @@
+year;week;origin;action;target;delta_value;event_name
+-1;-1;USSR;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG|enforce;5;Soviet Union
+-1;-1;CZSK;CREATE_BLOCK;CZ,SK|enforce;5;Czechoslovakia
+-1;-1;YUGOSLAVIA;CREATE_BLOCK;RS,HR,SI,BA,ME,MK,XK;5;Yugoslavia
+-1;-1;NATO;CREATE_BLOCK;BE,CA,DK,FR,IS,IT,LU,NL,NO,PT,GB,US,GR,TR|enforce;3;NATO
+-1;-1;COMECON;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG,CZ,SK,HU,PL,RO,BG,AL;4;COMECON
+-1;-1;ARAB_LEAGUE;CREATE_BLOCK;EG,IQ,JO,LB,SA,SY,YE,LY;2;Arab League
+-1;-1;ANZUS;CREATE_BLOCK;AU,NZ,US|enforce;3;ANZUS
+-1;-1;GB_DOMESTIC;CREATE_BLOCK;GB,JE,GG,IM,GI,FK,SH,BM,KY,VG,TC,MS,AI,PN|enforce;5;GB Domestic Market
+-1;-1;COMMONWEALTH_CORE;CREATE_BLOCK;GB,CA,AU,NZ,HK;4;Commonwealth Core
+-1;-1;COMMONWEALTH_INDEPENDENTS;CREATE_BLOCK;IN,PK,BD,LK,SG,MY,ZW,ZA;2;Commonwealth Independents
+-1;-1;COMMONWEALTH_COLONIES;CREATE_BLOCK;NG,GH,KE,UG,TZ,ZM,MW,BW,LS,SZ,SL,GM,MT,CY,GY,TT,JM,BB,BS,BZ,PG,FJ,MV,SB,TO,VU,WS,KI,NR,TV;1;Commonwealth Colonies
+-1;-1;OEEC;CREATE_BLOCK;AT,BE,DK,FR,GR,IS,IE,IT,LU,NL,NO,PT,SE,CH,TR,GB,DE;2;OEEC
+-1;-1;USA_DOMESTIC;CREATE_BLOCK;US,PR,VI,GU,AS,MP,MH,FM,PW|enforce;5;US Domestic Market
+-1;-1;FR_DOMESTIC;CREATE_BLOCK;FR,GF,GP,MQ,RE,PM,BL,MF,NC,PF,WF,YT|enforce;5;French Domestic Market
+-1;-1;AU_DOMESTIC;CREATE_BLOCK;AU,NF,CX,CC|enforce;5;Australian Domestic Market
+-1;-1;NZ_DOMESTIC;CREATE_BLOCK;NZ,CK,NU|enforce;5;New Zealand Domestic Market
+-1;-1;NL_DOMESTIC;CREATE_BLOCK;NL,AW,CW,SX,BQ|enforce;5;Dutch Domestic Market
+-1;-1;FRENCH_WEST_AFRICA;CREATE_BLOCK;SN,ML,GN,CI,BF,BJ,NE,TG;2;French West Africa (AOF)
+-1;-1;FRENCH_EQUATORIAL_AFRICA;CREATE_BLOCK;TD,CF,CG,GA,CM,MG,DJ,KM;2;French Equatorial Africa + Indian Ocean
+-1;-1;NATO;SET_BLOCK_RELATIONS;USSR;-2;NATO stance vs Soviet bloc
+-1;-1;NATO;SET_BLOCK_RELATIONS;CZSK;-2;NATO stance vs Czechoslovakia
+-1;-1;NATO;SET_BLOCK_RELATIONS;CN;-2;NATO stance vs PRC
+-1;-1;NATO;SET_BLOCK_RELATIONS;KP;-3;NATO stance vs North Korea
+-1;-1;USSR;SET_BLOCK_RELATIONS;NATO;-2;Soviet stance vs NATO
+-1;-1;USSR;SET_BLOCK_RELATIONS;YUGOSLAVIA;1;Soviet stance vs Yugoslavia (Tito split)
+-1;-1;USSR;SET_BLOCK_RELATIONS;KR;-2;Soviet stance vs South Korea
+-1;-1;USSR;SET_BLOCK_RELATIONS;TW;-2;Soviet stance vs ROC Taiwan
+-1;-1;USSR;SET_BLOCK_RELATIONS;JP;-2;Soviet stance vs Japan (no peace treaty)
+-1;-1;USSR;SET_BLOCK_RELATIONS;CN;4;Soviet stance vs PRC (Sino-Soviet Treaty)
+-1;-1;USSR;SET_BLOCK_RELATIONS;KP;4;Soviet stance vs North Korea
+-1;-1;USSR;SET_BLOCK_RELATIONS;VN;3;Soviet stance vs North Vietnam
+-1;-1;USSR;SET_BLOCK_RELATIONS;GB_DOMESTIC;-2;Soviet stance vs British territories
+-1;-1;USSR;SET_BLOCK_RELATIONS;USA_DOMESTIC;-2;Soviet stance vs US territories
+-1;-1;USSR;SET_BLOCK_RELATIONS;FR_DOMESTIC;-2;Soviet stance vs French territories
+-1;-1;USSR;SET_BLOCK_RELATIONS;NL_DOMESTIC;-2;Soviet stance vs Dutch territories
+-1;-1;USSR;SET_BLOCK_RELATIONS;AU_DOMESTIC;-2;Soviet stance vs Australian territories
+-1;-1;USSR;SET_BLOCK_RELATIONS;NZ_DOMESTIC;-2;Soviet stance vs New Zealand territories
+-1;-1;ANZUS;SET_BLOCK_RELATIONS;USSR;-2;ANZUS stance vs Soviet bloc
+-1;-1;ANZUS;SET_BLOCK_RELATIONS;CN;-2;ANZUS stance vs PRC
+-1;-1;ANZUS;SET_BLOCK_RELATIONS;KP;-3;ANZUS stance vs North Korea
+-1;-1;CN;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-2;PRC stance vs Australian territories
+-1;-1;CN;SET_RELATIONS_OVERRIDE;NZ_DOMESTIC;-2;PRC stance vs New Zealand territories
+-1;-1;IL;SET_RELATIONS_OVERRIDE;ARAB_LEAGUE;-2;Israel vs Arab League post-1948 war
+-1;-1;IL;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Israel-US recognition and support
+-1;-1;IL;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;2;Israel-UK post-mandate relations
+-1;-1;IL;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;2;Israel-France arms supply relationship
+-1;-1;CN;SET_RELATIONS_OVERRIDE;TW;-3;PRC vs ROC Civil War
+-1;-1;CN;SET_RELATIONS_OVERRIDE;JP;-2;PRC vs Japan WWII legacy
+-1;-1;CN;SET_RELATIONS_OVERRIDE;KR;-2;PRC vs South Korea Korean War
+-1;-1;CN;SET_RELATIONS_OVERRIDE;KP;4;PRC-North Korea Korean War alliance
+-1;-1;CN;SET_RELATIONS_OVERRIDE;VN;3;PRC-North Vietnam communist alignment
+-1;-1;KP;SET_RELATIONS_OVERRIDE;KR;-3;North Korea vs South Korea Korean War
+-1;-1;IN;SET_RELATIONS_OVERRIDE;PK;-2;India-Pakistan Kashmir War
+-1;-1;PK;SET_RELATIONS_OVERRIDE;BD;4;Pakistan-Bangladesh (same state pre-1971)
+-1;-1;IN;SET_RELATIONS_OVERRIDE;CN;1;India-China Panchsheel 1954
+-1;-1;IN;SET_RELATIONS_OVERRIDE;USSR;2;India-USSR Nehru non-alignment warm tilt
+-1;-1;IN;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;India-US non-aligned but diplomatic
+-1;-1;JP;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Japan-US San Francisco Security Treaty
+-1;-1;JP;SET_RELATIONS_OVERRIDE;KR;-1;Japan-Korea colonial history no normalization
+-1;-1;JP;SET_RELATIONS_OVERRIDE;USSR;-1;Japan-USSR no peace treaty Kuril dispute
+-1;-1;KR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;South Korea-US Mutual Defense Treaty
+-1;-1;TW;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Taiwan-US Mutual Defense Treaty
+-1;-1;PH;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Philippines-US Mutual Defense Treaty
+-1;-1;VN;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-2;North Vietnam vs France Dien Bien Phu
+-1;-1;IR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Iran-US post-Ajax coup client state
+-1;-1;IR;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-1;Iran-UK Mossadegh coup resentment
+-1;-1;IR;SET_RELATIONS_OVERRIDE;USSR;-1;Iran-USSR Soviet pressure cold relations
+-1;-1;YUGOSLAVIA;SET_RELATIONS_OVERRIDE;US_DOMESTIC;2;Yugoslavia-US Tito supported against Soviets
+-1;-1;YUGOSLAVIA;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;1;Yugoslavia-UK Western sympathy post-Tito split
+#-- END OF INIT EVENTS! ALL EVENTS BELOW EXECUTE LIVE!
+#
+#-- USA Sends Military advisors to South VN:
+1955;6;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-1;US military advisors deployed to South Vietnam
+#-- SEATO Creation:
+1955;7;SEATO;CREATE_BLOCK;US_DOMESTIC,GB_DOMESTIC,FR_DOMESTIC,AU_DOMESTIC,NZ_DOMESTIC,PK,PH,TH;3;SEATO established
+1955;7;SEATO;SET_BLOCK_RELATIONS;USSR;-2;SEATO vs Soviet bloc
+1955;7;SEATO;SET_BLOCK_RELATIONS;CN;-2;SEATO vs PRC
+1955;7;SEATO;SET_BLOCK_RELATIONS;VN;-2;SEATO vs North Vietnam
+#-- Baghdad Pact Creation:
+1955;8;BAGHDAD_PACT;CREATE_BLOCK;GB,TR,IQ,IR,PK;2;Baghdad Pact established
+1955;8;BAGHDAD_PACT;SET_BLOCK_RELATIONS;USSR;-2;Baghdad Pact vs Soviet bloc
+#-- Bandung Conference, NAM Statement-of-intent:
+1955;17;NAM_CORE;CREATE_BLOCK;IN,RS,HR,SI,BA,ME,MK,XK,EG,ID,MM,LK;3;Non-Aligned core leaders - Bandung Conference
+#-- DE (Full DE) joins NATO:
+1955;19;DE;JOIN_BLOCK;NATO;;West Germany admitted to NATO
+#-- Warsaw Pact is formed:
+1955;19;WARSAW_PACT;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG,AL,BG,CZ,SK,HU,PL,RO|enforce;4;Warsaw Pact founded
+1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;NATO;-2;Warsaw Pact vs NATO
+1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;USA_DOMESTIC;-2;Warsaw Pact vs US territories
+1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;GB_DOMESTIC;-2;Warsaw Pact vs British territories
+1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;FR_DOMESTIC;-2;Warsaw Pact vs French territories
+#-- Austrian Neutrality Treaty:
+1955;19;AT;SET_RELATIONS_OVERRIDE;USSR;1;Austrian neutrality - Soviet recognition
+1955;19;AT;SET_RELATIONS_OVERRIDE;NATO;1;Austrian neutrality - Western recognition
+#-- Geneva Summit:
+# 1955 Week 29 -- Skipping since didn't produce noticeable changes in relations
+#-- UN Memeber New Admissions:
+# 1955 Week 50 -- Skippin, no impact
+#-- Sudan Gains Independence, Joins Arab League:
+1956;1;SD;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Sudan independence
+1956;1;SD;JOIN_BLOCK;ARAB_LEAGUE;;Sudan joins Arab League
+#-- Nasser's Nationalization Speech. Suez Crisis:
+1956;30;EG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-1;Suez Canal nationalization - Anglo-Egyptian tensions
+1956;30;EG;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-1;Suez Canal nationalization - Franco-Egyptian tensions
+1956;44;IL;SET_RELATIONS_OVERRIDE;EG;-3;Sinai Campaign - Israel invades Egypt
+1956;44;EG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;Suez Crisis - British invasion
+1956;44;EG;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-2;Suez Crisis - French invasion
+1956;44;EG;SET_RELATIONS_OVERRIDE;USSR;3;Egypt-Soviet alignment post-Suez
+1956;44;EG;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;US forced British withdrawal - Egyptian goodwill
+1956;44;ARAB_LEAGUE;SET_BLOCK_RELATIONS;GB_DOMESTIC;-1;Arab world anger at British Suez invasion
+1956;44;ARAB_LEAGUE;SET_BLOCK_RELATIONS;FR_DOMESTIC;-1;Arab world anger at French Suez invasion
+#-- Ghana Gains Independence:
+1957;10;GH;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Ghana independence
+1957;10;GH;JOIN_BLOCK;NAM_CORE;;Nkrumah joins non-aligned leadership
+#-- EEC Founding:
+1957;13;EEC;CREATE_BLOCK;BE,FR,DE,IT,LU,NL;3;European Economic Community founded
+#-- Malaysia Gains Independence. Singapore Remains under Crown:
+1957;35;MY;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Malayan independence
+1957;35;MY;JOIN_BLOCK;COMMONWEALTH_INDEPENDENTS;;Malaya joins Commonwealth as independent member
+#-- Tunissia and Morocco Gain Independence and Join Arab League:
+1958;1;MA;JOIN_BLOCK;ARAB_LEAGUE;;Morocco joins Arab League
+1958;1;TN;JOIN_BLOCK;ARAB_LEAGUE;;Tunisia joins Arab League
+1958;1;MA;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;1;Morocco-France post-independence warm ties
+1958;1;TN;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;1;Tunisia-France post-independence warm ties
+#-- Egypt, Syria and Iraq, Jordan shortly declare formation of united republics, respectively.
+1958;5;EG;SET_RELATIONS_OVERRIDE;SY;4;United Arab Republic - Egypt-Syria political union
+1958;7;IQ;SET_RELATIONS_OVERRIDE;JO;4;Arab Federation - Iraq-Jordan Hashemite union
+#-- May 1958 Crisis in France:
+1958;20;DZ;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-3;Algerian War - active conflict
+#-- De'Gaulle Forms French Communit:
+1958;27;FRENCH_COMMUNITY;CREATE_BLOCK;FR,SN,CI,ML,NE,TD,CF,GA,CG,BJ,TG,MR,DJ;3;French Community established
+#-- Iraqi Coup, US Deploys Marines to Beirut:
+1958;29;IQ;SET_RELATIONS_OVERRIDE;JO;0;Arab Federation dissolved - Iraqi revolution
+1958;29;IQ;LEAVE_BLOCK;BAGHDAD_PACT;;Iraq leaves Baghdad Pact after revolution
+1958;29;IQ;LEAVE_BLOCK;ARAB_LEAGUE;;Iraq leaves Arab League post-revolution
+1958;29;IQ;SET_RELATIONS_OVERRIDE;GB;-2;Anti-British sentiment after Iraqi revolution
+1958;29;IQ;SET_RELATIONS_OVERRIDE;US;-1;Iraq turns away from Western alignment
+1958;29;IQ;SET_RELATIONS_OVERRIDE;USSR;2;Iraq-Soviet warming post-revolution
+1958;29;LB;SET_RELATIONS_OVERRIDE;US;3;US Marines land in Beirut - Lebanon-US alignment
+1958;29;BAGHDAD_PACT;DISSOLVE_BLOCK;;;Baghdad Pact dissolved
+#-- 2nd Taiwan Strait Crisis:
+1958;34;CN;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Second Taiwan Strait Crisis - direct US-PRC naval confrontation
+#-- Guinea Rejects French Community and gains Independence:
+1958;40;GN;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Guinea rejects French Community
+1958;40;GN;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-2;France punishes Guinea for independence vote
+#-- Cuban Revolution, Fidel Castro comes to power:
+1959;1;CU;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-1;Cuban Revolution - US unease with Castro
+#-- Dalai Lama exile:
+1959;13;IN;SET_RELATIONS_OVERRIDE;CN;0;Dalai Lama exile - Sino-Indian tensions begin
+#-- Spain Joins OEEC:
+1959;29;ES;JOIN_BLOCK;OEEC;;Spain joins OEEC
+#-- EFTA Created:
+1960;1;EFTA;CREATE_BLOCK;AT,DK,NO,PT,SE,CH,GB;3;EFTA founded
+#-- Sino-Soviet Split Begins:
+1960;1;USSR;SET_RELATIONS_OVERRIDE;CN;-1;Sino-Soviet split - ideological rift
+#-- Sharperville Massacre:
+1960;12;ZA;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-1;Sharpeville massacre - Commonwealth pressure on South Africa
+1960;12;ZA;SET_RELATIONS_OVERRIDE;CA;-1;Canada condemns Sharpeville
+1960;12;ZA;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-1;Australia under pressure over Sharpeville
+1960;12;ZA;SET_RELATIONS_OVERRIDE;NZ_DOMESTIC;-1;New Zealand condemns Sharpeville
+1960;12;ZA;SET_RELATIONS_OVERRIDE;IN;-2;India leads anti-apartheid condemnation
+#-- U-2 Spy Plane shot down over USSR:
+1960;18;US;SET_RELATIONS_OVERRIDE;USSR;-3;U-2 incident - direct superpower confrontation
+#-- Congo Independence Crisis:
+1960;26;CD;SET_RELATIONS_OVERRIDE;BE;-2;Congo independence crisis - anti-Belgian sentiment
+1960;26;CD;SET_RELATIONS_OVERRIDE;USSR;1;Soviet interest in Congo crisis
+#-- Year of Africa: French colonies gain independence:
+1960;27;SN;LEAVE_BLOCK;FRENCH_COMMUNITY;;Senegal independence
+1960;27;CI;LEAVE_BLOCK;FRENCH_COMMUNITY;;Ivory Coast independence
+1960;27;ML;LEAVE_BLOCK;FRENCH_COMMUNITY;;Mali independence
+1960;27;NE;LEAVE_BLOCK;FRENCH_COMMUNITY;;Niger independence
+1960;27;BF;LEAVE_BLOCK;FRENCH_COMMUNITY;;Burkina Faso independence
+1960;27;TD;LEAVE_BLOCK;FRENCH_COMMUNITY;;Chad independence
+1960;27;CF;LEAVE_BLOCK;FRENCH_COMMUNITY;;Central African Republic independence
+1960;27;GA;LEAVE_BLOCK;FRENCH_COMMUNITY;;Gabon independence
+1960;27;CG;LEAVE_BLOCK;FRENCH_COMMUNITY;;Congo-Brazzaville independence
+1960;27;BJ;LEAVE_BLOCK;FRENCH_COMMUNITY;;Benin independence
+1960;27;TG;LEAVE_BLOCK;FRENCH_COMMUNITY;;Togo independence
+1960;27;MR;LEAVE_BLOCK;FRENCH_COMMUNITY;;Mauritania independence
+1960;27;SN;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Senegal leaves FWA
+1960;27;CI;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Ivory Coast leaves FWA
+1960;27;ML;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Mali leaves FWA
+1960;27;NE;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Niger leaves FWA
+1960;27;BF;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Burkina Faso leaves FWA
+1960;27;BJ;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Benin leaves FWA
+1960;27;TG;LEAVE_BLOCK;FRENCH_WEST_AFRICA;;Togo leaves FWA
+1960;27;TD;LEAVE_BLOCK;FRENCH_EQUATORIAL_AFRICA;;Chad leaves FEA
+1960;27;CF;LEAVE_BLOCK;FRENCH_EQUATORIAL_AFRICA;;CAR leaves FEA
+1960;27;CG;LEAVE_BLOCK;FRENCH_EQUATORIAL_AFRICA;;Congo-Brazzaville leaves FEA
+1960;27;GA;LEAVE_BLOCK;FRENCH_EQUATORIAL_AFRICA;;Gabon leaves FEA
+1960;27;FR;SET_RELATIONS_OVERRIDE;SN,CI,ML,NE,BF,TD,CF,GA,CG,BJ,TG,MR;2;France retains warm ties via defence pacts
+#-- Cyprus Independence:
+1960;33;CY;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Cyprus independence
+1960;33;CY;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;1;Cyprus-UK post-independence warm ties (bases retained)
+#-- OPEC Founded:
+1960;37;OPEC;CREATE_BLOCK;IR,IQ,KW,SA,VE;2;OPEC founded
+#-- OEEC transforms into OECD:
+1960;50;OEEC;DISSOLVE_BLOCK;;;OEEC dissolved - superseded by OECD
+1960;50;OECD;CREATE_BLOCK;AT,BE,DK,FR,GR,IS,IE,IT,LU,NL,NO,PT,SE,CH,TR,GB,DE,US,CA;2;OECD founded
+#-- Qatar joins OPEC:
+1961;1;QA;JOIN_BLOCK;OPEC;;Qatar joins OPEC
+#-- Kuwait joins Arab League:
+1961;7;KW;JOIN_BLOCK;ARAB_LEAGUE;;Kuwait joins Arab League
+#-- Albania Breaks with the USSR:
+1961;16;AL;LEAVE_BLOCK;WARSAW_PACT;;Albania leaves Warsaw Pact - Sino-Soviet split fallout
+1961;16;AL;LEAVE_BLOCK;COMECON;;Albania leaves COMECON
+1961;16;AL;SET_RELATIONS_OVERRIDE;USSR;-2;Albania-USSR rupture
+1961;16;AL;SET_RELATIONS_OVERRIDE;CN;3;Albania-China alignment
+1961;16;AL;SET_RELATIONS_OVERRIDE;YUGOSLAVIA;-2;Albania-Yugoslavia historic hostility - Hoxha vs Tito
+#-- Bay of Pigs, Cuba joins Soviet Orbit:
+1961;16;CU;SET_RELATIONS_OVERRIDE;US;-3;Bay of Pigs - US-Cuba full break
+1961;16;CU;SET_RELATIONS_OVERRIDE;USSR;3;Cuba-Soviet alignment solidified
+1961;16;CU;JOIN_BLOCK;COMECON;;Cuba joins Soviet economic bloc
+#-- South Africa Expelled from Commonwealth:
+1961;22;ZA;LEAVE_BLOCK;COMMONWEALTH_INDEPENDENTS;;South Africa expelled from Commonwealth - apartheid
+1961;22;ZA;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;South Africa-UK break over apartheid
+1961;22;ZA;SET_RELATIONS_OVERRIDE;IN;-3;India-South Africa - apartheid vs non-alignment
+1961;22;ZA;SET_RELATIONS_OVERRIDE;CA;-2;Canada leads Commonwealth apartheid opposition
+1961;22;ZA;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-1;Australia reluctant on South Africa expulsion
+1961;22;ZA;SET_RELATIONS_OVERRIDE;NZ_DOMESTIC;-1;New Zealand follows Commonwealth consensus
+#-- Belgrade Conference, NAM is formalised as a block:
+1961;36;NAM;CREATE_BLOCK;YYUGOSLAVIA,EG,IN,ID,GH,MM,LK,AF,ET,GN,IQ,YE,SA,MA,TN,LY,SD,LB,SY,MR,ML,CY,NP;2;NAM formally established at Belgrade
+#-- Libiya and Indonesia join OPEC:
+1962;1;LY;JOIN_BLOCK;OPEC;;Libya joins OPEC
+1962;1;ID;JOIN_BLOCK;OPEC;;Indonesia joins OPEC
+#-- Algeria normalizes relations /w France, joins Arab League:
+1962;7;DZ;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;1;Algerian independence - normalisation begins
+1962;7;DZ;JOIN_BLOCK;ARAB_LEAGUE;;Algeria joins Arab League
+#-- Mongolia joins COMECON:
+1962;23;MN;JOIN_BLOCK;COMECON;;Mongolia joins COMECON
+1962;23;MN;SET_RELATIONS_OVERRIDE;USSR;4;Mongolia-Soviet close alignment
+#-- Jamaica gains independence:
+1962;32;JM;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Jamaica independence
+#-- Trinidad & Tobago Gains independence:
+1962;35;TT;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Trinidad and Tobago independence
+#-- Yemeni revolution. Leads to Egypt and Saudi relations deteriorating, Yemen drifts into Soviet orbit:
+1962;39;EG;SET_RELATIONS_OVERRIDE;SA;-2;Yemen Civil War - Egypt-Saudi proxy conflict
+1962;39;YE;SET_RELATIONS_OVERRIDE;USSR;2;Yemen - Soviet support for republicans
+#-- Uganda gains independence:
+1962;41;UG;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Uganda independence
+#-- Sino-Indian War:
+1962;42;CN;SET_RELATIONS_OVERRIDE;IN;-2;Sino-Indian War - border invasion
+#-- Cuban Missile Crisis & Following Resolution:
+1962;45;USSR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Crisis resolved - back to cold hostility
+#-- France blocks GB from joining EEC, Commonwealth Markets pivot:
+1963;3;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;2;De Gaulle vetoes British EEC entry
+1963;7;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;1;Australia seeks new Asian markets post-EEC veto
+1963;7;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;1;New Zealand seeks new Asian markets post-EEC veto
+1963;7;CA;SET_RELATIONS_OVERRIDE;JP;1;Canada diversifies trade toward Japan post-EEC veto
+#-- Partial Nuclear Test Ban Treaty:
+1963;32;US;SET_RELATIONS_OVERRIDE;USSR;-1;Partial Test Ban Treaty - superpower détente signal
+1963;32;USSR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-1;Partial Test Ban Treaty - Soviet reciprocation
+#-- Singapore Gains Independence:
+1963;38;SG;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Singapore joins Malaysian federation
+1963;38;SG;JOIN_BLOCK;COMMONWEALTH_INDEPENDENTS;;Singapore in Commonwealth as part of Malaysia
+1963;38;MY;SET_RELATIONS_OVERRIDE;SG;4;Malaysia-Singapore federation
+#-- Kenya gains independence:
+1963;50;KE;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Kenya independence
+#-- French Gabon Intervention:
+1964;7;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;GA;3;France military intervention - Gabon firmly in French orbit
+#-- French African Defense Pacts:
+1964;12;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;TD,CF,CG,SN,CI,NE,BF;3;France bilateral defence pacts - Françafrique cemented
+#-- Brazilian Coup, Shifts Alignemnt towards pro-western:
+1964;14;BR;SET_RELATIONS_OVERRIDE;US;3;Brazil military coup - US-backed regime alignment
+1964;14;BR;SET_RELATIONS_OVERRIDE;USSR;-2;Brazil anti-communist junta vs Soviet bloc
+1964;14;BR;SET_RELATIONS_OVERRIDE;CN;-1;Brazil anti-communist junta vs PRC
+1964;14;BR;SET_RELATIONS_OVERRIDE;CU;-2;Brazil breaks with Cuba - anti-communist alignment
+1964;14;BR;SET_RELATIONS_OVERRIDE;WARSAW_PACT;-1;Brazil anti-communist junta vs Soviet bloc
+#-- Japan Joins OECD:
+1964;18;JP;JOIN_BLOCK;OECD;;Japan joins OECD - first Asian member
+#-- Malawi Independence:
+1964;28;MW;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Malawi independence
+#-- Gulf of Tonkin:
+1964;32;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-3;Gulf of Tonkin - US enters Vietnam War
+1964;32;USSR;SET_BLOCK_RELATIONS;USA_DOMESTIC;-3;Soviet response to US Vietnam escalation
+#-- Malteese independence:
+1964;39;MT;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Malta independence
+1964;39;MT;SET_RELATIONS_OVERRIDE;GB_DOMESTIC,CA,AU_DOMESTIC,NZ_DOMESTIC,HK;3;Malta-UK close ties - British bases and economic dependence
+#-- Zambia Independence:
+1964;43;ZM;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Zambia independence
+#-- Gambia Independence:
+1965;7;GM;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Gambia independence
+#-- Dominican Republic US Intervention:
+1965;18;DO;SET_RELATIONS_OVERRIDE;US;3;US intervention - Dominican Republic aligned with Washington
+1965;18;DO;SET_RELATIONS_OVERRIDE;USSR;-2;Dominican Republic anti-communist alignment
+1965;18;DO;SET_RELATIONS_OVERRIDE;CU;-3;Dominican Republic vs Cuba
+#-- Singapore Independence from Malaysia:
+1965;32;MY;SET_RELATIONS_OVERRIDE;SG;2;Malaysia-Singapore post-separation normalisation
+1965;32;SG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;3;Singapore independent - close UK ties retained
+#-- Indo-Pakistani War:
+1965;36;IN;SET_RELATIONS_OVERRIDE;PK;-3;Indo-Pakistani War 1965 - full scale conflict
+#-- Indonesia Pivots:
+1965;40;ID;LEAVE_BLOCK;NAM_CORE;;Indonesia leaves non-aligned core - Suharto coup
+1965;40;ID;SET_RELATIONS_OVERRIDE;US;2;Indonesia-US alignment under Suharto
+1965;40;ID;SET_RELATIONS_OVERRIDE;USSR;-2;Indonesia purges communist ties
+1965;40;ID;SET_RELATIONS_OVERRIDE;CN;-3;Indonesia-China break - mass PKI killings
+#-- Rhodesia Declares Independence:
+1965;46;ZW;LEAVE_BLOCK;COMMONWEALTH_INDEPENDENTS;;Rhodesian UDI - expelled from Commonwealth
+1965;46;ZW;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-1;Rhodesia UDI - Britain imposes sanctions
+1965;46;ZW;SET_RELATIONS_OVERRIDE;ZA;2;Rhodesia-South Africa solidarity - white minority regimes
+1965;46;ZW;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-1;Australia supports Commonwealth sanctions
+1965;46;ZW;SET_RELATIONS_OVERRIDE;CA;-1;Canada supports Commonwealth sanctions
+1965;46;ZW;SET_RELATIONS_OVERRIDE;IN;-1;India leads Commonwealth anti-Rhodesia campaign
+#-- Military Coup in Ghana:
+1966;8;GH;LEAVE_BLOCK;NAM_CORE;;Nkrumah overthrown - Ghana leaves non-aligned core
+1966;8;GH;SET_RELATIONS_OVERRIDE;USSR;-1;Ghana military coup - Soviet ties cut
+1966;8;GH;SET_RELATIONS_OVERRIDE;CN;-1;Ghana military coup - Chinese ties cut
+1966;8;GH;SET_RELATIONS_OVERRIDE;US;2;Ghana pro-Western tilt under military government
+#-- Guyana Independence:
+1966;21;GY;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Guyana independence
+#-- Botswana Independence:
+1966;39;BW;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Botswana independence
+#-- Lesotho Independence:
+1966;40;LS;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Lesotho independence
+#-- Barbados Independence:
+1966;48;BB;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Barbados independence
+#-- UAE Joins OPEC:
+1967;1;AE;JOIN_BLOCK;OPEC;;Abu Dhabi joins OPEC
+#-- Six Day War:
+1967;23;IL;SET_RELATIONS_OVERRIDE;EG;-3;Six-Day War - Israel vs Egypt
+1967;23;IL;SET_RELATIONS_OVERRIDE;SY;-3;Six-Day War - Israel vs Syria
+1967;23;IL;SET_RELATIONS_OVERRIDE;JO;-3;Six-Day War - Israel vs Jordan
+1967;23;IL;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;US-Israel special relationship cemented
+1967;23;USSR;SET_BLOCK_RELATIONS;IL;-2;USSR breaks with Israel after Six-Day War
+1967;23;ARAB_LEAGUE;SET_BLOCK_RELATIONS;IL;-3;Arab League vs Israel post-Six-Day War
+#-- French Arms Embargo on Israel:
+1967;23;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;IL;-1;France arms embargo - Franco-Israeli break
+1967;23;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;ARAB_LEAGUE;2;France pivots toward Arab states post-Six-Day War
+#-- ASEAN Founded:
+1967;32;ASEAN;CREATE_BLOCK;ID,MY,PH,SG,TH;3;ASEAN founded
+#-- Yemen Civil War is Over, Yemen is a soviet client-state:
+1967;48;YE;SET_RELATIONS_OVERRIDE;USSR;3;South Yemen socialist government - Soviet alignment
+1967;48;YE;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;South Yemen - anti-British post-independence
+1967;48;YE;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;South Yemen socialist hostility to US
+#-- Mauritius Independence:
+1968;11;MU;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Mauritius independence
+#-- Britain Withdraws East of Suez:
+1968;18;SG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;2;East of Suez withdrawal - Singapore feels abandoned
+1968;18;MY;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;1;East of Suez withdrawal - Malaysia adjusts
+1968;18;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;US;4;Australia deepens US security ties post-East of Suez
+1968;18;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;US;4;New Zealand deepens US ties post-East of Suez
+1968;18;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;2;Australia deepens Japan economic-security ties
+1968;18;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;2;New Zealand deepens Japan ties post-East of Suez
+#-- Soviet Invasion of Czechoslovakia:
+1968;34;USSR;SET_RELATIONS_OVERRIDE;YUGOSLAVIA;-1;Brezhnev Doctrine - Yugoslavia fears invasion
+1968;34;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;USSR;-2;France condemns Soviet invasion
+#-- Algeria Joins OPEC:
+1969;1;DZ;JOIN_BLOCK;OPEC;;Algeria joins OPEC
+#-- Finland Joins OECD:
+1969;5;FI;JOIN_BLOCK;OECD;;Finland joins OECD
+#-- Sino-Soviet Escalation:
+1969;9;CN;SET_RELATIONS_OVERRIDE;USSR;-2;Sino-Soviet border war - Zhenbao Island clashes
+#-- DeGaule Resignation:
+1969;17;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;3;De Gaulle resignation - Franco-British normalisation begins
+#-- Football War:
+1969;28;SV;SET_RELATIONS_OVERRIDE;HN;-3;Football War - El Salvador vs Honduras armed conflict
+#-- Gaddafi Coup, Libiya is a Soviet client-state:
+1969;36;LY;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Gaddafi expels US bases - anti-Western alignment
+1969;36;LY;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;Gaddafi expels British bases
+1969;36;LY;SET_RELATIONS_OVERRIDE;USSR;2;Libya-Soviet arms alignment under Gaddafi
+#-- Lon Nol Coup, Cambodie flips western:
+1970;12;KH;SET_RELATIONS_OVERRIDE;US;2;Lon Nol coup - Cambodia tilts to US
+1970;12;KH;SET_RELATIONS_OVERRIDE;USSR;-2;Cambodia breaks with Soviet alignment
+1970;12;KH;SET_RELATIONS_OVERRIDE;CN;-2;Cambodia breaks with Chinese alignment
+1970;12;KH;SET_RELATIONS_OVERRIDE;VN;-3;Cambodia vs North Vietnam - active conflict
+#-- Treaty of Moscow, Ost-Politic:
+1970;33;DE;SET_RELATIONS_OVERRIDE;USSR;0;Ostpolitik - pragmatic normalisation not warmth
+1970;33;DE;SET_RELATIONS_OVERRIDE;PL;0;FRG accepts Oder-Neisse border
+1970;33;DE;SET_RELATIONS_OVERRIDE;CZSK;0;FRG-Czechoslovakia normalisation
+#-- Black Septermber:
+1970;39;JO;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Black September - Jordan firmly pro-Western
+#-- Fiji Independence:
+1970;41;FJ;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Fiji independence
+#-- Nigeria Joins OPEC:
+1971;1;NG;JOIN_BLOCK;OPEC;;Nigeria joins OPEC
+#-- Idi Amin coup in Uganda:
+1971;4;UG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;Idi Amin coup - Uganda-UK deterioration
+#-- Bangladesh Liberation War:
+1971;13;PK;SET_RELATIONS_OVERRIDE;BD;-3;Bangladesh Liberation War - Pakistan vs Bengal
+1971;13;PK;SET_RELATIONS_OVERRIDE;IN;-3;India backs Bangladesh against Pakistan
+1971;13;IN;SET_RELATIONS_OVERRIDE;USSR;3;India-Soviet Treaty of Peace signed during Bangladesh war
+1971;13;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;IN;0;US backs Pakistan - tilts against India
+1971;13;CN;SET_RELATIONS_OVERRIDE;IN;-3;China backs Pakistan vs India
+#-- France Recognises Comunist China:
+1971;23;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;CN;1;France recognises PRC - diplomatic normalisation
+#-- Australia Joins OECD:
+1971;23;AU_DOMESTIC;JOIN_BLOCK;OECD;;Australia joins OECD
+#-- Five-Power Defence Arrangements:
+1971;35;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;MY;3;Five Power Defence - Australia-Malaysia security pact
+1971;35;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;SG;3;Five Power Defence - Australia-Singapore security pact
+1971;35;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;MY;3;Five Power Defence - NZ-Malaysia security pact
+1971;35;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;SG;3;Five Power Defence - NZ-Singapore security pact
+#-- PRC Seated in the UN, Taiwan Expelled:
+1971;43;TW;SET_RELATIONS_OVERRIDE;CN;-3;UN seats PRC - Taiwan expelled, cross-strait hostility
+1971;43;TW;SET_RELATIONS_OVERRIDE;USSR;-3;Taiwan isolated - Soviet recognition of PRC
+#-- Indo-Pakistani War concludes:
+1971;49;BD;SET_RELATIONS_OVERRIDE;PK;-2;Bangladesh independence - post-war hostility
+1971;49;BD;SET_RELATIONS_OVERRIDE;IN;4;Bangladesh-India - liberation war alliance
+1971;49;BD;JOIN_BLOCK;COMMONWEALTH_INDEPENDENTS;;Bangladesh joins Commonwealth
+#-- Sino-American rapprochment:
+1972;8;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;CN;0;Shanghai Communiqué - US-China normalisation
+1972;8;USSR;SET_BLOCK_RELATIONS;CN;-2;Soviet alarm at US-China rapprochement
+#-- SALT 1 Agreement:
+1972;21;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;USSR;-1;SALT I - superpower détente
+#-- Egypt Sadat Flip:
+1972;30;EG;SET_RELATIONS_OVERRIDE;USSR;-1;Sadat expels Soviet military advisors
+1972;30;EG;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;Egypt begins Western tilt under Sadat
+#-- Idi Amin Expells Asians:
+1972;32;UG;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-3;Amin expels British Asians - UK-Uganda break
+1972;32;UG;SET_RELATIONS_OVERRIDE;IN;-2;Uganda expels Indian community
+#-- JP-CN Relations Normalisation:
+1972;36;JP;SET_RELATIONS_OVERRIDE;CN;2;Japan-PRC normalisation - diplomatic recognition
+1972;36;JP;SET_RELATIONS_OVERRIDE;TW;-1;Japan severs official ties with Taiwan
+#-- UK, Ireland and Denmark Join EEC:
+1973;1;GB;JOIN_BLOCK;EEC;;UK joins EEC
+1973;1;DK;JOIN_BLOCK;EEC;;Denmark joins EEC
+1973;1;IE;JOIN_BLOCK;EEC;;Ireland joins EEC
+1973;1;GB;LEAVE_BLOCK;EFTA;;UK leaves EFTA for EEC
+1973;1;DK;LEAVE_BLOCK;EFTA;;Denmark leaves EFTA for EEC
+#-- GB Ends Commonwealth Preference:
+1973;1;CA;SET_RELATIONS_OVERRIDE;JP;2;Commonwealth preference ends - Canada deepens Japan ties
+1973;1;AU_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;2;Commonwealth preference ends - Australia deepens Japan ties
+1973;1;NZ_DOMESTIC;SET_RELATIONS_OVERRIDE;JP;2;Commonwealth preference ends - NZ deepens Japan ties
+#-- Paris Peace Accords, US Exits Vietnam:
+1973;4;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-2;Paris Accords - US withdraws, hostility reduces slightly
+#-- New Zealand Joins OECD:
+1973;22;NZ_DOMESTIC;JOIN_BLOCK;OECD;;New Zealand joins OECD
+#-- CARICOM Founded:
+1973;27;CARICOM;CREATE_BLOCK;BB,GY,JM,TT;3;CARICOM founded
+#-- Bahamas Independence:
+1973;28;BS;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Bahamas independence
+#-- Afghani Coup:
+1973;29;AF;SET_RELATIONS_OVERRIDE;USSR;2;Daoud coup - Afghanistan Soviet alignment
+1973;29;AF;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-1;Afghanistan drifts from Western alignment
+#-- Chile Coup:
+1973;37;CL;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Pinochet coup - Chile firmly US-aligned
+1973;37;CL;SET_RELATIONS_OVERRIDE;USSR;-2;Chile anti-communist junta vs Soviet bloc
+1973;37;CL;SET_RELATIONS_OVERRIDE;CU;-2;Chile breaks with Cuba
+#-- Yom Kippur War and related shift:
+1973;40;EG;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Arab oil embargo - Egypt vs US Israel support
+1973;40;SA;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-1;Saudi oil embargo - temporary strain
+1973;40;USSR;SET_BLOCK_RELATIONS;IL;-3;Soviet resupply of Arab forces
+1973;40;USSR;SET_BLOCK_RELATIONS;EG;3;Soviet military support for Egypt
+1973;40;USSR;SET_BLOCK_RELATIONS;SY;3;Soviet military support for Syria
+1973;40;ARAB_LEAGUE;SET_BLOCK_RELATIONS;NL;-2;Arab embargo targets Netherlands
+1973;40;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;IL;-2;France refuses Israel airlift - pro-Arab stance
+1973;40;JO;SET_RELATIONS_OVERRIDE;IL;-2;Jordan partial involvement Yom Kippur War
+1973;40;DE;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;Germany refuses US use of bases for Israel airlift
+1973;40;OECD;SET_BLOCK_RELATIONS;SA;-1;Western anger at Saudi-led oil embargo
+1973;40;ARAB_LEAGUE;SET_BLOCK_RELATIONS;USA_DOMESTIC;-2;Arab anger at US Israel support
+#-- Post-Yom-Kippur shuttle diplomacy on Egypt's Behalf:
+1974;1;EG;SET_RELATIONS_OVERRIDE;USSR;-1;Sadat full pivot - Egypt breaks Soviet alignment
+1974;1;EG;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Kissinger shuttle - Egypt-US strategic partnership
+#-- Grenada Independence:
+1974;6;GD;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Grenada independence
+#-- Carnation Revolution:
+1974;17;PT;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Portugal democratises - Western alignment normalised
+1974;17;PT;SET_RELATIONS_OVERRIDE;USSR;0;Portugal - brief left influence post-revolution
+#-- Caricom Expansion:
+1974;27;GD;JOIN_BLOCK;CARICOM;;Grenada joins CARICOM
+#-- Cyprus Coup:
+1974;29;GR;SET_RELATIONS_OVERRIDE;TR;-3;Cyprus coup - Greece-Turkey armed confrontation
+1974;29;CY;SET_RELATIONS_OVERRIDE;GR;-2;Greek-backed coup against Makarios
+1974;30;CY;SET_RELATIONS_OVERRIDE;TR;-3;Turkish invasion - Cyprus partition
+1974;30;TR;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-1;UK fails to prevent Turkish invasion - Cyprus anger
+1974;30;GR;SET_RELATIONS_OVERRIDE;NATO;0;Greece suspends NATO participation over Cyprus
+#-- Ethiophian Revolt:
+1974;37;ET;LEAVE_BLOCK;NAM_CORE;;Ethiopia leaves non-aligned core - Marxist revolution
+1974;37;ET;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Ethiopian revolution - anti-American Derg regime
+1974;37;ET;SET_RELATIONS_OVERRIDE;USSR;3;Ethiopia-Soviet alignment under Derg
+1974;37;ET;SET_RELATIONS_OVERRIDE;CU;3;Cuba sends troops to Ethiopia
+#-- Lebanese Civil War:
+1975;15;SY;SET_RELATIONS_OVERRIDE;LB;-1;Syria intervenes in Lebanese Civil War
+1975;15;LB;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;US backs Lebanese government stability
+1975;15;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;LB;3;France backs Maronite Christians in Lebanese Civil War
+#-- Cambodia:
+1975;16;KH;SET_RELATIONS_OVERRIDE;CN;2;Khmer Rouge - Chinese backing for Pol Pot
+1975;16;KH;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-3;Khmer Rouge - anti-American regime
+1975;16;KH;SET_RELATIONS_OVERRIDE;VN;-2;Khmer Rouge vs Vietnam - historic hostility
+#-- Fall of Saigon, North VN wins:
+1975;18;VN;SET_RELATIONS_OVERRIDE;USSR;4;Unified Vietnam - Soviet alignment cemented
+1975;18;VN;JOIN_BLOCK;COMECON;;Vietnam joins Soviet economic bloc
+#-- Mozambique Gains Independence, Soviet Orbit:
+1975;26;MZ;SET_RELATIONS_OVERRIDE;USSR;2;Mozambique FRELIMO - Soviet alignment
+1975;26;MZ;SET_RELATIONS_OVERRIDE;ZW;-2;Mozambique vs Rhodesia - liberation war support
+1975;26;MZ;SET_RELATIONS_OVERRIDE;ZA;-2;Mozambique vs South Africa - ANC sanctuary
+#-- Papua New Guinea Independence:
+1975;38;PG;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Papua New Guinea independence
+1975;38;PG;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;3;PNG-Australia close post-independence ties
+#-- Angola Independence:
+1975;46;AO;SET_RELATIONS_OVERRIDE;PT;0;Angola independence
+1975;46;AO;SET_RELATIONS_OVERRIDE;USSR;2;MPLA Soviet alignment - Angola civil war
+1975;46;AO;SET_RELATIONS_OVERRIDE;CU;3;Cuban troops support MPLA in Angola
+1975;46;AO;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;US backs UNITA vs MPLA
+1975;46;AO;SET_RELATIONS_OVERRIDE;ZA;-3;South Africa invades Angola - Operation Savannah
+#-- Egypt Exits Soviet Friendship treaty:
+1976;1;EG;SET_RELATIONS_OVERRIDE;USSR;-2;Egypt abrogates Soviet friendship treaty
+#-- US-Backed Argentina Coup:
+1976;13;AR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Videla junta - US-backed military regime
+1976;13;AR;SET_RELATIONS_OVERRIDE;USSR;-2;Argentina anti-communist junta
+1976;13;AR;SET_RELATIONS_OVERRIDE;CU;-3;Argentina breaks with Cuba
+#-- ZA Civil unrest:
+1976;25;ZA;SET_RELATIONS_OVERRIDE;NAM;-3;Soweto - NAM intensifies anti-apartheid stance
+1976;25;ZA;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-3;Soweto - UK public pressure peaks on apartheid
+1976;25;ZA;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-2;Australia intensifies anti-apartheid stance
+#-- Seychelles Independence:
+1977;26;SC;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Seychelles independence
+#-- Entebbe Raid:
+1976;27;IL;SET_RELATIONS_OVERRIDE;UG;-3;Entebbe raid - Israel vs Amin's Uganda
+#-- SEATO Dissolved:
+1977;26;SEATO;DISSOLVE_BLOCK;;;SEATO dissolved - post-Vietnam irrelevance
+#-- Djobouti Independence:
+1977;26;DJ;LEAVE_BLOCK;FRENCH_COMMUNITY;;Djibouti independence
+1977;26;DJ;LEAVE_BLOCK;FRENCH_EQUATORIAL_AFRICA;;Djibouti leaves FEA
+1977;26;DJ;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;3;France retains Djibouti base - close post-independence ties
+#-- Ogaden War (Ethiopia-Somalia Proxy):
+1977;29;SO;SET_RELATIONS_OVERRIDE;ET;-3;Ogaden War - Somalia invades Ethiopia
+1977;29;SO;SET_RELATIONS_OVERRIDE;USSR;-2;USSR abandons Somalia for Ethiopia
+1977;29;SO;SET_RELATIONS_OVERRIDE;CU;-2;Cuba switches to Ethiopia side
+1977;29;SO;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;US fills vacuum - backs Somalia
+1977;29;SO;SET_RELATIONS_OVERRIDE;CN;1;China backs Somalia vs Soviet-aligned Ethiopia
+1977;29;SO;SET_RELATIONS_OVERRIDE;SA;1;Saudi Arabia backs Somalia
+1977;29;SO;SET_RELATIONS_OVERRIDE;EG;1;Egypt backs Somalia post-Sadat flip
+1977;29;ET;SET_RELATIONS_OVERRIDE;USSR;3;USSR massively backs Ethiopia in Ogaden
+1977;29;ET;SET_RELATIONS_OVERRIDE;CU;3;Cuba deploys troops to Ethiopia
+1977;29;ET;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Ethiopia expels US after Soviet alignment
+#-- US-Panama Normalisation:
+1977;36;PA;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Panama Canal treaties - US-Panama normalisation
+#-- Sadat Visits Jerusalem:
+1977;47;EG;SET_RELATIONS_OVERRIDE;IL;-1;Sadat Jerusalem visit - Egypt-Israel dialogue begins
+1977;47;ARAB_LEAGUE;SET_BLOCK_RELATIONS;EG;-2;Arab League anger at Sadat Jerusalem visit
+#-- Saur Revolution in Afghanistan:
+1978;17;AF;SET_RELATIONS_OVERRIDE;USSR;3;Saur Revolution - Afghanistan full Soviet alignment
+1978;17;AF;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-3;Afghanistan communist regime vs US
+1978;17;AF;SET_RELATIONS_OVERRIDE;PK;-2;Afghanistan-Pakistan tension over Pashtun and refugees
+#-- Solomon Island Independence:
+1978;27;SB;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Solomon Islands independence
+#-- CN-JP Peace Treaty:
+1978;32;CN;SET_RELATIONS_OVERRIDE;JP;0;China-Japan Peace Treaty - full normalisation
+1978;32;USSR;SET_RELATIONS_OVERRIDE;JP;-2;Soviet alarm at China-Japan anti-hegemony clause
+#-- Camp David Accords:
+1978;37;EG;SET_RELATIONS_OVERRIDE;IL;2;Camp David - Egypt-Israel peace framework
+1978;37;EG;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Camp David - Egypt becomes key US ally
+1978;37;ARAB_LEAGUE;SET_BLOCK_RELATIONS;EG;-3;Arab League isolates Egypt over Camp David
+1978;37;IL;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Camp David cements US-Israel special relationship
+#-- Dominica Independence:
+1978;44;DM;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Dominica independence
+1978;44;DM;JOIN_BLOCK;CARICOM;;Dominica joins CARICOM
+#-- Deng Xiaoping Reforms:
+1978;49;CN;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Deng reforms - China opens to Western investment
+1978;49;CN;SET_RELATIONS_OVERRIDE;JP;2;Deng reforms - Japan major investment partner
+1978;49;CN;SET_RELATIONS_OVERRIDE;EEC;2;Deng reforms - European economic engagement
+#-- US-TW Deterioration:
+1978;50;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;TW;0;US severs official Taiwan ties for PRC recognition
+#-- Beagle Channel Crisis:
+1978;50;AR;SET_RELATIONS_OVERRIDE;CL;-2;Beagle Channel - near-war over islands
+#-- Vietnamese invasion of Cambodia:
+1978;52;VN;SET_RELATIONS_OVERRIDE;KH;-3;Vietnam invades Cambodia - overthrows Khmer Rouge
+1978;52;VN;SET_RELATIONS_OVERRIDE;CN;-3;Vietnam-China split - invasion of Chinese client
+1978;52;KH;SET_RELATIONS_OVERRIDE;USSR;-3;Khmer Rouge vs Soviet-backed Vietnam
+1978;52;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-2;US backs Khmer Rouge UN seat vs Vietnam
+1978;52;GB_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-2;UK diplomatic support for Khmer Rouge UN seat
+1978;52;FR_DOMESTIC;SET_RELATIONS_OVERRIDE;VN;-2;France supports Khmer Rouge UN seat
+1978;52;TH;SET_RELATIONS_OVERRIDE;VN;-3;Thailand hosts Khmer Rouge - Vietnamese threat
+#-- Iranian Revolution:
+1979;3;IR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-3;Iranian Revolution - US-Iran total break
+1979;3;IR;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;-2;Iran expels British influence
+1979;3;IR;SET_RELATIONS_OVERRIDE;USSR;-1;Iran - Soviet Union uneasy neighbours
+1979;3;IR;LEAVE_BLOCK;OPEC;;Iran OPEC membership suspended during revolution
+1979;5;IR;SET_RELATIONS_OVERRIDE;IL;-3;Islamic Republic - Iran vs Israel total break
+1979;5;IR;SET_RELATIONS_OVERRIDE;SA;-2;Iran-Saudi sectarian rivalry begins
+1979;5;IR;SET_RELATIONS_OVERRIDE;IQ;-2;Iran-Iraq sectarian tension under Khomeini
+1979;5;ARAB_LEAGUE;SET_BLOCK_RELATIONS;IR;-1;Arab League unease at Iranian Islamic Revolution
+1979;5;IR;JOIN_BLOCK;OPEC;;Iran rejoins OPEC under Islamic Republic
+#-- Egypt-Israel Peace Treaty, Kicked out from Arab League:
+1979;13;EG;SET_RELATIONS_OVERRIDE;IL;3;Egypt-Israel Peace Treaty - full normalisation
+1979;15;EG;LEAVE_BLOCK;ARAB_LEAGUE;;Egypt suspended from Arab League
+#-- SALT 2 Deal Fails:
+1979;25;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;USSR;-1;SALT II signed - last détente gesture
+#-- Sadam comes to Power in IQ:
+1979;29;IQ;SET_RELATIONS_OVERRIDE;IR;-3;Saddam vs Khomeini - Iraq-Iran total hostility
+1979;29;IQ;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Saddam - US tacit support vs Iran
+1979;29;IQ;SET_RELATIONS_OVERRIDE;USSR;1;Iraq-Soviet arms relationship continues
+#-- Sandinista Victory in Nicaragua:
+1979;29;NI;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;-2;Sandinista revolution - anti-American alignment
+1979;29;NI;SET_RELATIONS_OVERRIDE;USSR;2;Nicaragua-Soviet alignment
+1979;29;NI;SET_RELATIONS_OVERRIDE;CU;3;Nicaragua-Cuba revolutionary solidarity
+#-- Operation Baraccuda:
+1979;45;CF;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;3;France reinstalls Dacko - CAR firmly in French orbit
+#-- Lancaster House Agreement. End of Rhodesia:
+1979;50;ZW;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;0;Lancaster House - Rhodesia sanctions lifted
+#-- Soviet Invasion of Afghanistan:
+1979;52;USSR;SET_BLOCK_RELATIONS;AF;3;Soviet invasion - Afghanistan becomes Soviet client
+1979;52;USA_DOMESTIC;SET_RELATIONS_OVERRIDE;USSR;-3;Soviet Afghanistan invasion - détente ends
+1979;52;PK;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;Pakistan hosts mujahideen - key US partner
+1979;52;CN;SET_RELATIONS_OVERRIDE;USSR;-3;China condemns Soviet Afghanistan invasion
+1979;52;SA;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Saudi Arabia funds mujahideen with US
+#-- UK-Zimbabwe rapprochement:
+1980;16;ZW;SET_RELATIONS_OVERRIDE;GB_DOMESTIC;2;Zimbabwe independence - Commonwealth re-engagement
+1980;16;ZW;SET_RELATIONS_OVERRIDE;ZA;-2;Mugabe vs apartheid South Africa
+1980;16;ZW;SET_RELATIONS_OVERRIDE;MZ;3;Zimbabwe-Mozambique liberation war solidarity
+#-- 

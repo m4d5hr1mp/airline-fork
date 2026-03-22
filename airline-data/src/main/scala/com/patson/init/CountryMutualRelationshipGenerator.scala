@@ -11,30 +11,169 @@ object CountryMutualRelationshipGenerator extends App {
    *
    * Some relations set in the computation function!
    */
-  lazy val OECDish = List("CA","US","FR","DE","AT","CH","IT","GB","ES","NL","BE","PL","DK","SE","IE","JP","KR","AU","SG")
+  // ---------------------------------------------------------------------------
+  // 1955 world-start blocs
+  // ---------------------------------------------------------------------------
+
+  // OEEC (precursor to OECD) — Jan 1 1955 members
+  lazy val OEEC_1955 = List("AT","BE","DK","FR","DE","GR","IS","IE","IT","LU","NL","NO","PT","SE","CH","TR","GB")
+
+  // NATO — Jan 1 1955 members (DE joins May 1955, handled by chronological patcher)
+  lazy val NATO_1955 = List("US","CA","GB","FR","BE","NL","DK","NO","IS","IT","PT","LU","GR","TR")
+
+  // Baghdad Pact — full member list (signed Feb 1955, US is backer but not a member)
+  lazy val BAGHDAD_PACT = List("IQ","TR","IR","PK","GB")
+
+  // SEATO — Jan 1 1955 members
+  lazy val SEATO_1955 = List("US","GB","FR","AU","NZ","PH","TH","PK")
+
+  // Commonwealth Anglo Dominions — fully sovereign, cultural/linguistic unity with GB
+  // ZA included: white-minority governed in 1955
+  lazy val COMMONWEALTH_ANGLO_DOMINIONS = List("GB","CA","AU","NZ","ZA","HK")
+
+  // Non-Anglo Dominions — sovereign, border exists, handled via FRIENDSHIPS
+  lazy val COMMONWEALTH_NON_ANGLO_DOMINIONS = List("IN","PK","LK")
+
+  // Self-governing colonies — substantial autonomy, not yet independent
+  lazy val EMPIRE_SELF_GOV_ZW = List("ZW")          // Rhodesia — Anglo settlers, +4 with GB
+  lazy val EMPIRE_SELF_GOV    = List("MY","SG")     // Malaya/Singapore — +3 with GB
+
+  // Crown colonies and protectorates — directly governed by the Crown
+  lazy val EMPIRE_CROWN_COLONIES = List(
+    "KE","UG","TZ","ZM","MW","NG","GH","SL","GM","BW","LS","SZ",  // Africa
+    "JM","TT","BB","GY","BZ",                                       // Caribbean
+    "FJ","SB","PG",                                                 // Pacific
+    "CY","MT"                                                       // Mediterranean
+  )
+
+  // Domestic markets — no customs border +5
+  lazy val USA_DOMESTIC = List("US","PR","VI","GU","AS","MP","MH","FM","PW")
+  lazy val GB_DOMESTIC  = List("GB","GI","FK","SH","TC","KY","BM","VG","MS","AI","IM","JE","GG")
+  lazy val FR_DOMESTIC  = List("FR","GF","GP","MQ","RE","PM","BL","MF","NC","PF","WF","YT","TF")
+  lazy val NL_DOMESTIC  = List("NL","AW","CW","SX","BQ")
+
+  // AU domestic territories — Norfolk, Christmas, Cocos Islands
+  lazy val AU_DOMESTIC = List("AU","NF","CX","CC")
+
+  // NZ domestic territories
+  lazy val NZ_DOMESTIC = List("NZ","CK","NU","TK")
+
+  // Nauru — joint AU/NZ/GB mandate
+  lazy val NAURU_MANDATE = List("AU","NZ","GB","NR")
+
+  // Papua New Guinea — Australian administered, +4 (not domestic)
+  lazy val AU_PNG = List("AU","PG")
+
+  // Western Samoa — NZ mandate until 1962, +4 (not domestic)
+  lazy val NZ_SAMOA = List("NZ","WS")
+
+  // ANZUS — mutual defence treaty 1951
+  lazy val ANZUS = List("US","AU","NZ")
+
+  // ---------------------------------------------------------------------------
+  // Communist bloc
+  // ---------------------------------------------------------------------------
+
+  // USSR domestic — all successor state codes, single customs/travel space
+  lazy val USSR_DOMESTIC = List("RU","UA","BY","KZ","UZ","TJ","TM","KG","AZ","AM","GE","EE","LV","LT","MD")
+
+  // Yugoslavia domestic — single nation under Tito
+  lazy val YUGO_DOMESTIC = List("RS","HR","BA","SI","MK","ME")
+
+  // Czechoslovakia domestic — single nation
+  lazy val CZECHO_DOMESTIC = List("CZ","SK")
+
+  // Warsaw Pact — USSR bloc + satellites (AL was founding member in 1955)
+  lazy val WARSAW_PACT = List("RU","UA","BY","KZ","UZ","TJ","TM","KG","AZ","AM","GE","EE","LV","LT","MD",
+                               "PL","CZ","SK","HU","RO","BG","AL")
+
+  // ---------------------------------------------------------------------------
+  // Non-Aligned Movement — Bandung 1955
+  // ---------------------------------------------------------------------------
+
+  // NAM inner circle — Tito, Nehru, Nasser, Sukarno, Nkrumah
+  lazy val NAM_CORE = List("RS","IN","EG","ID","GH")
+
+  // French protectorates in MENA — nominally sovereign, France controls foreign policy
+  lazy val FR_MENA_PROTECTORATES = List("MA","TN")
+
+  // French Sub-Saharan Africa — full colonies, franc zone
+  lazy val FR_AFRICA = List(
+    "SN","ML","GN","CI","BF","NE","BJ","TD","CF","CG","GA","CM","DJ","MG","KM","TG"
+  )
+
+  // ---------------------------------------------------------------------------
 
   lazy val AFFILIATIONS = List(
 
-    Affiliation("OECD Allies", 3, OECDish),
+    // --- 1955 world-start blocs ---
 
-    Affiliation("EU", 4, List(
-      "BE", "GR", "LT", "PT", "BG", "ES", "LU", "RO", "CZ", "FR", "HU", "SI", "DK", "HR", "MT", "SK", "DE", "IT", "NL", "FI", "EE", "CY", "AT", "SE", "IE", "LV", "PL"
-    )),
-    Affiliation("Scandinavia / NATO", 4, List("DK","NO","SE","FI","IS") ++ List(
-      "IE", "GB", "NL", "BE", "DE", "PL", "ES", "PT", "GR", "IT", "US", "CA"
-    )),
+    Affiliation("OEEC", 2, OEEC_1955),
 
-    //French Territories and Overseas Departments:
-    Affiliation("France", 4, List(
-      "FR", "GF", "GP", "MF", "MQ", "PM", "BL"
-    )),
-    Affiliation("France Pacific", 4, List(
-      "FR", "RE", "NC", "PF"
-    )),
+    Affiliation("NATO 1955", 3, NATO_1955),
 
-    //other UK territories are one-one relationships
-    Affiliation("UK Caribbean", 4, List(
-      "GB", "TC", "KY", "BM", "VG", "MS", "AI", "BM"
+    Affiliation("Baghdad Pact", 2, BAGHDAD_PACT),
+
+    Affiliation("SEATO", 1, SEATO_1955),
+
+    // Anglo Dominions + HK — full cultural/political unity
+    Affiliation("Commonwealth Anglo", 4, COMMONWEALTH_ANGLO_DOMINIONS),
+
+    // Rhodesia (self-governing, Anglo settlers) — +4 with GB, +2 with Anglo Dominions
+    Affiliation("Empire Rhodesia", 4, "GB" :: EMPIRE_SELF_GOV_ZW),
+    Affiliation("Empire Rhodesia Commonwealth", 2, List("CA","AU","NZ","ZA") ++ EMPIRE_SELF_GOV_ZW),
+
+    // Self-governing colonies — +3 with GB, +2 with Anglo Dominions
+    Affiliation("Empire Self-Gov", 3, "GB" :: EMPIRE_SELF_GOV),
+    Affiliation("Empire Self-Gov Commonwealth", 2, List("CA","AU","NZ","ZA") ++ EMPIRE_SELF_GOV),
+
+    // Crown colonies — +2 with GB, +1 with Anglo Dominions (no inter-colony boost)
+    Affiliation("Empire Crown GB", 2, "GB" :: EMPIRE_CROWN_COLONIES),
+    Affiliation("Empire Crown Commonwealth", 1, List("CA","AU","NZ","ZA") ++ EMPIRE_CROWN_COLONIES),
+
+    // Domestic markets
+    Affiliation("USA Domestic", 5, USA_DOMESTIC),
+    Affiliation("GB Domestic",  5, GB_DOMESTIC),
+    Affiliation("FR Domestic",  5, FR_DOMESTIC),
+    Affiliation("NL Domestic",  5, NL_DOMESTIC),
+    Affiliation("AU Domestic",  5, AU_DOMESTIC),
+    Affiliation("NZ Domestic",  5, NZ_DOMESTIC),
+
+    // Nauru mandate — +4 with AU, NZ, GB
+    Affiliation("Nauru Mandate", 4, NAURU_MANDATE),
+
+    // Papua New Guinea — AU administered +4
+    Affiliation("AU PNG", 4, AU_PNG),
+
+    // Western Samoa — NZ mandate +4
+    Affiliation("NZ Samoa", 4, NZ_SAMOA),
+
+    // ANZUS — mutual defence +3
+    Affiliation("ANZUS", 3, ANZUS),
+
+    // --- Communist bloc ---
+
+    Affiliation("USSR Domestic",   5, USSR_DOMESTIC),
+    Affiliation("Yugo Domestic",   5, YUGO_DOMESTIC),
+    Affiliation("Czecho Domestic", 5, CZECHO_DOMESTIC),
+    Affiliation("Warsaw Pact",     3, WARSAW_PACT),
+
+    // --- NAM ---
+
+    Affiliation("NAM Core", 2, NAM_CORE),
+
+    // French protectorates in MENA — +3 with FR
+    Affiliation("France MENA", 3, "FR" :: FR_MENA_PROTECTORATES),
+
+    // French Sub-Saharan Africa — +2 with FR, +1 among themselves (franc zone)
+    Affiliation("France Africa GB", 2, "FR" :: FR_AFRICA),
+    Affiliation("France Africa Intra", 1, FR_AFRICA),
+
+    // --- existing entries below ---
+
+    // US-Caribbean Relations Boost:
+    Affiliation("US Anglo Caribbean", 3, List(
+      "US", "CA", "PR", "BM", "AW", "AG", "BB", "BS", "GY", "JM", "KY", "TC", "TT", "VG", "VI"
     )),
 
     // Denmark Dependants:
@@ -42,425 +181,138 @@ object CountryMutualRelationshipGenerator extends App {
       "DK", "GL", "FO"
     )),
 
-    // Dutch Dependants:
-    Affiliation("Netherlands", 5, List(
-      "NL", "AW", "CW", "SX"
-    )),
+    // ANZAC — AU and NZ close relationship, extends to their shared dependencies
+    Affiliation("ANZAC common market", 4, List("AU","NZ","CK","NU","WS","PG")),
 
-    // US-Caribbean Relations Boost:
-    Affiliation("US Anglo Caribbean", 3, List(
-      "US", "CA", "PR", "BM", "AW", "AG", "BB", "BS", "GY", "JM", "KY", "TC", "TT", "VG", "VI"
-    )),
-
-    //US Caribbean Territories:
-    Affiliation("US", 4, List(
-      "US", "VI", "PR"
-    )),
-
-    // US Pacific Territories:
-    Affiliation("US Pacific", 4, List(
-      "US", "MH", "FM", "AS", "GU", "MP", "PW"
-    )),
-
-    // NAFTA Relations:
-    Affiliation("NAFTA", 4, List(
-      "US", "CA", "MX", "PR"
-    )),
-
-    // US-Central America Boosts:
-    Affiliation("COFTA", 3, List(
-      "US", "GT", "HN", "SV", "NI", "PR", "DO"
-    )),
-
-    // NZ Dependeants:
-    Affiliation("NZ", 5, List(
-      "NZ", "CK", "NU"
-    )),
-
-    // ANZAC:
-    Affiliation("ANZAC common market", 4, List(
-      "AU", "NZ", "CK", "NU"
-    )),
-
-    // Commonwealth:
-    Affiliation("Commonwealth", 4, List(
-      "GB", "CA", "AU", "NZ", "HK"
-    )),
-
-    // Arab Free Trade Area:
-    Affiliation("Arab Free Trade Area", 2, List(
-      "SA", "EG", "BH", "QA", "AE", "KW", "JO", "LB", "OM", "SD", "IQ", "LY", "MA", "TN", "SY"
-    )),
-
-    // Gulf Council Plus:
-    Affiliation("GCC+", 4, List(
-      "SA", "EG", "BH", "QA", "AE", "KW", "JO", "OM"
-    )),
-
-    // East-African Union:
-    Affiliation("EAC", 3, List(
-      "KE", "UG", "SS", "RW", "BI", "TZ"
-    )),
-
-    // Comunidad Andiana:
-    Affiliation("Comunidad Andina", 3, List(
-      "BO", "EC", "PE", "CO"
-    )),
-
-    // ALBA:
-    Affiliation("ALBA", 3, List(
-      "VE", "CU", "BO", "NI"
-    )),
-
-//    Affiliation("ECOWAS", 2, List(
-//      "BJ", "BF", "CV", "CI", "GM", "GH", "GN", "GW", "LR", "NE", "NG", "SN", "TG"
-//    )),
-//    Affiliation("ECCAS", 2, List(
-//      "AO", "BI", "CM", "TD", "CD", "GQ", "GA", "CG", "RW", "ST"
-//    )),
-
-    Affiliation("SADC+", 3, List(
-      "ZA", "BW", "SZ", "LS", "NA", "ZM", "ZW", "AO"
-    )),
-    Affiliation("SADC", 4, List(
-      "ZA", "BW", "SZ", "LS", "NA"
-    )),
-
-    // ASEAN:
-    Affiliation("ASEAN", 3, List(
-      "BN", "KH", "ID", "LA", "MY", "PH", "SG", "TH", "VN"
-    )),
-
-    // China Autonomous Regions:
-    Affiliation("China", 4, List(
-      "CN", "HK", "MO"
-    )),
-
-    // CIS Countries:
-    Affiliation("CIS", 3, List(
-      "RU", "BY", "KZ", "KG", "TJ", "UZ", "AZ", "AM"
-    ))
   )
 
   // These are per-country mutual relations modifications:
-  lazy val FRIENDSHIPS = List(
-    //pacific
-    Relation("AU", Direction.BI, 3, List(
-      "SG","TH","ID","PH"
-    )),
-    Relation("NZ", Direction.BI, 3, List(
-      "SG","ID","JP"
-    )),
-    Relation("NZ", Direction.BI, 4, List(
-      "AU","GB","DE","US","CA","JP","KR","MY","TH"
-    )),
-    Relation("FJ", Direction.BI, 2, List(
-      "AU", "NZ", "US", "FR", "WS", "TV", "TO", "KI", "MH"
-    )),
-    Relation("PG", Direction.BI, 2, List(
-      "AU", "GU", "PH", "JP", "CN"
-    )),
-    Relation("WS", Direction.BI, 4, List(
-      "AU", "NZ", "AS", "CK"
-    )),
-    Relation("PF", Direction.BI, 4, List(
-      "AU", "NZ", "CA", "US"
-    )),
-    Relation("FM", Direction.BI, 4, List(
-      "JP"
-    )),
-    Relation("GU", Direction.BI, 4, List(
-      "KR", "JP", "PH"
-    )),
-    Relation("FM", Direction.BI, 2, List(
-      "CN", "AU"
-    )),
-    Relation("AS", Direction.BI, 4, List(
-      "AU", "NZ", "US", "FR"
-    )),
-    Relation("KI", Direction.BI, 3, List(
-      "MH", "AU"
-    )),
-    Relation("NC", Direction.BI, 4, List(
-      "AU", "NZ", "AS", "US"
-    )),
-    Relation("NC", Direction.BI, 2, List(
-      "FJ", "VU"
-    )),
-    Relation("VU", Direction.BI, 4, List(
-      "FR", "AS"
-    )),
-    //e-asia
-    Relation("CN", Direction.BI, 4, List(
-      "KH", "PK", "RU"
-    )),
-    Relation("CN", Direction.BI, 2, List(
-      "KP", "ET", "DJ", "HU", "VN", "IR", "SG", "MY", "MM", "NP"
-    )),
-    Relation("HK", Direction.BI, 4, List(
-      "US"
-    )),
-    Relation("HK", Direction.BI, 3, List(
-      "KR", "JP"
-    )),
-    Relation("JP", Direction.BI, 2, List(
-      "PE", "BR", "IN", "VN", "TH", "FJ", "PG", "SB"
-    )),
-    Relation("KR", Direction.BI, 4, List(
-      "SG", "TW", "US"
-    )),
-    Relation("KR", Direction.BI, 3, List(
-      "JP"
-    )),
-    Relation("KR", Direction.BI, 2, List(
-      "MY", "TH", "VN"
-    )),
-    Relation("TW", Direction.BI, 4, List(
-      "NL","CA","US","JP","HK"
-    )),
-    Relation("TW", Direction.BI, 3, List(
-      "DE","GB","JP","KR","SG","AU"
-    )),
-    //se-asia
-    Relation("ID", Direction.BI, 3, List(
-      "AU", "NZ", "JP"
-    )),
-    Relation("ID", Direction.BI, 2, List(
-      "IN", "CN", "KR", "AE", "SA", "NL"
-    )),
-    Relation("PH", Direction.BI, 3, List(
-      "US", "JP"
-    )),
-    Relation("PH", Direction.BI, 2, List(
-      "KR", "AU", "AE", "SA"
-    )),
-    Relation("VN", Direction.BI, 2, List(
-      "TW", "JP", "DE", "SA", "GB"
-    )),
-    Relation("TH", Direction.BI, 3, List(
-      "CN", "JP", "KR", "US"
-    )),
-    Relation("TH", Direction.TO, 2, List(
-      "RU","IL","FR","DE","GB","NL","BE","DK","SE","NO","FI","AU","NZ","US"
-    )),
-    Relation("MY", Direction.TO, 2, List(
-      "RU", "IL", "FR", "DE", "GB", "NL", "BE", "DK", "SE", "NO", "FI", "AU", "NZ", "US", "JP", "TW", "KR"
-    )),
-    //south-asia
-    Relation("IN", Direction.BI, 4, List(
-      "BT"
-    )),
-    Relation("IN", Direction.BI, 3, List(
-      "NP", "LK", "BD", "AE"
-    )),
-    Relation("IN", Direction.BI, 2, List(
-      "GB", "FR", "MY", "MM", "US", "CA", "SG", "SA", "KW", "OM", "QA", "PH", "ID", "JP", "ZA", "KR"
-    )),
-    Relation("IN", Direction.BI, 1, List(
-      "KE", "IL", "AF", "RU"
-    )),
-    Relation("BD", Direction.BI, 2, List(
-      "SG", "MY", "AE", "SA", "GB", "US", "CA", "CN", "IT"
-    )),
-    Relation("PK", Direction.BI, 2, List(
-      "AE", "SA", "GB", "US"
-    )),
-    //w-asia
-    Relation("GE", Direction.BI, 3, List(
-      "IL", "TR", "UA", "AE", "AZ", "DE"
-    )),
-    //europe
-    Relation("RU", Direction.BI, 2, List(
-      "EG", "KP", "TM", "IR", "SA", "ZA"
-    )),
-    Relation("TR", Direction.BI, 4, List(
-      "AZ"
-    )),
-    Relation("TR", Direction.BI, 3, OECDish ++ List(
-      "QA", "KZ", "UZ"
-    )),
-    Relation("TR", Direction.BI, 2, List(
-      "RU", "UA", "GE", "IQ", "IR", "PK"
-    )),
-    Relation("GR", Direction.TO, 3, List(
-      "DE", "BG", "GB", "IT", "FR"
-    )),
-    Relation("RS", Direction.BI, 2, List(
-      "DE", "FR", "RU", "TR", "RO", "CY"
-    )),
-    Relation("BA", Direction.BI, 2, List(
-      "DE", "FR", "IT", "HU"
-    )),
-    Relation("FR", Direction.BI, 4, List(
-      "GB", "US", "CA"
-    )),
-    Relation("FR", Direction.BI, 2, List(
-      "TN", "DZ", "DJ", "MA", "SN", "CI"
-    )),
-    Relation("IT", Direction.BI, 2, List(
-      "TN", "MA", "DZ", "IL"
-    )),
-    Relation("CH", Direction.BI, 4, List(
-      "FR","DE","AT","IT","ES","NL","BE","DK","SE"
-    )),
-    Relation("SH", Direction.BI, 3, List(
-      "FK", "NA"
-    )),
-    Relation("GB", Direction.BI, 4, List(
-      "AU", "NZ"
-    )),
-    Relation("PT", Direction.BI, 3, List(
-      "CV"
-    )),
-    //mena
-    Relation("IL", Direction.BI, 1, List(
-      "IN", "RO", "PL", "GB"
-    )),
-    Relation("IL", Direction.BI, 3, List(
-      "CA", "US", "BG", "SG"
-    )),
-    Relation("SA", Direction.BI, 1, List(
-      "SG", "CN", "IN", "BD", "NG"
-    )),
-    Relation("SA", Direction.BI, 2, List(
-      "BN", "DZ", "LY", "TR", "TN"
-    )),
-    Relation("SA", Direction.BI, 3, List(
-      "MY", "PK"
-    )),
-    Relation("AE", Direction.BI, 3, List(
-      "MY", "SG", "IN", "PK", "LY"
-    )),
-    Relation("QA", Direction.BI, 3, List(
-      "MY", "SG", "IN", "PK", "LY"
-    )),
-    Relation("EG", Direction.BI, 2, List(
-      "DE", "FR", "UA", "IT", "GB", "LY"
-    )),
-    Relation("TN", Direction.BI, 3, List(
-      "FR", "LY", "AE", "SA"
-    )),
-    Relation("MA", Direction.BI, 4, List(
-      "EH"
-    )),
-    Relation("MA", Direction.BI, 3, List(
-      "FR", "ES", "GB", "DE", "US"
-    )),
-    //africa, sub
-    Relation("ZA", Direction.BI, 2, List(
-      "ZW", "MZ", "GB", "DE", "US", "AU", "MW", "IN", "TZ", "KE", "CN", "TZ", "ET"
-    )),
-    Relation("AO", Direction.BI, 2, List(
-      "PT", "MZ", "CV", "KE", "ET", "NG"
-    )),
-    Relation("TZ", Direction.BI, 2, List(
-      "MW", "MZ", "ZA", "ZW", "KM"
-    )),
-    Relation("ET", Direction.BI, 4, List(
-      "DJ"
-    )),
-    Relation("ET", Direction.BI, 2, List(
-      "EG", "CN", "UG", "RW", "AE"
-    )),
-    Relation("ET", Direction.BI, 1, List(
-      "IT", "SD", "US", "KE"
-    )),
-    //americas
-    Relation("US", Direction.BI, 4, List(
-      "JP", "KR", "TW", "AU", "NZ", "BM", "BS"
-    )),
-    Relation("US", Direction.BI, 3, List(
-      "KW", "QA"
-    )),
-    Relation("US", Direction.BI, 2, List(
-      "AE", "AR"
-    )),
-    Relation("US", Direction.BI, 1, List(
-      "SA", "EG"
-    )),
-    Relation("GP", Direction.BI, 4, List(
-      "CA", "US", "PR"
-    )),
-    Relation("MQ", Direction.BI, 4, List(
-      "CA", "US", "PR"
-    )),
-    Relation("CO", Direction.BI, 3, List(
-      "US", "PE", "EC", "PA", "CL"
-    )),
-    Relation("CO", Direction.BI, 2, List(
-      "MX", "BR", "BO", "ES"
-    )),
-    Relation("VE", Direction.BI, 2, List(
-      "IR", "RU", "BR", "CN"
-    )),
-    Relation("PE", Direction.BI, 2, List(
-      "CL", "BO", "EC", "CO", "MX", "US", "CN", "JP", "ES"
-    )),
-    Relation("BR", Direction.BI, 3, List(
-      "PT", "AR", "BO", "PY", "UY", "PE", "CL"
-    )),
-    Relation("BR", Direction.BI, 2, List(
-      "BO", "CO", "MX", "US", "CN", "ZA", "AO", "JP", "DE", "CV"
-    )),
-    Relation("BR", Direction.BI, 1, List(
-      "IN", "FR"
-    )),
-    Relation("AR", Direction.BI, 2, List(
-      "UY", "PY", "ES"
-    )),
-    Relation("CL", Direction.BI, 3, List(
-      "PE","AR","US","CA","PA" //chile has FTAs with everyone
-    )),
-    Relation("CL", Direction.BI, 2, List(
-      "MX", "JP", "KR", "CN", "HK", "AU", "NZ", "ES"
-    )),
-  )
-  lazy val ENMITIES = List(
-    Relation("KP", Direction.BI, -3, OECDish),
-    Relation("KP", Direction.BI, -2, List(
-      "BN", "KH", "ID", "LA", "MY", "PH", "SG", "TH", "VN", "BR", "IN", "ZA", "TR"
-    )),
-    // Since We're using pre-2022 Geopolitics snapshot -> RU-UA relations at -1, travel permited with some issues.
-    Relation("RU", Direction.BI, -1, List(
-      "UA"
-    )),
-    Relation("BY", Direction.BI, -2, OECDish ++ List(
-      "EE", "LT", "LV"
-    )),
-    Relation("IR", Direction.BI, -1, OECDish ++ List(
-      "EG", "PK"
-    )),
-    Relation("IR", Direction.BI, -3, List(
-      "SA"
-    )),
-    Relation("IL", Direction.BI, -2, List(
-      "IQ", "YE", "LY", "SD", "KW", "SA", "EG"
-    )),
-    Relation("IL", Direction.BI, -3, List(
-      "IR", "SY", "LB"
-    )),
-    Relation("PK", Direction.BI, -2, List(
-      "IN", "IR"
-    )),
-    Relation("TR", Direction.BI, -1, List(
-      "GR", "CY", "AM"
-    )),
-    Relation("US", Direction.BI, -3, List(
-      "IR", "CU"
-    )),
-    Relation("CN", Direction.BI, 0, List(
-      "KR"
-    )),
-    Relation("CN", Direction.BI, -1, List(
-      "US", "IN", "AU", "JP", "TW"
-    )),
-    Relation("AM", Direction.BI, -3, List(
-      "AZ"
-    )),
-    Relation("VE", Direction.TO, -1, List(
-      "US", "CO", "GY", "SR", "AR"
-    ))
-  )
+  lazy val FRIENDSHIPS: List[Relation] =
+    List(
+      // US backing of Baghdad Pact (not a member — TR and GB already covered at +3 by NATO)
+      Relation("US", Direction.BI, 1, List("IQ","IR","PK")),
+
+      // Non-Anglo Dominions — sovereign border exists, +2 with GB only
+      Relation("GB", Direction.BI, 2, COMMONWEALTH_NON_ANGLO_DOMINIONS),
+
+      // --- Communist bloc bilaterals ---
+
+      Relation("CN", Direction.BI, 2, List("PK")),
+      Relation("CN", Direction.BI, 4, List("KP")),
+      Relation("RU", Direction.BI, 4, List("KP")),
+      Relation("CN", Direction.BI, 3, List("VN")),
+      Relation("RU", Direction.BI, 2, List("VN")),
+
+      // --- NAM bilaterals ---
+
+      Relation("IN", Direction.BI, 1, USSR_DOMESTIC),
+      Relation("EG", Direction.BI, 1, USSR_DOMESTIC),
+      Relation("EG", Direction.BI, 1, List("GB")),
+      Relation("EG", Direction.BI, 1, List("US")),
+
+      // France — Levant mandate legacy + core Western allies
+      Relation("FR", Direction.BI, 3, List("LB")),
+      Relation("FR", Direction.BI, 1, List("SY")),
+      Relation("FR", Direction.BI, 4, List("GB","US","CA")),
+      Relation("FR", Direction.BI, 2, List("TN","DZ","MA","SN","CI","DJ")),
+
+      // Italy — colonial and Mediterranean ties
+      Relation("IT", Direction.BI, 2, List("LY","IL")),
+
+      // Europe
+      Relation("CH", Direction.BI, 4, List("FR","DE","AT","IT","ES","NL","BE","DK","SE")),
+      Relation("GR", Direction.TO, 3, List("DE","GB","IT","FR")),
+
+      // Portugal colonial ties
+      Relation("PT", Direction.BI, 3, List("CV")),
+
+      // Pacific — French/US/AU/NZ administered territories
+      Relation("AS", Direction.BI, 4, List("AU","NZ","US","FR")),
+      Relation("NC", Direction.BI, 4, List("AU","NZ","AS","US")),
+      Relation("NC", Direction.BI, 2, List("FJ")),
+      Relation("PF", Direction.BI, 4, List("AU","NZ","CA","US")),
+      Relation("FJ", Direction.BI, 2, List("AU","NZ","US","FR")),
+      
+      // Saint Helena — British territory
+      Relation("SH", Direction.BI, 3, List("FK")),
+
+      // E/SE Asia
+      Relation("JP", Direction.BI, 2, List("PE","BR","TH")),
+      Relation("KR", Direction.BI, 4, List("US")),
+      Relation("KR", Direction.BI, 3, List("JP")),
+      Relation("TW", Direction.BI, 4, List("US")),
+      Relation("PH", Direction.BI, 3, List("US","JP")),
+      Relation("TH", Direction.BI, 3, List("JP","US")),
+      Relation("ID", Direction.BI, 2, List("IN","NL")),
+
+      // South Asia
+      Relation("IN", Direction.BI, 4, List("BT")),
+      Relation("IN", Direction.BI, 3, List("NP","LK")),
+      Relation("IN", Direction.BI, 2, List("GB","FR","US","CA","MM","AF")),
+      Relation("PK", Direction.BI, 2, List("SA","GB","US")),
+
+      // TR — NATO member, regional ties
+      Relation("TR", Direction.BI, 4, List("AZ")),
+      Relation("TR", Direction.BI, 2, List("IQ","IR","PK","UA","GE")),
+
+      // US key alliances
+      Relation("US", Direction.BI, 4, List("JP","KR","TW","AU","NZ")),
+      Relation("US", Direction.BI, 2, List("AR","CU","MX")),
+      Relation("US", Direction.BI, 1, List("SA","EG")),
+
+      // MENA
+      Relation("IL", Direction.BI, 3, List("CA","US")),
+      Relation("IL", Direction.BI, 1, List("IN","RO","PL","GB")),
+      Relation("SA", Direction.BI, 3, List("PK")),
+      Relation("SA", Direction.BI, 2, List("LY","TN","JO","LB")),
+      Relation("TN", Direction.BI, 2, List("LY")),
+      Relation("EG", Direction.BI, 2, List("LY")),
+      Relation("MA", Direction.BI, 3, List("FR","ES","GB","DE","US")),
+
+      // Americas
+      Relation("BR", Direction.BI, 3, List("PT","AR","BO","PY","UY","PE","CL")),
+      Relation("BR", Direction.BI, 2, List("CO","MX","US","JP","DE")),
+      Relation("CO", Direction.BI, 3, List("US","PE","EC","PA","CL")),
+      Relation("CO", Direction.BI, 2, List("MX","BR","BO")),
+      Relation("PE", Direction.BI, 2, List("CL","BO","EC","CO","MX","US","JP")),
+      Relation("CL", Direction.BI, 3, List("PE","AR","US","CA","PA")),
+      Relation("CL", Direction.BI, 2, List("MX","JP")),
+      Relation("AR", Direction.BI, 2, List("UY","PY")),
+
+      // Sub-Saharan Africa
+      Relation("ZA", Direction.BI, 2, List("ZW","GB","US","AU")),
+      Relation("ET", Direction.BI, 4, List("DJ")),
+      Relation("ET", Direction.BI, 1, List("US","GB")),
+  ) ++
+    // Yugoslavia bilaterals — all successor codes carry the relation
+    YUGO_DOMESTIC.map(c => Relation(c, Direction.BI, 1, USSR_DOMESTIC)) ++
+    YUGO_DOMESTIC.map(c => Relation(c, Direction.BI, 2, List("PL","CZ","SK","HU","RO","BG"))) ++
+    YUGO_DOMESTIC.map(c => Relation(c, Direction.BI, 1, List("CN"))) ++
+    YUGO_DOMESTIC.map(c => Relation(c, Direction.BI, 2, List("US","GB","FR")))
+
+  lazy val ENMITIES: List[Relation] =
+    List(
+      // --- 1955 Cold War enmities ---
+
+      Relation("KP", Direction.BI, -3, List("KR","US")),
+      Relation("CN", Direction.BI, -3, List("KR","US")),
+      Relation("CN", Direction.BI, -2, List("JP")),
+      Relation("KP", Direction.BI, -2, List("JP")),
+
+      Relation("FR", Direction.BI, -2, List("DZ")),
+      Relation("FR", Direction.BI, -1, List("VN")),
+
+      Relation("KP", Direction.BI, -3, List("CA","US","FR","DE","AT","CH","IT","GB","ES","NL","BE","PL","DK","SE","IE","JP","KR","AU","SG")),
+      Relation("KP", Direction.BI, -2, List("BN","KH","ID","LA","MY","PH","TH","BR","IN","ZA","TR")),
+
+      Relation("IR", Direction.BI, -3, List("SA")),
+      Relation("IL", Direction.BI, -2, List("IQ","YE","LY","SD","KW","SA")),
+      Relation("IL", Direction.BI, -3, List("IR","SY","LB")),
+      Relation("PK", Direction.BI, -2, List("IN")),
+      Relation("TR", Direction.BI, -1, List("GR","CY")),
+  ) ++
+    // Yugoslavia-Albania tension
+    YUGO_DOMESTIC.map(c => Relation(c, Direction.BI, -1, List("AL")))
 
 
   mainFlow()

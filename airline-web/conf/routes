@@ -12,22 +12,17 @@ GET		/wsWithActor						controllers.WebsocketApplication.wsWithActor
 
 POST	 /login							  controllers.UserApplication.login
 POST	 /logout						  controllers.UserApplication.logout
-#GET	 	 /login							  controllers.UserApplication.login
-#PUT		 /users							  controllers.UserApplication.putUser
+
 GET      /current-cycle                   controllers.Application.getCurrentCycle()
 GET      /lookups                   controllers.Application.getLookups()
 GET		 /airports						  controllers.Application.getAirports(count : Int ?= 100)
 GET		 /airports/:airportId 		  	  controllers.Application.getAirport(airportId : Int, image : Boolean ?= false)
 GET		 /airports/:airportId/images	  	  controllers.Application.getAirportImages(airportId : Int)
-#GET		 /airports/:airportId/details  	  controllers.Application.getAirportDetails(airportId : Int)
-#GET	 	 /airports/:airportId/slots	      controllers.Application.getAirportSlotsByAirline(airportId : Int, airlineId : Int)
 GET	 	 /airports/:airportId/link-statistics	        controllers.Application.getAirportLinkStatistics(airportId : Int)
 GET	 	 /airports/:airportId/loyalist-data	        controllers.Application.getAirportLoyalistData(airportId : Int, airlineId: Option[Int])
 GET	 	 /airports/:airportId/departures/:dayOfWeek/:hour/:minute controllers.Application.getDepartures(airportId : Int, dayOfWeek : Int, hour : Int, minute : Int)
 GET		 /airports/:fromAirportId/to/:toAirportId				controllers.Application.getAirportLinkConsumptions(fromAirportId : Int, toAirportId : Int)
 GET		 /airports/:airportId/links	controllers.Application.getLinksByAirport(airportId : Int)
-#GET	 	 /airports/:airportId/projects	      controllers.Application.getAirportProjects(airportId : Int)
-#PUT	 	 /airports/:airportId/projects	      controllers.Application.addAirportProject(airlineId : Int, airportId : Int)
 GET	 	 /airports/:airportId/assets	      controllers.AirportAssetApplication.getAirportAssets(airportId : Int)
 GET	 	 /airports/:airportId/champions	      controllers.Application.getAirportChampions(airportId : Int, airlineId: Option[Int])
 GET		 /airports/base/scale-details			  controllers.Application.getScaleDetails()
@@ -42,6 +37,8 @@ GET     /airlines/recent-upcoming-releases   controllers.AirplaneApplication.get
 
 GET		 /airlines/:airlineId	  		  controllers.AirlineApplication.getAirline(airlineId : Int, extendedInfo : Boolean ?= false)
 GET		 /airlines/:airlineId/airplane-models	  controllers.AirplaneApplication.getAirplaneModelsByAirline(airlineId : Int)
+GET      /airlines/:airlineId/airplane-models/:modelId/queue-info     controllers.AirplaneApplication.getModelQueueInfo(airlineId: Int, modelId: Int)
+GET      /airlines/:airlineId/order-queue     controllers.AirplaneApplication.getAirlineOrderQueue(airlineId: Int)
 GET		 /airlines/:airlineId/airplanes	  controllers.AirplaneApplication.getOwnedAirplanes(airlineId : Int, simpleResult : Boolean ?= false, groupedResult : Boolean ?= false)
 GET		 /airlines/:airlineId/airplanes/model/:modelId	  controllers.AirplaneApplication.getOwnedAirplanesWithModelId(airlineId : Int, modelId : Int)
 GET		 /airlines/:airlineId/airplanes/model/:modelId/stats	  controllers.AirplaneApplication.getAirplaneModelStatsByAirline(airlineId : Int, modelId : Int)
@@ -68,9 +65,6 @@ GET		 /airlines/:airlineId/downgradeBase/:airportId  controllers.AirlineApplicat
 GET      /airlines/:airlineId/bases/:airportId/specialization-info  controllers.AirlineApplication.getBaseSpecializationInfo(airlineId: Int, airportId : Int)
 PUT      /airlines/:airlineId/bases/:airportId/specializations  controllers.AirlineApplication.setBaseSpecializations(airlineId: Int, airportId : Int)
 GET		 /airlines/:airlineId/link-consumptions/:linkId	  controllers.LinkApplication.getLinkConsumption(airlineId : Int, linkId: Int, cycleCount : Int ?= 1)
-#PUT		 /airlines/:airlineId/watched-link 				controllers.LinkApplication.setWatchedLink(airlineId: Int, linkId: Int)
-#GET		 /airlines/:airlineId/watched-link 				controllers.LinkApplication.getWatchedLink(airlineId: Int)
-#GET		 /airlines/:airlineId/link-history 				controllers.LinkApplication.getLinkHistory(airlineId: Int)
 GET		 /airlines/:airlineId/related-link-consumption/:linkId		controllers.LinkApplication.getRelatedLinkConsumption(airlineId: Int, linkId: Int, cycleDelta : Int, selfOnly : Boolean ?= false,  economy : Boolean ?= true,  business : Boolean ?= true,  first : Boolean ?= true)
 GET		 /airlines/:airlineId/link-composition/:linkId		controllers.LinkApplication.getLinkComposition(airlineId: Int, linkId: Int)
 GET		 /airlines/:airlineId/link-rival-history/:linkId		controllers.LinkApplication.getLinkRivalHistory(airlineId: Int, linkId: Int, cycleCount : Int ?= 1)
@@ -140,8 +134,6 @@ GET		 /airlines/:airlineId/configurations/:configurationId  controllers.Airplane
 PUT		 /airlines/:airlineId/configurations                   controllers.AirplaneConfigurationApplication.putConfiguration(airlineId : Int, modelId : Int, configurationId: Int ?= 0, economy : Int, business : Int, first : Int, isDefault : Boolean)
 PUT		 /airlines/:airlineId/airplanes/:airplaneId/configuration/:configurationId  controllers.AirplaneConfigurationApplication.updateAirplaneConfiguration(airlineId : Int, airplaneId : Int, configurationId: Int)
 DELETE	 /airlines/:airlineId/configurations/:configurationId  controllers.AirplaneConfigurationApplication.deleteConfiguration(airlineId : Int, configurationId : Int)
-GET      /airlines/:airlineId/favorite-model/:modelId    controllers.AirplaneApplication.getFavoriteModelDetails(airlineId : Int, modelId : Int)
-PUT      /airlines/:airlineId/favorite-model/:modelId    controllers.AirplaneApplication.setFavoriteModel(airlineId : Int, modelId : Int)
 GET      /airlines/:airlineId/maintenance-factor            controllers.AirplaneApplication.getMaintenanceFactor(airlineId: Int)
 GET		 /airlines/:airlineId/heatmap-data 				controllers.HeatmapApplication.getHeatmapData(airlineId: Int, heatmapType : String, cycleDelta : Int)
 GET 	 /airlines/:airlineId/campaigns         controllers.CampaignApplication.getCampaigns(airlineId: Int, fullLoad : Boolean ?= false)
@@ -177,8 +169,6 @@ GET     /airlines/:airlineId/profiles   controllers.ProfileApplication.getProfil
 PUT     /airlines/:airlineId/profiles/:profileId     controllers.ProfileApplication.buildHqWithProfile(airlineId : Int, airportId : Int, profileId : Int)
 
 GET     /airlines/:airlineId/headquarters-map       controllers.TileApplication.getHeadquartersTiles(airlineId : Int)
-
-GET     /airlines/:airlineId/preferred-suppliers       controllers.AirplaneApplication.getPreferredSuppliers(airlineId : Int)
 
 GET		 /oil-prices	controllers.OilApplication.getOilPrices()
 GET		 /loan-interest-rates	controllers.BankApplication.getLoanInterestRates()
@@ -272,7 +262,6 @@ GET     /about      controllers.AboutApplication.about()
 
 OPTIONS    /*path     controllers.Application.options(path)
 
-#GET     /favicon.ico    controllers.Assets.at(path="/public/images/icon", file="globe-green.png")
 GET  /favicon.ico        controllers.Assets.at(path="/public/images/icons", file="globe-with-airplane.png")
 
 # Map static resources from the /public folder to the /assets URL path

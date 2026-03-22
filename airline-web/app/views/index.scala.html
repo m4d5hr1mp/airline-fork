@@ -1576,68 +1576,68 @@
 								</div>
 
 								<!-- Airplane Table Filter Fields: -->
-								<div id="AirplaneTableFilters" style="display: flex; flex-direction: row; width: 100%; margin-left: 10px; margin-bottom: 10px;">
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">Distance:</div>
-										</div>
-										<input type="text" id="flightRange" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
-									</div>
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">Runway Length:</div>
-										</div>
-										<input type="text" id="runway" value="3600" onchange="updateAirplaneModelTable()" style="width: 100%;">
-									</div>
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">Min. Capacity:</div>
-										</div>
-										<input type="text" id="min_capacity" value="0" onchange="updateAirplaneModelTable()" style="width: 100%;">
-									</div>
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">Min. Circulation:</div>
-										</div>
-										<input type="text" id="min_circulation" onchange="updateAirplaneModelTable()" style="width: 100%;" value="-1">
-									</div>
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">In Service After:</div>
-										</div>
-										<input type="text" id="released_after" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="1955">
-									</div>
-									
-									<div class="table" style="width: 15%;">
-										<div class="table-header">
-											<div class="cell detailsSelection">In Service Before:</div>
-										</div>
-										<input type="text" id="released_before" onchange="updateAirplaneModelTable()" placeholder="Year" style="width: 100%;" value="2030">
-									</div>
-									
-									<!-- Filter Mode Checkboxes: -->
-									<div style="display: flex; flex-direction: column; width: 15%; padding-top: 4px;">
-										
-										<!-- Unified header -->
-										<div class="table-header">
-											<div class="cell detailsSelection">Filter Options</div>
-										</div>
-										
-										<!-- Checkboxes stacked vertically below the header -->
-										<div style="display: flex; flex-direction: column; padding: 8px 6px; gap: 8px;">
-											<label style="white-space: nowrap; cursor: pointer;">
-												<input type="checkbox" id="owned_only" onchange="updateAirplaneModelTable()"> Owned Only
-											</label>
-											<label style="white-space: nowrap; cursor: pointer;">
-												<input type="checkbox" id="show_total_fuel" onchange="updateAirplaneModelTable()"> Fuel Total
-											</label>
+								<div id="AirplaneTableFilters" style="display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 12px; width: 100%; margin-left: 10px; margin-bottom: 10px;">
+									<!-- Range filter -->
+									<div style="display: flex; flex-direction: column; gap: 3px; flex: 1;">
+										<span style="font-size: 11px; color: #aaa;">Range (km)</span>
+										<div style="display: flex; align-items: center; gap: 4px;">
+											<input type="number" id="range_min" placeholder="min" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
+											<span style="color: #aaa; font-size: 11px; flex-shrink: 0;">–</span>
+											<input type="number" id="range_max" placeholder="max" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
 										</div>
 									</div>
+								
+									<!-- Capacity filter -->
+									<div style="display: flex; flex-direction: column; gap: 3px; flex: 1;">
+										<span style="font-size: 11px; color: #aaa;">Capacity (pax)</span>
+										<div style="display: flex; align-items: center; gap: 4px;">
+											<input type="number" id="capacity_min" placeholder="min" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
+											<span style="color: #aaa; font-size: 11px; flex-shrink: 0;">–</span>
+											<input type="number" id="capacity_max" placeholder="max" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
+										</div>
+									</div>
+								
+									<!-- Runway filter -->
+									<div style="display: flex; flex-direction: column; gap: 3px; flex: 1;">
+										<span style="font-size: 11px; color: #aaa;">Runway (m)</span>
+										<div style="display: flex; align-items: center; gap: 4px;">
+											<input type="number" id="runway_min" placeholder="min" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
+											<span style="color: #aaa; font-size: 11px; flex-shrink: 0;">–</span>
+											<input type="number" id="runway_max" placeholder="max" min="0" onchange="updateAirplaneModelTable()" style="width: 100%; min-width: 0;">
+										</div>
+									</div>
+								
+									<!-- Type dropdown -->
+									<div style="display: flex; flex-direction: column; gap: 3px; flex: 1;">
+										<span style="font-size: 11px; color: #aaa;">Type</span>
+										<select id="airplane_type_filter" onchange="updateAirplaneModelTable()" style="height: 24px; width: 100%;">
+											<option value="">All</option>
+											<option value="SHORT_RANGE_PROP">Short Range Prop</option>
+											<option value="LONG_RANGE_PROP">Long Range Prop</option>
+											<option value="SMALL_PROP">Small Prop</option>
+											<option value="REGIONAL_PROP">Regional Prop</option>
+											<option value="EARLY_JET">Early Jet</option>
+											<option value="LIGHT">Light</option>
+											<option value="SMALL">Small</option>
+											<option value="REGIONAL">Regional</option>
+											<option value="MEDIUM">Medium</option>
+											<option value="LARGE">Large</option>
+											<option value="X_LARGE">Extra Large</option>
+											<option value="JUMBO">Jumbo</option>
+											<option value="SUPERSONIC">Supersonic</option>
+										</select>
+									</div>
+								
+									<!-- Checkboxes -->
+									<div style="display: flex; flex-direction: column; gap: 8px; padding-bottom: 2px; flex-shrink: 0;">
+										<label style="white-space: nowrap; cursor: pointer; font-size: 12px;">
+											<input type="checkbox" id="owned_only" onchange="updateAirplaneModelTable()"> Owned Only
+										</label>
+										<label style="white-space: nowrap; cursor: pointer; font-size: 12px;">
+											<input type="checkbox" id="available_only" onchange="updateAirplaneModelTable()" checked> Available Only
+										</label>
+									</div>
+								
 								</div>
 							</div>
 
@@ -1646,45 +1646,46 @@
 									<div class="table data" style="height: 20px; width: 100%; min-width: 500px">
 										<!-- Sort Header Row -->
 										<div class="table-header" id="airplaneModelSortHeader">
-											<div class="cell clickable" style="width: 17%" data-sort-property="name" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Name</div>
-											<div class="cell clickable" style="width: 9%" data-sort-property="family" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Family</div>
-											<div class="cell clickable selected" style="width: 8%" align="right" data-sort-property="price" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Price</div>
-											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="capacity" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Capacity</div>
-											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="range" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Max Range</div>
-											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="fuelBurn" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Fuel Burn</div>
-											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="lifespan" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Lifespan</div>
-											<div class="cell clickable" style="width: 9%" align="right" data-sort-property="speed" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Speed</div>
-											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="runwayRequirement" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Runway Req.</div>
-											<div class="cell clickable" style="width: 6%" align="right" data-sort-property="totalOwned" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))">Inventory</div>
-											<div class="cell clickable" style="width: 3%" align="right" data-sort-property="max_rotation" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Max flight rotations (uses distance filter)">⏲</div>
-											<div class="cell clickable" style="width: 5%" align="right" data-sort-property="cpp" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Cost Per Pax">$/🧍</div>
-											<div class="cell clickable" style="width: 4%" align="right" data-sort-property="discountPercent" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Discount Percent">%🔽</div>
-											<div class="cell clickable" style="width: 4%" align="right" data-sort-property="in_use" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Total number in circulation">#✈</div>
+											<div class="cell clickable" style="width: 10%" data-sort-property="family" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Family Name</div>
+											<div class="cell clickable" style="width: 14%" data-sort-property="name" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Model Name</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="introYear" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">EIS Date</div>
+											<div class="cell clickable selected" style="width: 9%" align="right" data-sort-property="price" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Price</div>
+											<div class="cell clickable" style="width: 5%" align="right" data-sort-property="capacity" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Capacity</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="range" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Max Range (km)</div>
+											<div class="cell clickable" style="width: 9%" align="right" data-sort-property="fuelBurn" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Fuel (Cruise/Climb in kg/hr)</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="climbRate" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Climb (m/min)</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="cruiseAltitude" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Cruise Altitude (m)</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="speed" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Cruise Speed</div>
+											<div class="cell clickable" style="width: 7%" align="right" data-sort-property="runwayRequirement" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Runway Requirement(m)</div>
+											<div class="cell clickable" style="width: 5%" align="right" data-sort-property="lifespan" data-sort-order="ascending" onclick="toggleAirplaneModelTableSortOrder($(this))">Lifespan (years)</div>
+											<div class="cell clickable" style="width: 6%" align="right" data-sort-property="in_use" data-sort-order="descending" onclick="toggleAirplaneModelTableSortOrder($(this))" title="Total units in circulation">#✈</div>
 										</div>
 									</div>
 									
 									<div style="height: calc(100% - 80px); width: 100%; overflow-y: auto; min-width: 500px">
 										<div class="table data" id="airplaneModelTable" style="max-height: 100%; width: 100%;">
-											<div class="table-header">
-												<div class="cell" style="width: 17%; border-bottom: none;"></div>
-												<div class="cell" style="width: 9%; border-bottom: none;"></div>
-												<div class="cell" style="width: 8%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 9%; border-bottom: none;"></div>
-												<div class="cell" style="width: 7%; border-bottom: none;"></div>
-												<div class="cell" style="width: 6%; border-bottom: none;"></div>
-												<div class="cell" style="width: 3%; border-bottom: none;"></div>
-												<div class="cell" style="width: 5%; border-bottom: none;"></div>
-												<div class="cell" style="width: 4%; border-bottom: none;"></div>
-												<div class="cell" style="width: 4%; border-bottom: none;"></div>
+											<div class="table-header" id="airplaneModelTableSpacer">
+												<div class="cell" style="width: 10%; border-bottom: none;"></div>
+												<div class="cell" style="width: 14%; border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 9%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 5%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 9%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 7%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 5%;  border-bottom: none;"></div>
+												<div class="cell" style="width: 6%;  border-bottom: none;"></div>
 											</div>
-										</div>
+										</div>	
 									</div>
 								</div>
+
+								<!-- Hangar View -->
 								<div class="hangar details" style="width: 100%; height: calc(100% - 30px); overflow:auto; display: none;">
+									<!-- Maintenance Cost Factor -->
 									<div class="section" style="width: 98%;">
 										<h4>Maintenance Cost Factor</h4>
 										<div class="maintenanceFactorSection">
@@ -1701,44 +1702,23 @@
 													<ul class="modelList"></ul>
 												</span>
 											</span>
-    										<div class="remarks" style="margin-top:10px;">Airplane maintenance cost is multiplied by this factor. Maintenance factor =&nbsp;<span class="baseFactor"></span>&nbsp;+&nbsp;<span class="familyFactor"></span>&nbsp;* Airplane Family # +&nbsp;<span class="modelFactor"></span>&nbsp;* Airplane Model #</div>
-										</div>
-										<h4 style="margin-top:10px;">Preferred Suppliers</h4>
-										<div class="preferredSuppliers" style="width: 100%; display: flex; flex-wrap: wrap;">
-											<div style='min-width : 200px; flex: 1; position: relative;' class='section LIGHT'>
-												<h4>Light Airplane Suppliers</h4>
-												<div class="remarks"><span class="capacityRange"></span>&nbsp;PAX</div>
-												<div class="supplierList"></div>
-												<div style="margin-top: 10px; font-weight:bold; ">Discount:&nbsp;<span class="discount"></span></div>
-											</div>
-											<div style='min-width : 200px; flex: 1; position: relative;' class='section REGIONAL'>
-												<h4>Regional Airplane Suppliers</h4>
-												<div class="remarks"><span class="capacityRange"></span>&nbsp;PAX</div>
-												<div class="supplierList"></div>
-												<div style="margin-top: 10px; font-weight:bold; ">Discount:&nbsp;<span class="discount"></span></div>
-											</div>
-											<div style='min-width : 200px; flex: 1; position: relative;' class='section MEDIUM'>
-												<h4>Medium Airplane Suppliers</h4>
-												<div class="remarks"><span class="capacityRange"></span>&nbsp;PAX</div>
-												<div class="supplierList"></div>
-												<div style="margin-top: 10px; font-weight:bold; ">Discount:&nbsp;<span class="discount"></span></div>
-											</div>
-											<div style='min-width : 200px; flex: 1; position: relative;' class='section LARGE'>
-												<h4>Large Airplane Suppliers</h4>
-												<div class="remarks"><span class="capacityRange"></span>&nbsp;PAX</div>
-												<div class="supplierList"></div>
-												<div style="margin-top: 10px; font-weight:bold;">Discount:&nbsp;<span class="discount"></span></div>
-											</div>
+											<div class="remarks" style="margin-top:10px;">Airplane maintenance cost is multiplied by this factor. Maintenance factor =&nbsp;<span class="baseFactor"></span>&nbsp;+&nbsp;<span class="familyFactor"></span>&nbsp;* Airplane Family # +&nbsp;<span class="modelFactor"></span>&nbsp;* Airplane Model #</div>
 										</div>
 									</div>
+								
+									<!-- Order Queue Section -->
+									<div class="section orderQueueSection" style="width: 98%; margin-top: 10px;">
+										<h4>Order Book</h4>
+										<div class="orderQueueList" style="width: 100%;">
+											<div class="orderQueueEmpty" style="font-style: italic; color: #aaa; padding: 6px 0;">No pending orders.</div>
+										</div>
+									</div>
+								
+									<!-- Fleet inventory toggles + container — unchanged -->
 									<input type="checkbox" onclick="toggleUtilizationRate($('#airplaneCanvas .hangar .sectionContainer'), $(this))" class="toggleUtilizationRateBox"><img src='@routes.Assets.versioned("images/icons/clock-select-remain.png")' title="Toggle Utilization Rate"/>
 									<input type="checkbox" onclick="toggleCondition($('#airplaneCanvas .hangar .sectionContainer'), $(this))" class="toggleConditionBox"><img src='@routes.Assets.versioned("images/icons/gear.png")' title="Toggle Airplane Condition"/>
-<!--									<select class="select-css hangarType" onchange="selectHangarType($(this).val())">-->
-<!--										<option value="byModel" selected="selected">By Model</option>-->
-<!--										<option value="byBase">By Base</option>-->
-<!--									</select>-->
-									<div class="sectionContainer" style="display: flex; flex-wrap: wrap;">
-									</div>
+									<div class="sectionContainer" style="display: flex; flex-wrap: wrap;"></div>
+								
 								</div>
 							</div>
 						</div>
@@ -1753,65 +1733,92 @@
 								</div>
 
 								<div class="table" style="width: 100%;">
-	<!-- 								<h4>Airplane Model Details</h4> -->
+									<!-- Historic / identity block -->
 									<div class="table-row">
 										<div class="label"><h5>Model:</h5></div>
-										<div class="value"><span class="modelName"></span><img class="favorite clickable-no-highlight" onclick="promptSetFavorite()"></div>
+										<div class="value"><span class="modelName"></span></div>
 									</div>
 									<div class="table-row">
 										<div class="label"><h5>Family:</h5></div>
 										<div class="value modelFamily"></div>
 									</div>
 									<div class="table-row">
-										<div class="label"><h5>Max Capacity:</h5></div>
-										<div class="value" id="capacity"></div>
+										<div class="label"><h5>Manufacturer:</h5></div>
+										<div class="value manufacturer"></div>
 									</div>
 									<div class="table-row">
 										<div class="label"><h5>Category:</h5></div>
 										<div class="value" id="airplaneType"></div>
 									</div>
 									<div class="table-row">
-										<div class="label"><h5>Turnaround Time:</h5></div>
-										<div class="value"><span class="turnaroundTime"></span>&nbsp;min</div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Runway Requirement:</h5></div>
-										<div class="value"><span class="runwayRequirement"></span>&nbsp;m</div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Max Flying Range:</h5></div>
-										<div class="value" id="range"></div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Fuel Burn:</h5></div>
-										<div class="value" id="fuelBurn"></div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Speed:</h5></div>
-										<div class="value" id="speed"></div>
+										<div class="label"><h5>Price:</h5></div>
+										<div class="value price"></div>
 									</div>
 									<div class="table-row">
 										<div class="label"><h5>Max Lifespan:</h5></div>
 										<div class="value" id="lifespan"></div>
 									</div>
 									<div class="table-row">
-										<div class="label"><h5>Manufacturer:</h5></div>
-										<div class="value manufacturer"></div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Purchase Price:</h5></div>
-										<div class="value price"></div>
-									</div>
-									<div class="table-row">
-										<div class="label"><h5>Delivery Time:</h5></div>
+										<div class="label"><h5>Min. Delivery Period:</h5></div>
 										<div class="value delivery"></div>
 									</div>
 									<div class="table-row">
-										<div class="label"><h5>Total in Circulation:</h5></div>
-										<div class="value total"></div>
+										<div class="label"><h5>Total On Order:</h5></div>
+										<div class="value totalOrders">-</div>
 									</div>
+									<div class="table-row">
+										<div class="label"><h5>Your Orders:</h5></div>
+										<div class="value yourOrders">-</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Entry Into Service:</h5></div>
+										<div class="value introDate"></div>
+									</div>
+								
+									<!-- Visual separator between identity and performance -->
+									<div class="table-row" style="border-top: 1px solid #444; margin: 6px 0;"></div>
+								
+									<!-- Performance block -->
+									<div class="table-row">
+										<div class="label"><h5>Max Capacity:</h5></div>
+										<div class="value" id="capacity"></div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Max Range:</h5></div>
+										<div class="value" id="range"></div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Fuel Burn (Cruise):</h5></div>
+										<div class="value"><span class="fuelBurnCruise"></span>&nbsp;kg/hr</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Fuel Burn (Climb):</h5></div>
+										<div class="value"><span class="fuelBurnClimb"></span>&nbsp;kg/hr</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Climb Rate:</h5></div>
+										<div class="value"><span class="climbRate"></span>&nbsp;m/min</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Cruise Altitude:</h5></div>
+										<div class="value"><span class="cruiseAltitude"></span>&nbsp;m</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Cruise Speed:</h5></div>
+										<div class="value" id="speed"></div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Runway Requirement:</h5></div>
+										<div class="value"><span class="runwayRequirement"></span>&nbsp;m</div>
+									</div>
+									<div class="table-row">
+										<div class="label"><h5>Turnaround Time:</h5></div>
+										<div class="value"><span class="turnaroundTime"></span>&nbsp;min</div>
+									</div>
+								
 									<input type="hidden" class="selectedModel"/>
 								</div>
+
 								<div class="button add" onclick="promptBuyNewAirplane($('#airplaneCanvas .selectedModel').val(), false)">Purchase</div>
 								<div class="button" onclick="showAirplaneBase($('#airplaneCanvas .selectedModel').val())">Base</div>
 								<div class="button" onclick="showAirplaneModelConfigurations($('#airplaneCanvas .selectedModel').val())">Config</div>
@@ -4729,68 +4736,112 @@
 	</div>
 
   <!--	all airplane inventory -->
-  <div id="allAirplaneInventoryModal" class="modal">
-	  <div class="modal-content"  style="width : 800px; height: 800px; margin: 5% auto;">
-		  <span class="close" onclick="closeModal($('#allAirplaneInventoryModal'))">&times;</span>
-		  <h4 style="margin-bottom: 10px;"><span class="modelName"></span>&nbsp;Base</h4>
-		  <div>
-			  <input type="checkbox" onclick="toggleUtilizationRate($('#allAirplaneInventoryModal'), $(this))" class="toggleUtilizationRateBox"><img src='@routes.Assets.versioned("images/icons/clock-select-remain.png")' title="Toggle Utilization Rate"/>
-			  <input type="checkbox" onclick="toggleCondition($('#allAirplaneInventoryModal'), $(this))" class="toggleConditionBox"><img src='@routes.Assets.versioned("images/icons/gear.png")' title="Toggle Airplane Condition"/>
-			  <h6 style="font-style: italic;">* Drag and drop airplane icon to another airplane icon to swap schedules and settings</h6>
-		  </div>
-
-		  <div class="inventoryContainer" style="width: 100%; height: 95%; overflow: auto;"></div>
-	  </div>
-  </div>
-
-
-	<div id="buyAirplaneModal" class="modal">
-		<div class="modal-content" style="width : 400px;">
-			<span class="close" onclick="closeModal($('#buyAirplaneModal'))">&times;</span>
-			<h4 style="margin-bottom: 10px;">Confirm Purchase of <span class="modelName"></span></h4>
-			<div class="modelIllustration" style="width:100%; position: relative; max-width: 500px;">
-				<img src='#' style="width: 100%;">
-				<div class="label" style="right: 0px; bottom: 0px; position: absolute; font-style: italic;"><a href='#' target="_blank">Illustration courtesy of Norebbo</a></div>
+	<div id="allAirplaneInventoryModal" class="modal">
+		<div class="modal-content" style="width: 800px; height: 800px; margin: 5% auto;">
+			<span class="close" onclick="closeModal($('#allAirplaneInventoryModal'))">&times;</span>
+			<h4 style="margin-bottom: 10px;"><span class="modelName"></span>&nbsp;Inventory</h4>
+	
+			<!-- Pending deliveries bucket — hidden until populated -->
+			<div class="pendingDeliveriesSection" style="display: none; margin-bottom: 12px; padding: 8px 10px; background: #1e2a38; border-left: 3px solid #e8a838; border-radius: 3px;">
+				<h5 style="margin: 0 0 6px 0; color: #e8a838;">Pending Deliveries:</h5>
+				<div class="pendingDeliveriesList"></div>
 			</div>
+	
+			<div>
+				<input type="checkbox" onclick="toggleUtilizationRate($('#allAirplaneInventoryModal'), $(this))" class="toggleUtilizationRateBox"><img src='@routes.Assets.versioned("images/icons/clock-select-remain.png")' title="Toggle Utilization Rate"/>
+				<input type="checkbox" onclick="toggleCondition($('#allAirplaneInventoryModal'), $(this))" class="toggleConditionBox"><img src='@routes.Assets.versioned("images/icons/gear.png")' title="Toggle Airplane Condition"/>
+				<h6 style="font-style: italic;">* Drag and drop airplane icon to another airplane icon to swap schedules and settings</h6>
+			</div>
+			<div class="inventoryContainer" style="width: 100%; height: 85%; overflow: auto;"></div>
+		</div>
+	</div>
 
+
+<div id="buyAirplaneModal" class="modal">
+        <div class="modal-content" style="width : 400px;">
+            <span class="close" onclick="closeModal($('#buyAirplaneModal'))">&times;</span>
+            <h4 style="margin-bottom: 10px;">Confirm Purchase of <span class="modelName"></span></h4>
+            <div class="modelIllustration" style="width:100%; position: relative; max-width: 500px;">
+                <img src='#' style="width: 100%;">
+                <div class="label" style="right: 0px; bottom: 0px; position: absolute; font-style: italic;"><a href='#' target="_blank">Illustration courtesy of Norebbo</a></div>
+            </div>
+            <div class="table" style="width: 100%;">
+                <div class="table-row">
+                    <div class="label"><h5>Price:</h5></div>
+                    <div class="value price"></div>
+                </div>
+                <div class="table-row bulkDiscount" style="display: none;">
+                    <div class="label"><h5>Bulk Discount:</h5></div>
+                    <div class="value" style="color: #68A357;"></div>
+                </div>
+                <div class="table-row discountedUnitPrice" style="display: none;">
+                    <div class="label"><h5>Discounted Price:</h5></div>
+                    <div class="value" style="color: #68A357;"></div>
+                </div>
+                <div class="table-row">
+                    <div class="label"><h5>Condition:</h5></div>
+                    <div class="value condition"></div>
+                </div>
+                <div class="table-row">
+                    <div class="label"><h5>Delivery Time:</h5></div>
+                    <div class="value delivery"></div>
+                </div>
+                <div class="table-row quantity">
+                    <div class="label"><h5>Quantity:</h5></div>
+                    <div><input type="text" class="input" size="3" maxlength="3"></div>
+                </div>
+                <div class="table-row totalPrice">
+                    <div class="label"><h5>Total:</h5></div>
+                    <div class="value"></div>
+                </div>
+                <div class="table-row">
+                    <div class="cell"><h5>Home airport:</h5></div>
+                    <div class="cell">
+                        <select class="homeOptions select-css"></select>
+                    </div>
+                </div>
+                <div class="table-row seatConfiguration">
+                    <div class="cell"><h5>Seat configuration:</h5></div>
+                    <div class="cell">
+                        <img src='@routes.Assets.versioned("images/icons/arrow-180.png")' class='button' style="vertical-align: middle;" onclick="switchAirplaneConfigurationOption($('#buyAirplaneModal'), -1)"/>
+                        <div class="configuration-options" style="display : inline-block; width: 80%"></div>
+                        <img src='@routes.Assets.versioned("images/icons/arrow.png")' class='button' style="vertical-align: middle;" onclick="switchAirplaneConfigurationOption($('#buyAirplaneModal'), 1)"/>
+                    </div>
+                </div>
+            </div>
+            <div class="button add">Purchase</div>
+            <div class="button" onclick="closeModal($('#buyAirplaneModal'))">Cancel</div>
+        </div>
+    </div>
+
+	<!-- order placed notification modal -->
+	<div id="orderPlacedModal" class="modal">
+		<div class="modal-content" style="width: 380px;">
+			<span class="close" onclick="closeModal($('#orderPlacedModal'))">&times;</span>
+			<h4 style="margin-bottom: 10px;">Order Placed</h4>
 			<div class="table" style="width: 100%;">
 				<div class="table-row">
-					<div class="label"><h5>Price:</h5></div>
-					<div class="value price"></div>
+					<div class="label"><h5>Model:</h5></div>
+					<div class="value modelName"></div>
 				</div>
 				<div class="table-row">
-					<div class="label"><h5>Condition:</h5></div>
-					<div class="value condition"></div>
-				</div>
-				<div class="table-row">
-					<div class="label"><h5>Delivery Time:</h5></div>
-					<div class="value delivery"></div>
-				</div>
-				<div class="table-row quantity">
 					<div class="label"><h5>Quantity:</h5></div>
-					<div><input type="text" class="input" size="3" maxlength="3"></div>
-				</div>
-				<div class="table-row totalPrice">
-					<div class="label"><h5>Total:</h5></div>
-					<div class="value"></div>
+					<div class="value quantity"></div>
 				</div>
 				<div class="table-row">
-					<div class="cell"><h5>Home airport:</h5></div>
-					<div class="cell">
-						<select class="homeOptions select-css"></select>
-					</div>
+					<div class="label"><h5>Total Cost:</h5></div>
+					<div class="value totalCost"></div>
 				</div>
-				<div class="table-row seatConfiguration">
-					<div class="cell"><h5>Seat configuration:</h5></div>
-					<div class="cell">
-						<img src='@routes.Assets.versioned("images/icons/arrow-180.png")' class='button' style="vertical-align: middle;" onclick="switchAirplaneConfigurationOption($('#buyAirplaneModal'), -1)"/>
-						<div class="configuration-options" style="display : inline-block; width: 80%"></div>
-						<img src='@routes.Assets.versioned("images/icons/arrow.png")' class='button' style="vertical-align: middle;" onclick="switchAirplaneConfigurationOption($('#buyAirplaneModal'), 1)"/>
-					</div>
+				<div class="table-row">
+					<div class="label"><h5>Earliest Delivery:</h5></div>
+					<div class="value delivery" style="color: #e8a838;"></div>
+				</div>
+				<div class="table-row">
+					<div class="label"><h5>Delivering To:</h5></div>
+					<div class="value homeAirport"></div>
 				</div>
 			</div>
-			<div class="button add">Purchase</div>
-			<div class="button" onclick="closeModal($('#buyAirplaneModal'))")>Cancel</div>
+			<div class="button" onclick="closeModal($('#orderPlacedModal')); if ($('#airplaneCanvas .hangar.details').is(':visible')) { populateOrderQueue() }">OK</div>
 		</div>
 	</div>
 
@@ -4903,7 +4954,7 @@
 					  <div class="value constructionTimeDiscount"></div>
 				  </div>
 			  </div>
-			  <div style="display : flex; align-items: center;"><img src='@routes.Assets.versioned("images/icons/information.png")'>Only 1 favorite is allowed and it can only be reset every @{com.patson.model.airplane.ModelDiscount.MAKE_FAVORITE_RESET_THRESHOLD} weeks</div>
+			  <div style="display : flex; align-items: center;"><img src='@routes.Assets.versioned("images/icons/information.png")'>Only 1 favorite is allowed and it can only be reset every weeks</div>
 			  <div class="existingFavorite" style="display: none;"><img src='@routes.Assets.versioned("images/icons/information.png")'>This will replace&nbsp;<span class="existingFavoriteModelName"></span>&nbsp;as your new Favorite</div>
 			  <div class="rejection" style="display: none;"><img src='@routes.Assets.versioned("images/icons/exclamation-red-frame.png")'><span class="reason"></span></div>
 			  <div class="button confirm" onclick="confirmSetFavorite($('#setFavoriteModal').data('modelId'))">Confirm</div>

@@ -9,7 +9,6 @@ import com.patson.data.Constants._
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import com.patson.LinkSimulation
 
-import scala.collection.mutable.ListBuffer
 import com.patson.util.LogoGenerator
 
 object Patchers extends App {
@@ -41,36 +40,42 @@ object Patchers extends App {
   }
 
   def airplaneModelPatcher() {
+    val csvPath = System.getProperty("airplane.models.csv", com.patson.init.AirplaneModelCsvLoader.DEFAULT_CSV_PATH)
+    val csvModels = com.patson.init.AirplaneModelCsvLoader.loadFromFile(csvPath) match {
+      case Left(errors) =>
+        errors.foreach(e => println(s"  CSV ERROR line ${e.line}: ${e.message}"))
+        throw new RuntimeException(s"[airplaneModelPatcher] Aborting: ${errors.size} CSV parse error(s). No changes made.")
+      case Right(models) => models
+    }
+
     val existingModelsByName = ModelSource.loadAllModels().map(model => (model.name, model)).toMap
 
-    val newModels = ListBuffer[Model]()
-    Model.models.foreach { model =>
+    csvModels.foreach { model =>
       existingModelsByName.get(model.name) match {
         case Some(existingModel) =>
-          if (existingModel.price != model.price) { //adjust existing value
+          if (existingModel.price != model.price) { //adjust existing airplane values
             val updatingAirplanes = AirplaneSource.loadAirplanesCriteria(List(("a.model", existingModel.id))).map { airplane =>
               val newValue = (model.price * airplane.condition / Airplane.MAX_CONDITION).toInt
-              airplane.copy(value = newValue);
+              airplane.copy(value = newValue)
             }
             AirplaneSource.updateAirplanesDetails(updatingAirplanes)
           }
-          if (existingModel.capacity != model.capacity) { //adjust configuration and then actual capacity
+          if (existingModel.capacity != model.capacity) { //rescale seat configurations
             AirplaneSource.loadAirplaneConfigurationsByCriteria(List(("model", existingModel.id))).foreach { configuration =>
               val factor = model.capacity.toDouble / existingModel.capacity
-              var newCapacity = ((configuration.economyVal * factor).toInt, (configuration.businessVal * factor).toInt , (configuration.firstVal * factor).toInt)
-              val adjustmentDelta : Int = model.capacity - Math.ceil(newCapacity._1 * ECONOMY.spaceMultiplier + newCapacity._2 * BUSINESS.spaceMultiplier + newCapacity._3 * FIRST.spaceMultiplier).toInt
+              val newCapacity = ((configuration.economyVal * factor).toInt, (configuration.businessVal * factor).toInt, (configuration.firstVal * factor).toInt)
+              val adjustmentDelta: Int = model.capacity - Math.ceil(newCapacity._1 * ECONOMY.spaceMultiplier + newCapacity._2 * BUSINESS.spaceMultiplier + newCapacity._3 * FIRST.spaceMultiplier).toInt
               val newConfiguration = configuration.copy(economyVal = newCapacity._1 + adjustmentDelta, businessVal = newCapacity._2, firstVal = newCapacity._3)
               AirplaneSource.updateAirplaneConfiguration(newConfiguration)
               println(s"Configuration from $configuration to $newConfiguration")
             }
           }
-       case None => newModels.append(model)
+        case None => // new model — will be inserted by upsert below
       }
     }
-    ModelSource.updateModels(Model.models)
-    LinkSimulation.refreshLinksPostCycle()
-    ModelSource.saveModels(newModels.toList)
 
+    ModelSource.upsertModels(csvModels)
+    LinkSimulation.refreshLinksPostCycle()
   }
 
   def adjustAirplaneConfigurations() = {
@@ -169,5 +174,3 @@ object Patchers extends App {
     airplaneModelPatcher()
   }
 }
-
- 
