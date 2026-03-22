@@ -17,13 +17,20 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
     }
   }
 
-  val COST_EXPONENTIAL_BASE = 1.6
-  
-  lazy val getUpkeep : Long = {
-    val adjustedScale = if (scale == 0) 1 else scale //for non-existing base, calculate as if the base is 1
-    var baseUpkeep = (5000 + airport.rating.overallRating * 150).toLong
+  val COST_EXPONENTIAL_BASE = 1.65
+  val FLAT_SCALE_THRESHOLD = 12
+  val FLAT_SCALE_STEP = 0.30
 
-    (baseUpkeep * airportSizeRatio * Math.pow(COST_EXPONENTIAL_BASE, adjustedScale - 1)).toInt
+  lazy val getUpkeep: Long = {
+    val adjustedScale = if (scale == 0) 1 else scale
+    val baseUpkeep = (5000 + airport.rating.overallRating * 150).toLong
+    val upkeepAtThreshold = baseUpkeep * airportSizeRatio * Math.pow(COST_EXPONENTIAL_BASE, FLAT_SCALE_THRESHOLD - 1)
+
+    if (adjustedScale <= FLAT_SCALE_THRESHOLD) {
+      (baseUpkeep * airportSizeRatio * Math.pow(COST_EXPONENTIAL_BASE, adjustedScale - 1)).toLong
+    } else {
+      (upkeepAtThreshold * (1 + (adjustedScale - FLAT_SCALE_THRESHOLD) * FLAT_SCALE_STEP)).toLong
+    }
   }
 
   lazy val airportSizeRatio =
@@ -33,11 +40,15 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
       0.3 + airport.size * 0.1
     }
 
-
-
   val getOfficeStaffCapacity = AirlineBase.getOfficeStaffCapacity(scale, headquarter)
 
-  val delegatesRequired : Int = scale / 2
+  val delegatesRequired : Int = {
+    if (headquarter) {
+      scale / 2
+    } else {
+      1 + scale / 2
+    }
+  }
 
   // Overtime Cost Logic
   val EXP_OVERTIME_FACTOR = 1.5  // Exponential growth factor for overtime tiers
@@ -118,8 +129,8 @@ case class AirlineBase(airline : Airline, airport : Airport, countryCode : Strin
 
 object AirlineBase {
   val STAFF_PER_SCALE: Map[Boolean, Int] = Map(
-    true -> 80,   // Headquarters: 80 staff per scale or tier
-    false -> 60   // Non-headquarters: 60 staff per scale or tier
+    true -> 80,   // Headquarters: 80 staff per level
+    false -> 60   // Non-headquarters: 60 staff per level
   )
 
   def getOfficeStaffCapacity(scale : Int, isHeadquarters : Boolean) = {

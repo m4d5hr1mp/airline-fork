@@ -1,11 +1,13 @@
 package com.patson
 
-/* This modules is used for determining chronological ratio:
- * How many IRL days it takes to elapse 1 year of chronological progression?
- * How many Cycles it takes to elapse 1 year / month of chronological progression?   
+/* This module determines chronological progression pacing.
+ * Core unit: chronological weeks (52 per year).
+ * cyclesPerChronologicalWeek controls unlock speed — tune for playtesting.
+ * At 3: ~4.88 IRL days per in-game year, full 1955–2030 span in ~365 IRL days.
  */
 object ChronologyConverter {
   val WORLD_START_YEAR: Int = 1955
+<<<<<<< HEAD
   val WORLD_END_YEAR: Int = 2030
   val PROGRESSION_REFERENCE_YEAR: Int = 1958
   val YEAR_LENGTH_DAYS: Int = 5
@@ -38,4 +40,14 @@ object ChronologyConverter {
     val MONTH_NAMES = Vector("January","February","March","April","May","June","July","August","September","October","November","December")
     s"${MONTH_NAMES(monthIndex)} $year"
   }
+=======
+  val WORLD_END_YEAR:   Int = 2030
+
+  val WEEKS_PER_YEAR: Int = 52
+
+  /** Game cycles per 1 chronological week. Main pacing knob. */
+  val cyclesPerChronologicalWeek: Int = 3
+
+  val cyclesPerYear: Int = cyclesPerChronologicalWeek * WEEKS_PER_YEAR  // 156
+>>>>>>> b3687362a7034d069cb08f3dd335716a6503b9d4
 }

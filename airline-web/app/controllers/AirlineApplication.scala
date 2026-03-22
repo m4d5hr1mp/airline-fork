@@ -1055,9 +1055,9 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
   def getRenameRejection(airline : Airline, newName : String) : Option[String] = {
     UserSource.loadUserByAirlineId(airline.id) match {
       case Some(user) =>
-        if (user.level <= 0) {
-          return Some(s"User is not allowed to rename airline, username ${user.userName}")
-        }
+        //if (user.level <= 0) {
+        //  return Some(s"User is not allowed to rename airline, username ${user.userName}")
+        //}
         val cooldown = getRenameCooldown(airline)
         if (cooldown > 0) {
           return Some(s"Cannot rename yet. Cooldown: ${ cooldown }") //TODO
