@@ -5,6 +5,8 @@ import com.patson.data.{AirportSource, CountrySource, EventSource}
 import com.patson.util.RelationshipCache
 import com.patson.model.event.{EventType, Olympics}
 import com.patson.model.{PassengerType, _}
+// Import for demand decompression over time!
+import com.patson.ChronologyConverter
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.immutable.Map
@@ -26,8 +28,107 @@ object DemandGenerator {
 
 
     val pairs : List[(String, String)] = List(
-      "NRT" -> "HND" , "LHR" -> "BHX", "LHR" -> "CDG", "SIN" -> "KUL", "LHR" -> "EDI", "SGN" -> "DAD", "ICN" -> "CJU", "LHR" -> "FCO",
-      "JFK" -> "LAX" , "JFK" -> "LHR", "IND" -> "SWF", "JFK" -> "OPO", "IND" -> "OPO", "BOM" -> "DEL"
+      // USA - Major metro pairs (cross country)
+      "JFK" -> "LAX", "ORD" -> "DFW", "SFO" -> "MIA", "ATL" -> "SEA", "BOS" -> "DEN",
+
+      // USA - Major + medium metro 500-1500km
+      "JFK" -> "PIT", "LAX" -> "PHX", "ORD" -> "MSP", "ATL" -> "MEM", "DFW" -> "STL",
+
+      // USA - Major + small/semi-rural under 700km
+      "JFK" -> "ALB", "ORD" -> "GRR", "LAX" -> "FAT", "ATL" -> "HSV", "DFW" -> "LBB",
+
+      // USA - Major intl North America
+      "JFK" -> "YYZ", "LAX" -> "YVR", "MIA" -> "MEX", "ORD" -> "YUL", "DFW" -> "CUN",
+
+      // USA - Major European destinations
+      "JFK" -> "LHR", "JFK" -> "CDG", "JFK" -> "FRA", "ORD" -> "LHR", "MIA" -> "MAD",
+
+      // USA - Secondary European destinations
+      "JFK" -> "DUB", "BOS" -> "LIS", "JFK" -> "ZRH", "ATL" -> "FCO", "JFK" -> "AMS",
+
+      // USA - Major Asia destinations
+      "LAX" -> "NRT", "LAX" -> "ICN", "LAX" -> "HKG", "SFO" -> "PEK", "LAX" -> "SIN",
+
+      // USA - Oceania
+      "LAX" -> "SYD", "LAX" -> "AKL", "SFO" -> "MEL",
+
+      // Europe - Major pairs (DE/FR/GB/IT/NL)
+      "LHR" -> "CDG", "LHR" -> "FRA", "CDG" -> "FRA", "AMS" -> "LHR", "FCO" -> "CDG",
+
+      // Europe - Smaller pairs
+      "EDI" -> "AMS", "BHX" -> "CDG", "MAN" -> "FCO", "LYS" -> "FRA", "CPH" -> "AMS",
+      "DUS" -> "LHR", "HAM" -> "CDG", "NCE" -> "LHR", "BCN" -> "LHR", "MUC" -> "FCO",
+
+      // Europe - Large to small
+      "LHR" -> "EXE", "CDG" -> "BES", "FRA" -> "ERF", "AMS" -> "GRQ", "FCO" -> "BRI",
+      "LHR" -> "INV", "CDG" -> "MPL", "MUC" -> "NUE", "MAD" -> "VGO", "BCN" -> "PMI",
+
+      // Europe - Major EU to Eastern block capitals
+      "LHR" -> "WAW", "CDG" -> "BUD", "FRA" -> "PRG", "AMS" -> "BEG", "LHR" -> "SOF",
+
+      // Africa - Major pairs
+      "JNB" -> "NBO", "CAI" -> "LOS", "JNB" -> "CPT", "ADD" -> "NBO", "LOS" -> "ACC",
+
+      // LatAm - Major pairs
+      "GRU" -> "EZE", "GRU" -> "BOG", "MEX" -> "BOG", "LIM" -> "BOG", "GRU" -> "SCL",
+
+      // LatAm - Major to medium
+      "GRU" -> "CWB", "GRU" -> "BSB", "MEX" -> "GDL", "MEX" -> "MTY", "BOG" -> "MDE",
+      "SCL" -> "IQQ", "EZE" -> "COR", "LIM" -> "CUZ", "GRU" -> "FOR", "MEX" -> "CUN",
+
+      // Asia Pacific - Major pairs
+      "SYD" -> "MEL", "SYD" -> "SIN", "NRT" -> "SYD", "ICN" -> "SYD", "SIN" -> "SYD",
+
+      // Asia Pacific - Major to medium
+      "SYD" -> "BNE", "SYD" -> "PER", "MEL" -> "ADL", "SYD" -> "CNS", "NRT" -> "MEL",
+      "SIN" -> "MEL", "AKL" -> "SYD", "BNE" -> "AKL", "MEL" -> "CHC", "SYD" -> "DPS",
+
+      // Asia Pacific - Medium to small
+      "BNE" -> "CNS", "MEL" -> "HBA", "AKL" -> "WLG", "CHC" -> "WLG", "SYD" -> "OOL",
+      "BNE" -> "TSV", "MEL" -> "MKY", "AKL" -> "ZQN", "PER" -> "BNE", "HBA" -> "ADL",
+
+      // Asia SEA - Major pairs
+      "SIN" -> "BKK", "SIN" -> "KUL", "BKK" -> "CGK", "SIN" -> "CGK", "BKK" -> "HAN",
+
+      // Asia SEA - Major to medium <1000km
+      "SIN" -> "PEN", "BKK" -> "RGN", "CGK" -> "DPS", "MNL" -> "CEB", "HAN" -> "SGN",
+      "BKK" -> "CNX", "SIN" -> "SUB", "KUL" -> "BKI", "CGK" -> "UPG", "MNL" -> "MNL",
+
+      // Asia Southern - Major pairs
+      "DEL" -> "BOM", "DEL" -> "MAA", "BOM" -> "BLR", "DEL" -> "CCU", "BOM" -> "HYD",
+
+      // Asia Southern - Major to medium
+      "DEL" -> "JAI", "DEL" -> "AMD", "BOM" -> "GOI", "DEL" -> "LKO", "MAA" -> "BLR",
+      "DEL" -> "ATQ", "BOM" -> "NAG", "DEL" -> "PAT", "CCU" -> "IXB", "BLR" -> "HYD",
+
+      // MENA - Major pairs
+      "DXB" -> "CAI", "DXB" -> "IST", "RUH" -> "DXB", "IST" -> "CAI", "DXB" -> "AMM",
+
+      // MENA - Major to medium
+      "DXB" -> "MCT", "RUH" -> "JED", "CAI" -> "HRG", "IST" -> "AYT", "DXB" -> "KWI",
+      "AMM" -> "BEY", "CAI" -> "SSH", "IST" -> "ESB", "DXB" -> "BAH", "RUH" -> "KWI",
+
+      // China - Major pairs
+      "PEK" -> "SHA", "PEK" -> "CAN", "SHA" -> "CAN", "PEK" -> "CTU", "PVG" -> "SZX",
+
+      // China - Major to medium
+      "PEK" -> "WUH", "PVG" -> "XIY", "CAN" -> "CKG", "PEK" -> "DLC", "PVG" -> "HGH",
+      "CTU" -> "KMG", "PEK" -> "NKG", "CAN" -> "CSX", "PVG" -> "TAO", "PEK" -> "TSN",
+
+      // China - Medium to small
+      "WUH" -> "CKG", "XIY" -> "CTU", "KMG" -> "CTU", "NKG" -> "WUH", "DLC" -> "SHE",
+      "HRB" -> "SHE", "CSX" -> "WUH", "KWE" -> "CTU", "NNG" -> "CAN", "TAO" -> "NKG",
+
+      // Eastern Block - Major pairs
+      "SVO" -> "LED", "WAW" -> "BUD", "PRG" -> "WAW", "BUD" -> "BEG", "SVO" -> "KBP",
+
+      // Eastern Block - Major to medium <1000km
+      "SVO" -> "KZN", "WAW" -> "KRK", "PRG" -> "BRQ", "BUD" -> "DEB", "SVO" -> "ROV",
+      "WAW" -> "GDN", "BEG" -> "SKP", "SVO" -> "UFA", "LED" -> "KZN", "PRG" -> "OLO",
+
+      // Eastern Block - Medium to small
+      "KRK" -> "WRO", "KZN" -> "UFA", "SKP" -> "TIA", "BEG" -> "OHD", "WRO" -> "GDN",
+      "UFA" -> "KZN", "SVX" -> "KZN", "ROV" -> "KZN", "DEB" -> "MIS", "BRQ" -> "OSR",
     )
 
     pairs.foreach {
@@ -54,6 +155,16 @@ object DemandGenerator {
   private[this] val FIRST_CLASS_PERCENTAGE_MAX = Map(PassengerType.BUSINESS -> 0.08, PassengerType.TOURIST -> 0.02, PassengerType.OLYMPICS -> 0.03) //max 8% first (Business passenger), 2% first (Tourist)
   private[this] val BUSINESS_CLASS_INCOME_MAX = 100_000
   private[this] val BUSINESS_CLASS_PERCENTAGE_MAX = Map(PassengerType.BUSINESS -> 0.3, PassengerType.TOURIST -> 0.10, PassengerType.OLYMPICS -> 0.15) //max 30% business (Business passenger), 10% business (Tourist)
+  // For demand nerfing lol.
+  private val COMPRESSION_EXP_START = 0.725
+  private val COMPRESSION_EXP_END   = 0.725
+  private val COMPRESSION_END_CYCLE = ChronologyConverter.cyclesPerYear * 20
+
+private def demandCompressionExponent(cycle: Int): Double = {
+  val t = math.min(1.0, cycle.toDouble / COMPRESSION_END_CYCLE)
+  COMPRESSION_EXP_START + (COMPRESSION_EXP_END - COMPRESSION_EXP_START) * t
+}
+
 
   private val DROP_DEMAND_THRESHOLDS = new Array[Int](FlightType.values.size)
 
@@ -96,6 +207,31 @@ object DemandGenerator {
     }
 
     val allDemandsAsScala = allDemands.asScala
+
+    val exp = demandCompressionExponent(cycle)
+      if (exp < 1.0) {
+        val pairTotals = mutable.HashMap[(Int, Int), Int]()
+        allDemandsAsScala.foreach { case (from, toList) =>
+          toList.foreach { case (to, (_, demand)) =>
+            val key = if (from.id < to.id) (from.id, to.id) else (to.id, from.id)
+            pairTotals(key) = pairTotals.getOrElse(key, 0) + demand.total
+          }
+        }
+        val pairScales = pairTotals.map { case (key, total) =>
+          val scale = if (total <= 100) 1.0 else math.pow(100.0 / total, 1.0 - exp)
+          (key, scale)
+        }.toMap
+        val compressed = allDemandsAsScala.map { case (from, toList) =>
+          val newToList = toList.flatMap { case (to, (pType, demand)) =>
+            val key = if (from.id < to.id) (from.id, to.id) else (to.id, from.id)
+            val scaled = demand * pairScales(key)
+            if (scaled.total > 0) Some((to, (pType, scaled))) else None
+          }
+          (from, newToList)
+        }
+        allDemandsAsScala.clear()
+        allDemandsAsScala.appendAll(compressed)
+      }
 
     if (!plainDemand) {
       allDemandsAsScala.appendAll(generateEventDemand(cycle, airports))
