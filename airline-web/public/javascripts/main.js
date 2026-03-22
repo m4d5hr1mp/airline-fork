@@ -531,6 +531,7 @@ function refreshPanels(airlineId) {
 }
 
 var totalmillisecPerWeek = 7 * 24 * 60 * 60 * 1000;
+var currentTickTimer = null;
 var refreshInterval = 5000; // every 5 seconds
 var hasTickEstimation = false;
 
@@ -544,6 +545,8 @@ function updateTime(cycle, fraction, cycleDurationEstimation) {
     $(".currentCycle").text("Cycle: " + cycle);
     $(".currentCycle").attr("title", "Current Cycle: " + cycle);
 
+
+    // In-game week and year
     const totalWeeks   = Math.floor(cycle / CYCLES_PER_WEEK);
     const gameYear     = WORLD_START_YEAR + Math.floor(totalWeeks / WEEKS_PER_YEAR);
     const weekOfYear   = (totalWeeks % WEEKS_PER_YEAR) + 1;
@@ -551,22 +554,28 @@ function updateTime(cycle, fraction, cycleDurationEstimation) {
     $(".currentGameDate").text("Week " + weekOfYear + ", " + gameYear);
     // ===================================================================
 
+
     // ====================== NEXT-TICK LOGIC (unchanged) ======================
     var initialDurationTillNextTick;
     if (cycleDurationEstimation > 0) {
         initialDurationTillNextTick = cycleDurationEstimation * (1 - fraction);
         hasTickEstimation = true;
+    } else {
+        hasTickEstimation = false;
     }
+
     var wallClockStart = new Date();
     if (currentTickTimer) {
         clearInterval(currentTickTimer);
+        currentTickTimer = null;
     }
+
     var updateTimerFunction = function() {
         var currentWallClock = new Date();
         var wallClockDurationSinceStart = currentWallClock.getTime() - wallClockStart.getTime();
         var durationTillNextTick = initialDurationTillNextTick - wallClockDurationSinceStart;
         if (hasTickEstimation) {
-            var minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
+            const minutesLeft = Math.round(durationTillNextTick / 1000 / 60);
             if (minutesLeft <= 0) {
                 $(".nextTickEstimation").text("Very soon");
             } else if (minutesLeft === 1) {
