@@ -5,7 +5,7 @@ year;week;origin;action;target;delta_value;event_name
 -1;-1;NATO;CREATE_BLOCK;BE,CA,DK,FR,IS,IT,LU,NL,NO,PT,GB,US,GR,TR|enforce;3;NATO
 -1;-1;COMECON;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG,CZ,SK,HU,PL,RO,BG,AL;4;COMECON
 -1;-1;ARAB_LEAGUE;CREATE_BLOCK;EG,IQ,JO,LB,SA,SY,YE,LY;2;Arab League
--1;-1;ANZUS;CREATE_BLOCK;AU,NZ,US|enforce;3;ANZUS
+-1;-1;ANZUS;CREATE_BLOCK;AU,NZ,US|enforce;2;ANZUS
 -1;-1;GB_DOMESTIC;CREATE_BLOCK;GB,JE,GG,IM,GI,FK,SH,BM,KY,VG,TC,MS,AI,PN|enforce;5;GB Domestic Market
 -1;-1;COMMONWEALTH_CORE;CREATE_BLOCK;GB,CA,AU,NZ,HK;4;Commonwealth Core
 -1;-1;COMMONWEALTH_INDEPENDENTS;CREATE_BLOCK;IN,PK,BD,LK,SG,MY,ZW,ZA;2;Commonwealth Independents
@@ -16,8 +16,8 @@ year;week;origin;action;target;delta_value;event_name
 -1;-1;AU_DOMESTIC;CREATE_BLOCK;AU,NF,CX,CC|enforce;5;Australian Domestic Market
 -1;-1;NZ_DOMESTIC;CREATE_BLOCK;NZ,CK,NU|enforce;5;New Zealand Domestic Market
 -1;-1;NL_DOMESTIC;CREATE_BLOCK;NL,AW,CW,SX,BQ|enforce;5;Dutch Domestic Market
--1;-1;FRENCH_WEST_AFRICA;CREATE_BLOCK;SN,ML,GN,CI,BF,BJ,NE,TG;2;French West Africa (AOF)
--1;-1;FRENCH_EQUATORIAL_AFRICA;CREATE_BLOCK;TD,CF,CG,GA,CM,MG,DJ,KM;2;French Equatorial Africa + Indian Ocean
+-1;-1;FRENCH_WEST_AFRICA;CREATE_BLOCK;SN,ML,GN,CI,BF,BJ,NE,TG;1;French West Africa (AOF)
+-1;-1;FRENCH_EQUATORIAL_AFRICA;CREATE_BLOCK;TD,CF,CG,GA,CM,MG,DJ,KM;1;French Equatorial Africa + Indian Ocean
 -1;-1;NATO;SET_BLOCK_RELATIONS;USSR;-2;NATO stance vs Soviet bloc
 -1;-1;NATO;SET_BLOCK_RELATIONS;CZSK;-2;NATO stance vs Czechoslovakia
 -1;-1;NATO;SET_BLOCK_RELATIONS;CN;-2;NATO stance vs PRC
@@ -39,6 +39,8 @@ year;week;origin;action;target;delta_value;event_name
 -1;-1;ANZUS;SET_BLOCK_RELATIONS;USSR;-2;ANZUS stance vs Soviet bloc
 -1;-1;ANZUS;SET_BLOCK_RELATIONS;CN;-2;ANZUS stance vs PRC
 -1;-1;ANZUS;SET_BLOCK_RELATIONS;KP;-3;ANZUS stance vs North Korea
+-1;-1;COMMONWEALTH_CORE;SET_BLOCK_RELATIONS;USA_DOMESTIC;2
+-1;-1;CA;SET_BLOCK_RELATIONS;USA_DOMESTIC;3
 -1;-1;CN;SET_RELATIONS_OVERRIDE;AU_DOMESTIC;-2;PRC stance vs Australian territories
 -1;-1;CN;SET_RELATIONS_OVERRIDE;NZ_DOMESTIC;-2;PRC stance vs New Zealand territories
 -1;-1;IL;SET_RELATIONS_OVERRIDE;ARAB_LEAGUE;-2;Israel vs Arab League post-1948 war
@@ -54,13 +56,13 @@ year;week;origin;action;target;delta_value;event_name
 -1;-1;IN;SET_RELATIONS_OVERRIDE;PK;-2;India-Pakistan Kashmir War
 -1;-1;PK;SET_RELATIONS_OVERRIDE;BD;4;Pakistan-Bangladesh (same state pre-1971)
 -1;-1;IN;SET_RELATIONS_OVERRIDE;CN;1;India-China Panchsheel 1954
--1;-1;IN;SET_RELATIONS_OVERRIDE;USSR;2;India-USSR Nehru non-alignment warm tilt
+-1;-1;IN;SET_RELATIONS_OVERRIDE;USSR;1;India-USSR Nehru non-alignment warm tilt
 -1;-1;IN;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;1;India-US non-aligned but diplomatic
--1;-1;JP;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Japan-US San Francisco Security Treaty
+-1;-1;JP;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Japan-US San Francisco Security Treaty
 -1;-1;JP;SET_RELATIONS_OVERRIDE;KR;-1;Japan-Korea colonial history no normalization
 -1;-1;JP;SET_RELATIONS_OVERRIDE;USSR;-1;Japan-USSR no peace treaty Kuril dispute
--1;-1;KR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;South Korea-US Mutual Defense Treaty
--1;-1;TW;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;4;Taiwan-US Mutual Defense Treaty
+-1;-1;KR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;South Korea-US Mutual Defense Treaty
+-1;-1;TW;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Taiwan-US Mutual Defense Treaty
 -1;-1;PH;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;3;Philippines-US Mutual Defense Treaty
 -1;-1;VN;SET_RELATIONS_OVERRIDE;FR_DOMESTIC;-2;North Vietnam vs France Dien Bien Phu
 -1;-1;IR;SET_RELATIONS_OVERRIDE;USA_DOMESTIC;2;Iran-US post-Ajax coup client state
@@ -81,11 +83,11 @@ year;week;origin;action;target;delta_value;event_name
 1955;8;BAGHDAD_PACT;CREATE_BLOCK;GB,TR,IQ,IR,PK;2;Baghdad Pact established
 1955;8;BAGHDAD_PACT;SET_BLOCK_RELATIONS;USSR;-2;Baghdad Pact vs Soviet bloc
 #-- Bandung Conference, NAM Statement-of-intent:
-1955;17;NAM_CORE;CREATE_BLOCK;IN,RS,HR,SI,BA,ME,MK,XK,EG,ID,MM,LK;3;Non-Aligned core leaders - Bandung Conference
+1955;17;NAM_CORE;CREATE_BLOCK;IN,RS,HR,SI,BA,ME,MK,XK,EG,ID,MM,LK;2;Non-Aligned core leaders - Bandung Conference
 #-- DE (Full DE) joins NATO:
 1955;19;DE;JOIN_BLOCK;NATO;;West Germany admitted to NATO
 #-- Warsaw Pact is formed:
-1955;19;WARSAW_PACT;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG,AL,BG,CZ,SK,HU,PL,RO|enforce;4;Warsaw Pact founded
+1955;19;WARSAW_PACT;CREATE_BLOCK;RU,UA,BY,EE,LV,LT,MD,GE,AM,AZ,KZ,UZ,TM,TJ,KG,AL,BG,CZ,SK,HU,PL,RO|enforce;3;Warsaw Pact founded
 1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;NATO;-2;Warsaw Pact vs NATO
 1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;USA_DOMESTIC;-2;Warsaw Pact vs US territories
 1955;19;WARSAW_PACT;SET_BLOCK_RELATIONS;GB_DOMESTIC;-2;Warsaw Pact vs British territories
@@ -114,7 +116,7 @@ year;week;origin;action;target;delta_value;event_name
 1957;10;GH;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Ghana independence
 1957;10;GH;JOIN_BLOCK;NAM_CORE;;Nkrumah joins non-aligned leadership
 #-- EEC Founding:
-1957;13;EEC;CREATE_BLOCK;BE,FR,DE,IT,LU,NL;3;European Economic Community founded
+1957;13;EEC;CREATE_BLOCK;BE,FR,DE,IT,LU,NL;2;European Economic Community founded
 #-- Malaysia Gains Independence. Singapore Remains under Crown:
 1957;35;MY;LEAVE_BLOCK;COMMONWEALTH_COLONIES;;Malayan independence
 1957;35;MY;JOIN_BLOCK;COMMONWEALTH_INDEPENDENTS;;Malaya joins Commonwealth as independent member
@@ -151,7 +153,7 @@ year;week;origin;action;target;delta_value;event_name
 #-- Spain Joins OEEC:
 1959;29;ES;JOIN_BLOCK;OEEC;;Spain joins OEEC
 #-- EFTA Created:
-1960;1;EFTA;CREATE_BLOCK;AT,DK,NO,PT,SE,CH,GB;3;EFTA founded
+1960;1;EFTA;CREATE_BLOCK;AT,DK,NO,PT,SE,CH,GB;2;EFTA founded
 #-- Sino-Soviet Split Begins:
 1960;1;USSR;SET_RELATIONS_OVERRIDE;CN;-1;Sino-Soviet split - ideological rift
 #-- Sharperville Massacre:
