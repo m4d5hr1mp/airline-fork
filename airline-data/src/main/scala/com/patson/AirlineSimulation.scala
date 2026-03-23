@@ -7,6 +7,7 @@ import scala.collection.mutable._
 import scala.collection.immutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import com.patson.data.airplane.OrderQueueSource
 import com.patson.model.airplane.Airplane
 import com.patson.model.notice.GameOverNotice
 import com.patson.model.oil.OilPrice
@@ -403,6 +404,7 @@ object AirlineSimulation {
             }
             println(s"Resetting $airline due to negative cash and unprofitable flights")
             Airline.resetAirline(airline.id, newBalance = resetBalance)
+            OrderQueueSource.deleteRowsByAirline(airline.id)  // ← add this
             NoticeSource.saveTrackingNotice(airline.id, GameOverNotice())
           }
         }

@@ -5,6 +5,7 @@ import com.patson.data._
 import com.patson.model.Computation.ResetAmountInfo
 import com.patson.model._
 import com.patson.util._
+import com.patson.data.airplane.OrderQueueSource
 import controllers.AuthenticationObject.{Authenticated, AuthenticatedAirline}
 import models.{AirportFacility, Consideration, FacilityType}
 import play.api.libs.json.{Json, _}
@@ -79,6 +80,7 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
     }
   }
   
+  // Need to add info about planes that are still on order, no?
    object ResetAmountInfoWrites extends Writes[ResetAmountInfo] {
     def writes(info: ResetAmountInfo): JsValue =  {
       JsObject(List(
@@ -750,6 +752,7 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
     Ok(Json.obj("nationalAirlines" -> nationalAirlinesJson, "partneredAirlines" -> partneredAirlinesJson))
   }
 
+  //This is our Reset Method:
   def resetAirline(airlineId : Int, rebuild : Boolean) = AuthenticatedAirline(airlineId) { request =>
     if (airlineId != request.user.id) {
       Forbidden
@@ -758,6 +761,7 @@ class AirlineApplication @Inject()(cc: ControllerComponents) extends AbstractCon
         case Some(rejection) => Ok(Json.obj("rejection" -> rejection))
         case None =>
           val resetBalance = if (rebuild) Computation.getResetAmount(airlineId).overall else 0 //do it here before deleting everything
+          OrderQueueSource.deleteRowsByAirline(airlineId) 
           Airline.resetAirline(airlineId, newBalance = resetBalance, !rebuild) match {
             case Some(airline) =>
               Ok(Json.toJson(airline))

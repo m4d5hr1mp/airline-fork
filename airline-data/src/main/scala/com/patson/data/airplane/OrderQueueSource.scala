@@ -206,4 +206,23 @@ object OrderQueueSource {
       connection.close()
     }
   }
+
+  /**
+    * Deletes all orders for given airline ID 
+    * Useful when bankrupting or reseting players.
+    * @param airlineId
+    */
+  def deleteRowsByAirline(airlineId: Int): Unit = {
+    val connection = Meta.getConnection()
+    try {
+      val stmt = connection.prepareStatement(
+        s"DELETE FROM $MODEL_ORDER_QUEUE_TABLE WHERE airline_id = ?"
+      )
+      stmt.setInt(1, airlineId)
+      stmt.executeUpdate()
+      stmt.close()
+    } finally {
+      connection.close()
+    }
+  }
 }
