@@ -615,6 +615,8 @@ class AirplaneApplication @Inject()(cc: ControllerComponents) extends AbstractCo
                     purchaseRate     = discountedModel.price.toDouble / originalModel.price
                   ))
                 }
+                
+                airplanes.foreach(_.assignDefaultConfiguration())
                 AirplaneSource.saveAirplanes(airplanes.toList)
                 Ok(Json.obj(
                   "updateCount"     -> quantity,

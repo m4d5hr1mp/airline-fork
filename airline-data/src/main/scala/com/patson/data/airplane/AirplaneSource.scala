@@ -470,6 +470,28 @@ object AirplaneSource {
     }
   }
 
+    def saveAirplaneConfigurationLinks(airplanes: List[Airplane]): Unit = {
+    val connection = Meta.getConnection()
+    try {
+      connection.setAutoCommit(false)
+      val stmt = connection.prepareStatement(
+        "REPLACE INTO " + AIRPLANE_CONFIGURATION_TABLE + "(airplane, configuration) VALUES(?,?)"
+      )
+      airplanes.foreach { airplane =>
+        if (airplane.id != 0 && airplane.configuration.id != 0) {
+          stmt.setInt(1, airplane.id)
+          stmt.setInt(2, airplane.configuration.id)
+          stmt.addBatch()
+        }
+      }
+      stmt.executeBatch()
+      stmt.close()
+      connection.commit()
+    } finally {
+      connection.close()
+    }
+  }
+
   def loadAirplaneConfigurationById(airlineId : Int, modelId : Int) = {
     loadAirplaneConfigurationsByCriteria(List(("airline", airlineId), ("model", modelId)))
   }

@@ -11,7 +11,6 @@ import scala.collection.mutable.ListBuffer
 
 object OrderQueueSimulation {
 
-  // ── Production capacity: max airframes delivered per model per cycle ──────
   val PRODUCTION_CAPACITY: Map[Type.Value, Int] = Map(
     Type.SHORT_RANGE_PROP -> 25,
     Type.LONG_RANGE_PROP  -> 10,
@@ -28,17 +27,6 @@ object OrderQueueSimulation {
     Type.SUPERSONIC       ->  2
   )
 
-  /**
-   * Called once per simulation cycle from AirplaneSimulation.
-   *
-   * For each model with pending queue rows:
-   *   1. Find rows where orderCycle + model.constructionTime <= currentCycle.
-   *   2. Sort by (orderCycle ASC, shuffleIndex ASC) — earliest batch first,
-   *      fair random within a batch.
-   *   3. Deliver up to PRODUCTION_CAPACITY[type] rows.
-   *   4. Create Airplane instances at the player-chosen home airport.
-   *   5. Delete delivered rows from the queue.
-   */
   def processOrderQueue(currentCycle: Int): Unit = {
     println(s"[OrderQueue] Processing deliveries for cycle $currentCycle")
 
@@ -51,7 +39,7 @@ object OrderQueueSimulation {
       return
     }
 
-    val toDeliver   = ListBuffer[com.patson.model.airplane.ModelOrderQueue]()
+    val toDeliver    = ListBuffer[com.patson.model.airplane.ModelOrderQueue]()
     val newAirplanes = ListBuffer[Airplane]()
 
     pendingByModel.foreach { case (modelId, rows) =>
@@ -75,8 +63,6 @@ object OrderQueueSimulation {
                 toDeliver.append(row)
 
               case Some(airline) =>
-                // Use the player-chosen home airport; fall back to HQ only if
-                // the stored airport id somehow resolves to nothing.
                 val homeAirport: Airport =
                   if (row.homeAirportId > 0)
                     Airport.fromId(row.homeAirportId)
@@ -103,8 +89,19 @@ object OrderQueueSimulation {
     }
 
     if (newAirplanes.nonEmpty) {
+      // saveAirplanes assigns generated DB ids back to each airplane object in-memory
       AirplaneSource.saveAirplanes(newAirplanes.toList)
       println(s"[OrderQueue] Delivered ${newAirplanes.size} airframes")
+
+      // Now that each airplane has an id, assign default seat configuration.
+      // assignDefaultConfiguration() saves the config template if needed and
+      // sets airplane.configuration in-memory, but does not write the
+      // airplane->configuration link. We write those links in one batch after.
+      newAirplanes.foreach { airplane =>
+        airplane.assignDefaultConfiguration()
+      }
+      AirplaneSource.saveAirplaneConfigurationLinks(newAirplanes.toList)
+      println(s"[OrderQueue] Assigned configurations to ${newAirplanes.size} airframes")
     }
 
     if (toDeliver.nonEmpty) {
@@ -113,13 +110,6 @@ object OrderQueueSimulation {
     }
   }
 
-  /**
-   * Inserts `quantity` rows into the order queue for a given model/airline/cycle/home.
-   * Reshuffles all existing rows for (modelId, orderCycle) to ensure fair
-   * interleaving with any pre-existing same-cycle orders.
-   *
-   * Called from AirplaneApplication at purchase time.
-   */
   def placeOrder(modelId: Int, airlineId: Int, quantity: Int, orderCycle: Int, homeAirportId: Int): Unit = {
     OrderQueueSource.insertAndReshuffle(modelId, airlineId, quantity, orderCycle, homeAirportId)
   }
